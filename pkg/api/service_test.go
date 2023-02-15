@@ -3,7 +3,7 @@ package service_test
 import (
 	"testing"
 
-	"github.com/NOAA-GSL/vxGoDataProcessing/src/service"
+	"github.com/NOAA-GSL/vxDataProcessor/pkg/api"
 )
 
 func TestService(t *testing.T) {

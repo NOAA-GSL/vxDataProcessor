@@ -2,6 +2,15 @@
 
 A parallel data processing project for MATS.
 
+## Getting Started
+
+Currently the following works:
+
+```
+go run cmd/test/main.go
+go test pkg/api/service_test.go
+```
+
 ## Disclaimer
 
 This repository is a scientific product and is not official communication of the

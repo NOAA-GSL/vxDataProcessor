@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/NOAA-GSL/vxGoDataProcessing/src/service"
+	"github.com/NOAA-GSL/vxDataProcessor/pkg/api"
 
 	"rsc.io/quote"
 )

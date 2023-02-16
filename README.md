@@ -27,6 +27,9 @@ go vet ./...
 go mod tidy
 # Build the "test" binary
 go build -o /tmp/test ./cmd/test
+# Run various Linters used in CI
+brew install golangci-lint # If not installed already
+golangci-lint run
 ```
 
 ## Disclaimer

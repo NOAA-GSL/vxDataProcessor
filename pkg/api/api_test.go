@@ -7,7 +7,7 @@ import (
 )
 
 func TestService(t *testing.T) {
-	if api.TestString() != "this is a string" {
+	if api.TestString() != "this is a string from api" {
 		t.Fatal("Wrong test string :")
 	}
 }

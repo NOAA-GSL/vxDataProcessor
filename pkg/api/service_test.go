@@ -1,4 +1,4 @@
-package service_test
+package api_test
 
 import (
 	"testing"
@@ -7,7 +7,7 @@ import (
 )
 
 func TestService(t *testing.T) {
-	if service.TestString() != "this is a string" {
+	if api.TestString() != "this is a string" {
 		t.Fatal("Wrong test string :")
 	}
 }

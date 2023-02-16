@@ -1,8 +1,5 @@
 package builder
 
-import "fmt"
-
-func main() {
-	fmt.Println("Hello from the builder!")
+func TestString() string {
+	return "this is a string"
 }
-

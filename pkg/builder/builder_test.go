@@ -3,11 +3,11 @@ package builder_test
 import (
 	"testing"
 
-	"github.com/NOAA-GSL/vxDataProcessor/pkg/api"
+	"github.com/NOAA-GSL/vxDataProcessor/pkg/builder"
 )
 
 func TestBuilder(t *testing.T) {
-	if api.TestString() != "this is a string" {
+	if builder.TestString() != "this is a string from builder" {
 		t.Fatal("Wrong test string :")
 	}
 }

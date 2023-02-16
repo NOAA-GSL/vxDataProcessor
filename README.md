@@ -6,9 +6,22 @@ A parallel data processing project for MATS.
 
 Currently the following works:
 
-```
-go run cmd/test/main.go
-go test pkg/api/service_test.go
+```shell
+# Run all packages in `cmd/`
+go run ./cmd/...
+# Run all tests with a coverage report
+go test -cover ./...
+
+# And some tooling examples
+
+# Format code inplace, apply simplifications if possible, and show the diff
+gofmt -w -s -d .
+# Run static analysis
+go vet ./...
+# Tidy up dependencies
+go mod tidy
+# Build the "test" binary
+go build -o /tmp/test ./cmd/test
 ```
 
 ## Disclaimer

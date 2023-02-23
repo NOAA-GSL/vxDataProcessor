@@ -1,8 +1,8 @@
 package builder_test
 
 import (
-	"testing"
 	"github.com/NOAA-GSL/vxDataProcessor/pkg/builder"
+	"testing"
 )
 
 func TestBuilder(t *testing.T) {

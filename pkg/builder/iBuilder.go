@@ -1,4 +1,5 @@
 package builder
+
 /*
 please refer to https://gist.github.com/vaskoz/10073335
 */
@@ -12,15 +13,16 @@ type InputData struct {
 		InputData []DerivedData
 	}
 }
+
 // -1 or 1
 type GoodnessPolarity int
 type Threshold float64
 type builderResult struct {
-	data DerivedData
+	data             DerivedData
 	goodnessPolarity GoodnessPolarity
-	majorThreshold Threshold
-	minorThreshold Threshold
-	value int
+	majorThreshold   Threshold
+	minorThreshold   Threshold
+	value            int
 }
 
 type Builder interface {

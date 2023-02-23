@@ -29,5 +29,4 @@ type Builder interface {
 	setMajorThreshold(Threshold) Builder
 	setMinorThreshold(Threshold) Builder
 	computeSignificance(DerivedData) Builder
-	Build() Builder
 }

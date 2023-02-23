@@ -2,7 +2,6 @@ package builder_test
 
 import (
 	"testing"
-
 	"github.com/NOAA-GSL/vxDataProcessor/pkg/builder"
 )
 

@@ -10,7 +10,7 @@ type DerivedData struct {
 }
 type InputData struct {
 	Rows []struct {
-		InputData []DerivedData
+		inputData []DerivedData
 	}
 }
 

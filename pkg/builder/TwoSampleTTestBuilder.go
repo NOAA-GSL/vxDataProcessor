@@ -49,7 +49,7 @@ var validate *validator.Validate = validator.New()
 // This information is determined outside of this builder (the builder doesn't know
 // what parameter combination is being tested) so the builder must be told
 // what the "goodnes polarity" is +1 or -1.
-func (br *builderResult)setGoodnessPolarity(polarity GoodnessPolarity) Builder {
+func (br *builderResult) setGoodnessPolarity(polarity GoodnessPolarity) Builder {
 	errs := validate.Var(polarity, "required,oneof=-1 1")
 	if errs != nil {
 		fmt.Println(errs)
@@ -60,7 +60,7 @@ func (br *builderResult)setGoodnessPolarity(polarity GoodnessPolarity) Builder {
 }
 
 // set the major p-value threshold
-func (br *builderResult)setMajorThreshold(threshold Threshold) Builder  {
+func (br *builderResult) setMajorThreshold(threshold Threshold) Builder {
 	if errs := validate.Var(threshold, "required,gt=0,lt=.5"); errs != nil {
 		fmt.Println(errs)
 	} else {
@@ -70,7 +70,7 @@ func (br *builderResult)setMajorThreshold(threshold Threshold) Builder  {
 }
 
 // set the major p-value threshold
-func (br *builderResult)setMinorThreshold(threshold Threshold)  Builder {
+func (br *builderResult) setMinorThreshold(threshold Threshold) Builder {
 	if errs := validate.Var(threshold, "required,gt=0,lt=.5"); errs != nil {
 		fmt.Println(errs)
 	} else {
@@ -100,7 +100,7 @@ func getValue(br builderResult, difference float64, pval float64) int {
 	}
 }
 
-func (br *builderResult)computeSignificance(derivedData DerivedData) Builder {
+func (br *builderResult) computeSignificance(derivedData DerivedData) Builder {
 	// alternate hypothesis is locationDiffers - i.e. null hypothesis is equality.
 	alt := stats.LocationDiffers
 	// If μ0 is non-zero, this tests if the average of the difference
@@ -130,7 +130,7 @@ func (br *builderResult)computeSignificance(derivedData DerivedData) Builder {
 	}
 }
 
-func (br *builderResult)deriveData(inputData InputData) Builder {
+func (br *builderResult) deriveData(inputData InputData) Builder {
 	// put the code to derive the data from the inputData HERE!
 	data := DerivedData{
 		// caclulate data here
@@ -143,11 +143,11 @@ func (br *builderResult)deriveData(inputData InputData) Builder {
 
 func (br *builderResult) Build() Builder {
 	return &builderResult{
-		data: br.data,
+		data:             br.data,
 		goodnessPolarity: br.goodnessPolarity,
-		majorThreshold: br.majorThreshold,
-		minorThreshold: br.minorThreshold,
-		value: br.value,
+		majorThreshold:   br.majorThreshold,
+		minorThreshold:   br.minorThreshold,
+		value:            br.value,
 	}
 }
 

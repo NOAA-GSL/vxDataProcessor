@@ -16,7 +16,5 @@ require (
 	github.com/aclements/go-moremath v0.0.0-20210112150236-f10218a38794
 	github.com/go-playground/validator/v10 v10.11.2
 	golang.org/x/text v0.6.0 // indirect
-	golang.org/x/tools v0.6.0
-	rsc.io/benchstat v0.0.0-20180218003226-ca9dcc07a32d
 	rsc.io/sampler v1.3.0 // indirect
 )

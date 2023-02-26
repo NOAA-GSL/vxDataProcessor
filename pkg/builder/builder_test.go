@@ -6,21 +6,24 @@ import (
 )
 
 func TestTwoSampleTTestBuilder(t *testing.T) {
-	var gp GoodnessPolarity = 1
-	var minorThreshold Threshold = 0.05
-	var majorThreshold Threshold = 0.01
-	// type InputData struct {
-	// 	Rows []struct {
-	// 		InputData []DerivedData
-	// 	}
-	// }
-	var ip = InputData{
-		[3]{DerivedData{}, DerivedData{}, DerivedData{}}
+	var gp builder.GoodnessPolarity = 1
+	// var minorThreshold builder.Threshold = 0.05
+	// var majorThreshold builder.Threshold = 0.01
+	var ip builder.InputData
+	cellBuilder := builder.GetBuilder("TwoSampleTTest")
+
+	cellBuilder.SetGoodnessPolarity(gp)
+	cellBuilder.SetMinorThreshold(0.05)
+	cellBuilder.SetMajorThreshold(0.01)
+	cellBuilder.DeriveData(ip)
+	cell := cellBuilder.GetScorecardCell()
+	cellBuilder.ComputeSignificance(cell.Data)
+	value := cell.Value
+	if value != 1 {
+		t.Fatal("Wrong value :")
 	}
-	var builderResult BuilderResult = NewTwoSampleTTestBuilder()
-	var derivedData DerivedData = builderResult.deriveData(ip)
-	builderResult.setGoodnessPolarity(gp).
-		setMinorThreshold(minorThreshold).
-		setMajorThreshold(majorThreshold).
-		computeSignificance(derivedData)
+}
+
+func NewTwoSampleTTestBuilder() {
+	panic("unimplemented")
 }

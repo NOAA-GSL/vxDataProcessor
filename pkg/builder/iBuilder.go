@@ -84,8 +84,8 @@ type ScorecardCellBuilder interface {
 }
 
 func GetBuilder(builderType string) ScorecardCellBuilder {
-    if builderType == "TwoSampleTTest" {
-        return NewTwoSampleTTestBuilder()
-    }
-    return nil
+	if builderType == "TwoSampleTTest" {
+		return NewTwoSampleTTestBuilder()
+	}
+	return nil
 }

@@ -49,7 +49,7 @@ var validate *validator.Validate = validator.New()
 // This information is determined outside of this builder (the builder doesn't know
 // what parameter combination is being tested) so the builder must be told
 // what the "goodnes polarity" is +1 or -1.
-func (scc *ScorecardCell) SetGoodnessPolarity(polarity GoodnessPolarity)  {
+func (scc *ScorecardCell) SetGoodnessPolarity(polarity GoodnessPolarity) {
 	errs := validate.Var(polarity, "required,oneof=-1 1")
 	if errs != nil {
 		fmt.Println(errs)
@@ -59,7 +59,7 @@ func (scc *ScorecardCell) SetGoodnessPolarity(polarity GoodnessPolarity)  {
 }
 
 // set the major p-value threshold
-func (scc *ScorecardCell) SetMajorThreshold(threshold Threshold)  {
+func (scc *ScorecardCell) SetMajorThreshold(threshold Threshold) {
 	if errs := validate.Var(threshold, "required,gt=0,lt=.5"); errs != nil {
 		fmt.Println(errs)
 	} else {
@@ -68,7 +68,7 @@ func (scc *ScorecardCell) SetMajorThreshold(threshold Threshold)  {
 }
 
 // set the major p-value threshold
-func (scc *ScorecardCell) SetMinorThreshold(threshold Threshold)  {
+func (scc *ScorecardCell) SetMinorThreshold(threshold Threshold) {
 	if errs := validate.Var(threshold, "required,gt=0,lt=.5"); errs != nil {
 		fmt.Println(errs)
 	} else {
@@ -97,7 +97,7 @@ func getValue(scc ScorecardCell, difference float64, pval float64) int {
 	}
 }
 
-func (scc *ScorecardCell) ComputeSignificance(derivedData DerivedDataElement)  {
+func (scc *ScorecardCell) ComputeSignificance(derivedData DerivedDataElement) {
 	// alternate hypothesis is locationDiffers - i.e. null hypothesis is equality.
 	alt := stats.LocationDiffers
 	// If μ0 is non-zero, this tests if the average of the difference
@@ -123,7 +123,7 @@ func (scc *ScorecardCell) ComputeSignificance(derivedData DerivedDataElement)  {
 	}
 }
 
-func (scc *ScorecardCell) DeriveData(inputData InputData)  {
+func (scc *ScorecardCell) DeriveData(inputData InputData) {
 	// put the code to derive the data from the inputData HERE!
 	data := DerivedDataElement{
 		// caclulate data here
@@ -134,7 +134,7 @@ func (scc *ScorecardCell) DeriveData(inputData InputData)  {
 }
 
 func (scc *ScorecardCell) GetScorecardCell() ScorecardCell {
-    return ScorecardCell{
+	return ScorecardCell{
 		Data:             scc.Data,
 		GoodnessPolarity: scc.GoodnessPolarity,
 		MajorThreshold:   scc.MajorThreshold,

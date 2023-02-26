@@ -10,7 +10,7 @@ LocationDiffers which specifies the alternative hypothesis that
 the locations of the two samples are not equal. This is a
 two-tailed test.
 For reference about Hypothesis testing with P-value look here...
-https://online.stat.psu.edu/statprogram/reviews/statistical-concepts/hypothesis-testing/p-value-approach
+https://refactoring.guru/design-patterns/builder/go/example
 
 For these analysis we asume for the null hypothesis that the statistic
 that is generated from the "validation data source", which might be thought of as the
@@ -49,38 +49,35 @@ var validate *validator.Validate = validator.New()
 // This information is determined outside of this builder (the builder doesn't know
 // what parameter combination is being tested) so the builder must be told
 // what the "goodnes polarity" is +1 or -1.
-func (br *builderResult) setGoodnessPolarity(polarity GoodnessPolarity) Builder {
+func (scc *ScorecardCell) SetGoodnessPolarity(polarity GoodnessPolarity)  {
 	errs := validate.Var(polarity, "required,oneof=-1 1")
 	if errs != nil {
 		fmt.Println(errs)
 	} else {
-		br.goodnessPolarity = polarity
+		scc.GoodnessPolarity = polarity
 	}
-	return nil
 }
 
 // set the major p-value threshold
-func (br *builderResult) setMajorThreshold(threshold Threshold) Builder {
+func (scc *ScorecardCell) SetMajorThreshold(threshold Threshold)  {
 	if errs := validate.Var(threshold, "required,gt=0,lt=.5"); errs != nil {
 		fmt.Println(errs)
 	} else {
-		br.majorThreshold = threshold
+		scc.MajorThreshold = threshold
 	}
-	return nil
 }
 
 // set the major p-value threshold
-func (br *builderResult) setMinorThreshold(threshold Threshold) Builder {
+func (scc *ScorecardCell) SetMinorThreshold(threshold Threshold)  {
 	if errs := validate.Var(threshold, "required,gt=0,lt=.5"); errs != nil {
 		fmt.Println(errs)
 	} else {
-		br.minorThreshold = threshold
+		scc.MinorThreshold = threshold
 	}
-	return nil
 }
 
 // get the return value based on the major and minor thresholds compared to the p-value
-func getValue(br builderResult, difference float64, pval float64) int {
+func getValue(scc ScorecardCell, difference float64, pval float64) int {
 	if errs := validate.Var(difference, "required"); errs != nil {
 		fmt.Println(errs)
 		return 0 // ??? don't know what to return for errors
@@ -89,18 +86,18 @@ func getValue(br builderResult, difference float64, pval float64) int {
 			fmt.Println(errs)
 			return 0 // ??? don't know what to return for errors
 		} else {
-			if pval <= float64(br.majorThreshold) {
-				return 2 * int(br.goodnessPolarity)
+			if pval <= float64(scc.MajorThreshold) {
+				return 2 * int(scc.GoodnessPolarity)
 			}
-			if pval <= float64(br.minorThreshold) {
-				return 1 * int(br.goodnessPolarity)
+			if pval <= float64(scc.MinorThreshold) {
+				return 1 * int(scc.GoodnessPolarity)
 			}
 			return 0
 		}
 	}
 }
 
-func (br *builderResult) computeSignificance(derivedData DerivedData) Builder {
+func (scc *ScorecardCell) ComputeSignificance(derivedData DerivedDataElement)  {
 	// alternate hypothesis is locationDiffers - i.e. null hypothesis is equality.
 	alt := stats.LocationDiffers
 	// If μ0 is non-zero, this tests if the average of the difference
@@ -108,11 +105,9 @@ func (br *builderResult) computeSignificance(derivedData DerivedData) Builder {
 	μ0 := 0.0
 	if errs := validate.Var(derivedData.CtlPop, "required,len gt 0"); errs != nil {
 		fmt.Println(errs)
-		return nil // ??? don't know what to return for errors
 	}
 	if errs := validate.Var(derivedData.ExpPop, "required,len gt 0"); errs != nil {
 		fmt.Println(errs)
-		return nil // ??? don't know what to return for errors
 	}
 	//&TTestResult{N1: n1, N2: n2, T: t, DoF: dof, AltHypothesis: alt, P: p}
 	// PairedTTest performs a two-sample paired t-test on samples x1 and x2.
@@ -122,35 +117,32 @@ func (br *builderResult) computeSignificance(derivedData DerivedData) Builder {
 		meanCtl := stats.Mean(derivedData.CtlPop)
 		meanExp := stats.Mean(derivedData.ExpPop)
 		difference := (meanCtl - meanExp)
-		br.value = getValue(*br, difference, ret.P)
-		return nil
+		scc.Value = getValue(*scc, difference, ret.P)
 	} else {
 		fmt.Println(err)
-		return nil
 	}
 }
 
-func (br *builderResult) deriveData(inputData InputData) Builder {
+func (scc *ScorecardCell) DeriveData(inputData InputData)  {
 	// put the code to derive the data from the inputData HERE!
-	data := DerivedData{
+	data := DerivedDataElement{
 		// caclulate data here
 		CtlPop: nil,
 		ExpPop: nil,
 	}
-	br.data = data
-	return nil
+	scc.Data = data
 }
 
-func (br *builderResult) Build() Builder {
-	return &builderResult{
-		data:             br.data,
-		goodnessPolarity: br.goodnessPolarity,
-		majorThreshold:   br.majorThreshold,
-		minorThreshold:   br.minorThreshold,
-		value:            br.value,
+func (scc *ScorecardCell) GetScorecardCell() ScorecardCell {
+    return ScorecardCell{
+		Data:             scc.Data,
+		GoodnessPolarity: scc.GoodnessPolarity,
+		MajorThreshold:   scc.MajorThreshold,
+		MinorThreshold:   scc.MinorThreshold,
+		Value:            scc.Value,
 	}
 }
 
-func NewTwoSampleTTestBuilder() Builder {
-	return &builderResult{}
+func NewTwoSampleTTestBuilder() *ScorecardCell {
+	return &ScorecardCell{}
 }

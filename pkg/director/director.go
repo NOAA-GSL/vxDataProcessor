@@ -39,6 +39,5 @@ func Build(documentId string) {
 		log.Fatal(fmt.Sprint("director - build - ComputeSignificance - error message : ", err))
 	}
 	// insert the elements into the in-memory document
-	fmt.Println(value)
 	// upsert the document
 }

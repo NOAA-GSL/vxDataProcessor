@@ -31,10 +31,11 @@ A P-value <= 0.01 (for a 99% major threshold) results in a 2. For 0.01 < P-value
 will cause a return of 0.
 */
 import (
+	"errors"
 	"fmt"
-
 	"github.com/aclements/go-moremath/stats"
 	"github.com/go-playground/validator/v10"
+	"log"
 )
 
 var validate *validator.Validate = validator.New()
@@ -50,68 +51,76 @@ var validate *validator.Validate = validator.New()
 // This information is determined outside of this builder (the builder doesn't know
 // what parameter combination is being tested) so the builder must be told
 // what the "goodnes polarity" is +1 or -1.
-func (scc *ScorecardCell) SetGoodnessPolarity(polarity GoodnessPolarity) {
+func (scc *ScorecardCell) SetGoodnessPolarity(polarity GoodnessPolarity) error {
 	errs := validate.Var(polarity, "required,oneof=-1 1")
 	if errs != nil {
-		fmt.Println(errs)
+		log.Print(errs)
+		return errors.New(fmt.Sprint("TwoSampleTTestBuilder SetGoodnessPolarity", errs))
 	} else {
 		scc.GoodnessPolarity = polarity
 	}
+	return nil // no errors
 }
 
 // set the major p-value threshold
-func (scc *ScorecardCell) SetMajorThreshold(threshold Threshold) {
+func (scc *ScorecardCell) SetMajorThreshold(threshold Threshold) error {
 	if errs := validate.Var(threshold, "required,gt=0,lt=.5"); errs != nil {
-		fmt.Println(errs)
+		log.Print(errs)
+		return errors.New(fmt.Sprint("TwoSampleTTestBuilder SetMajorThreshold", errs))
 	} else {
 		scc.MajorThreshold = threshold
 	}
+	return nil // no errors
 }
 
 // set the major p-value threshold
-func (scc *ScorecardCell) SetMinorThreshold(threshold Threshold) {
+func (scc *ScorecardCell) SetMinorThreshold(threshold Threshold) error {
 	if errs := validate.Var(threshold, "required,gt=0,lt=.5"); errs != nil {
-		fmt.Println(errs)
+		log.Print(errs)
+		return errors.New(fmt.Sprint("TwoSampleTTestBuilder SetMinorThreshold", errs))
 	} else {
 		scc.MinorThreshold = threshold
 	}
+	return nil // no errors
 }
 
 // get the return value based on the major and minor thresholds compared to the p-value
-func getValue(scc ScorecardCell, difference float64, pval float64) int {
+func getValue(scc ScorecardCell, difference float64, pval float64) (int, error) {
 	if errs := validate.Var(difference, "required"); errs != nil {
-		fmt.Println(errs)
-		return 0 // ??? don't know what to return for errors
+		log.Print(errs)
+		return 0, errors.New(fmt.Sprint("TwoSampleTTestBuilder getValue", errs))
 	} else {
 		if errs := validate.Var(pval, "required"); errs != nil {
 			fmt.Println(errs)
 			scc.Value = 100
-			return 0 // ??? don't know what to return for errors
+			return 100, errors.New(fmt.Sprint("TwoSampleTTestBuilder getValue", errs))
 		} else {
 			if pval <= float64(scc.MajorThreshold) {
 				scc.Value = 2
-				return 2 * int(scc.GoodnessPolarity)
+				return 2 * int(scc.GoodnessPolarity), nil
 			}
 			if pval <= float64(scc.MinorThreshold) {
 				scc.Value = 1
-				return 1 * int(scc.GoodnessPolarity)
+				return 1 * int(scc.GoodnessPolarity), nil
 			}
-			return 0
+			return 0, nil
 		}
 	}
 }
 
-func (scc *ScorecardCell) ComputeSignificance(derivedData DerivedDataElement) {
+func (scc *ScorecardCell) ComputeSignificance(derivedData DerivedDataElement) error {
 	// alternate hypothesis is locationDiffers - i.e. null hypothesis is equality.
 	alt := stats.LocationDiffers
 	// If μ0 is non-zero, this tests if the average of the difference
 	// is significantly different from μ0, we assume a zero μ0.
 	μ0 := 0.0
 	if errs := validate.Var(derivedData.CtlPop, "required"); errs != nil {
-		fmt.Println(errs)
+		log.Print(errs)
+		return errors.New(fmt.Sprint("TwoSampleTTestBuilder ComputeSignificance", errs))
 	}
 	if errs := validate.Var(derivedData.ExpPop, "required"); errs != nil {
-		fmt.Println(errs)
+		log.Print(errs)
+		return errors.New(fmt.Sprint("TwoSampleTTestBuilder ComputeSignificance", errs))
 	}
 	//&TTestResult{N1: n1, N2: n2, T: t, DoF: dof, AltHypothesis: alt, P: p}
 	// PairedTTest performs a two-sample paired t-test on samples x1 and x2.
@@ -122,18 +131,24 @@ func (scc *ScorecardCell) ComputeSignificance(derivedData DerivedDataElement) {
 		meanExp := stats.Mean(derivedData.ExpPop)
 		difference := (meanCtl - meanExp)
 		scc.StatValue = ret.P
-		scc.Value = getValue(*scc, difference, ret.P)
+		scc.Value, err = getValue(*scc, difference, ret.P)
+		if err != nil {
+			log.Print(err)
+			return errors.New(fmt.Sprint("TwoSampleTTestBuilder ComputeSignificance - getValue error: ", err))
+		}
 	} else {
-		fmt.Println(err)
-		// Not sure how to handle these errors ???
-		scc.StatValue=-1
-		scc.Value=100
+		log.Print(err)
+		scc.StatValue = -9999
+		scc.Value = -9999
+		return errors.New(fmt.Sprint("TwoSampleTTestBuilder ComputeSignificance", err))
 	}
+	return nil // no errors
 }
 
-func (scc *ScorecardCell) SetInputData(inputData DerivedDataElement) {
+func (scc *ScorecardCell) SetInputData(inputData DerivedDataElement) error {
 	// put the code to derive the data from the inputData HERE!
 	scc.Data = inputData
+	return nil // no errors
 }
 
 func NewTwoSampleTTestBuilder() *ScorecardCell {

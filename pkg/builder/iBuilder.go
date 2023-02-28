@@ -57,7 +57,7 @@ type ScorecardCell struct {
 	GoodnessPolarity GoodnessPolarity
 	MajorThreshold   Threshold
 	MinorThreshold   Threshold
-	StatValue		 float64
+	StatValue        float64
 	Value            int
 }
 

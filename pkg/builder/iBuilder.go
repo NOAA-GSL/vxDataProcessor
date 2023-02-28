@@ -49,20 +49,6 @@ type DerivedDataElement struct {
 
 type DerivedData []DerivedDataElement
 
-// rows: {"Row0": {"data": {"All HRRR domain": {"RMSE": {"2m temperature":
-//
-//	        {"0": 1,
-//	....
-type BLOCK string
-type DATAKEY string // should always be 'data' BLOCKS can have more things than data in them
-type DOMAIN string
-type STATISTIC string
-type THRESHOLD string // could be undefined for some apps i.e. "N/A"
-type VARIABLE string
-type LEVEL string       // could be undefined for some apps i.e. "N/A"
-type FORECASTLEN string // could be undefined for some apps i.e. "N/A"
-type InputData map[BLOCK]map[DATAKEY]map[DOMAIN]map[STATISTIC]map[VARIABLE]map[FORECASTLEN]int
-
 // -1 or 1
 type GoodnessPolarity int
 type Threshold float64
@@ -71,6 +57,7 @@ type ScorecardCell struct {
 	GoodnessPolarity GoodnessPolarity
 	MajorThreshold   Threshold
 	MinorThreshold   Threshold
+	StatValue		 float64
 	Value            int
 }
 
@@ -78,12 +65,12 @@ type ScorecardCellBuilder interface {
 	SetGoodnessPolarity(GoodnessPolarity)
 	SetMajorThreshold(Threshold)
 	SetMinorThreshold(Threshold)
-	DeriveData(InputData)
+	SetInputData(DerivedDataElement)
+	//DeriveData(InputData)
 	ComputeSignificance(DerivedDataElement)
-	GetScorecardCell() ScorecardCell
 }
 
-func GetBuilder(builderType string) ScorecardCellBuilder {
+func GetBuilder(builderType string) *ScorecardCell {
 	if builderType == "TwoSampleTTest" {
 		return NewTwoSampleTTestBuilder()
 	}

@@ -32,6 +32,7 @@ will cause a return of 0.
 */
 import (
 	"fmt"
+
 	"github.com/aclements/go-moremath/stats"
 	"github.com/go-playground/validator/v10"
 )
@@ -84,12 +85,15 @@ func getValue(scc ScorecardCell, difference float64, pval float64) int {
 	} else {
 		if errs := validate.Var(pval, "required"); errs != nil {
 			fmt.Println(errs)
+			scc.Value = 100
 			return 0 // ??? don't know what to return for errors
 		} else {
 			if pval <= float64(scc.MajorThreshold) {
+				scc.Value = 2
 				return 2 * int(scc.GoodnessPolarity)
 			}
 			if pval <= float64(scc.MinorThreshold) {
+				scc.Value = 1
 				return 1 * int(scc.GoodnessPolarity)
 			}
 			return 0
@@ -103,44 +107,33 @@ func (scc *ScorecardCell) ComputeSignificance(derivedData DerivedDataElement) {
 	// If μ0 is non-zero, this tests if the average of the difference
 	// is significantly different from μ0, we assume a zero μ0.
 	μ0 := 0.0
-	if errs := validate.Var(derivedData.CtlPop, "required,len gt 0"); errs != nil {
+	if errs := validate.Var(derivedData.CtlPop, "required"); errs != nil {
 		fmt.Println(errs)
 	}
-	if errs := validate.Var(derivedData.ExpPop, "required,len gt 0"); errs != nil {
+	if errs := validate.Var(derivedData.ExpPop, "required"); errs != nil {
 		fmt.Println(errs)
 	}
 	//&TTestResult{N1: n1, N2: n2, T: t, DoF: dof, AltHypothesis: alt, P: p}
 	// PairedTTest performs a two-sample paired t-test on samples x1 and x2.
 	ret, err := stats.PairedTTest(derivedData.CtlPop, derivedData.ExpPop, μ0, alt)
-	if err != nil {
+	if err == nil {
 		// what are the means of the populations
 		meanCtl := stats.Mean(derivedData.CtlPop)
 		meanExp := stats.Mean(derivedData.ExpPop)
 		difference := (meanCtl - meanExp)
+		scc.StatValue = ret.P
 		scc.Value = getValue(*scc, difference, ret.P)
 	} else {
 		fmt.Println(err)
+		// Not sure how to handle these errors ???
+		scc.StatValue=-1
+		scc.Value=100
 	}
 }
 
-func (scc *ScorecardCell) DeriveData(inputData InputData) {
+func (scc *ScorecardCell) SetInputData(inputData DerivedDataElement) {
 	// put the code to derive the data from the inputData HERE!
-	data := DerivedDataElement{
-		// caclulate data here
-		CtlPop: nil,
-		ExpPop: nil,
-	}
-	scc.Data = data
-}
-
-func (scc *ScorecardCell) GetScorecardCell() ScorecardCell {
-	return ScorecardCell{
-		Data:             scc.Data,
-		GoodnessPolarity: scc.GoodnessPolarity,
-		MajorThreshold:   scc.MajorThreshold,
-		MinorThreshold:   scc.MinorThreshold,
-		Value:            scc.Value,
-	}
+	scc.Data = inputData
 }
 
 func NewTwoSampleTTestBuilder() *ScorecardCell {

@@ -2,6 +2,7 @@ package director
 
 import (
 	"fmt"
+	"log"
 	"github.com/NOAA-GSL/vxDataProcessor/pkg/builder"
 )
 
@@ -17,12 +18,26 @@ func Build(documentId string) {
 	// get the scorecard document
 	// for all the input elements fire off a thread to do the compute
 	var cellPtr = builder.GetBuilder("TwoSampleTTest")
-	cellPtr.SetGoodnessPolarity(gp)
-	cellPtr.SetMinorThreshold(minorThreshold)
-	cellPtr.SetMajorThreshold(majorThreshold)
-	cellPtr.SetInputData(inputData)
-	cellPtr.ComputeSignificance(cellPtr.Data)
-	var value = cellPtr.Value
+	err := cellPtr.SetGoodnessPolarity(gp)
+	if err != nil {
+		log.Fatal(fmt.Sprint("director - build - SetGoodnessPolarity - error message : ", err))
+	}
+	err = cellPtr.SetMinorThreshold(minorThreshold)
+	if err != nil {
+		log.Fatal(fmt.Sprint("director - build - SetMinorThreshold - error message : ", err))
+	}
+	err = cellPtr.SetMajorThreshold(majorThreshold)
+	if err != nil {
+		log.Fatal(fmt.Sprint("director - build - SetMajorThreshold - error message : ", err))
+	}
+	err = cellPtr.SetInputData(inputData)
+	if err != nil {
+		log.Fatal(fmt.Sprint("director - build - SetInputData - error message : ", err))
+	}
+	err = cellPtr.ComputeSignificance(cellPtr.Data)
+	if err != nil {
+		log.Fatal(fmt.Sprint("director - build - ComputeSignificance - error message : ", err))
+	}
 	// insert the elements into the in-memory document
 	fmt.Println(value)
 	// upsert the document

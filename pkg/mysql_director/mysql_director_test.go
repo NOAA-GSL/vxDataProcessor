@@ -1,15 +1,15 @@
-package director_test
+package mysql_director_test
 
 import (
 	"fmt"
 	"log"
 	"testing"
-	"github.com/NOAA-GSL/vxDataProcessor/pkg/director"
+	"github.com/NOAA-GSL/vxDataProcessor/pkg/mysql_director"
 	"github.com/couchbase/gocb/v2"
 )
 
 func TestDirector_test_connection(t *testing.T) {
-	var cb_connection director.CB_connection = director.GetConnection()
+	var cb_connection *mysql_director.CB_connection = mysql_director.GetConnection()
 	//cb_connection.cluster QUERY!!
 		// get the scorecard document
 		var docOut *gocb.GetResult

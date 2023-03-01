@@ -1,4 +1,4 @@
-package director
+package mysql_director
 
 import (
 	"bufio"
@@ -7,9 +7,20 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
+
 	"github.com/NOAA-GSL/vxDataProcessor/pkg/builder"
 	"github.com/couchbase/gocb/v2"
 )
+
+type CB_credentials struct {
+	cb_host string
+	cb_user string
+	cb_password string
+	cb_bucket string
+	cb_scope string
+	cb_collection string
+}
 
 type CB_connection struct {
 	CB_cluster *gocb.Cluster
@@ -26,14 +37,16 @@ var inputData = builder.DerivedDataElement{
 	ExpPop: []float64{0.1, 1.5, 3.0, 4.1},
 }
 
-var cb_host string
-var cb_user string
-var cb_password string
-var cb_bucket string
-var cb_scope string = "_default"
-var cb_collection string = "SCORECARD"
+// var cb_host string
+// var cb_user string
+// var cb_password string
+// var cb_bucket string
+// var cb_scope string = "_default"
+// var cb_collection string = "SCORECARD"
 
-func getCredentials() {
+func getCredentials() *CB_credentials {
+	var cb_credentials  = CB_credentials{}
+	cb_credentials.cb_scope = "_default"
 	var filename = os.Getenv("HOME") + strconv.QuoteRune(os.PathSeparator) + "adb-cb4-credentials"
 	file, err := os.Open(filename)
 	if err != nil {
@@ -54,51 +67,53 @@ func getCredentials() {
 		s := strings.Split(each_ln, ":")
 		switch s[0] {
 		case "host":
-			cb_host = s[1]
+			cb_credentials.cb_host = s[1]
 		case "cb_user":
-			cb_user = s[1]
-		case cb_password:
-			cb_password = s[1]
-		case cb_bucket:
-			cb_bucket = s[1]
+			cb_credentials.cb_user = s[1]
+		case "cb_password":
+			cb_credentials.cb_password = s[1]
+		case "cb_bucket":
+			cb_credentials.cb_bucket = s[1]
+		case "cb_collection":
+			cb_credentials.cb_collection = s[1]
 		default: // do nothing
 		}
 	}
+	return &cb_credentials
 }
 
-func GetConnection() CB_connection {
+func GetConnection() *CB_connection {
+	var cb_credentials *CB_credentials = getCredentials()
 	var cb_connection CB_connection
-	const options = gocb.ClusterOptions{
+	var options = gocb.ClusterOptions{
 		Authenticator: gocb.PasswordAuthenticator{
-			Username: cb_user,
-			Password: cb_password,
+			Username: cb_credentials.cb_user,
+			Password: cb_credentials.cb_password,
 		},
 	}
 	if err := options.ApplyProfile(gocb.ClusterConfigProfileWanDevelopment); err != nil {
 		log.Fatal(err)
 	}
 	// Initialize the Connection
-	cluster, err := gocb.Connect("couchbases://"+ cb_host, options)
+	cluster, err := gocb.Connect("couchbases://"+ cb_credentials.cb_host, options)
 	if err != nil {
 		log.Fatal(err)
 	}
 	cb_connection.CB_cluster = cluster
-	bucket := cluster.Bucket(cb_bucket)
-	cb_connection.CB_bucket = bucket
-	err = bucket.WaitUntilReady(5*time.Second, nil)
+	cb_connection.CB_bucket = cluster.Bucket(cb_credentials.cb_bucket)
+	err = cb_connection.CB_bucket.WaitUntilReady(5*time.Second, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
-	scope := bucket.Scope(cb_scope)
-	cb_connection.CB_scope = scope
-	col := scope.Collection(cb_collection)
+	cb_connection.CB_scope = cb_connection.CB_bucket.Scope(cb_credentials.cb_scope)
+	col := cb_connection.CB_scope.Collection(cb_credentials.cb_collection)
 	cb_connection.CB_collection = col
 	return &cb_connection
 }
 
 func Build(documentId string) {
 	// get the connection
-	var cb_connection = getgetConnection()
+	var cb_connection = GetConnection()
 	// get the scorecard document
 	var docOut *gocb.GetResult
 	var err error
@@ -110,7 +125,7 @@ func Build(documentId string) {
 	// builde the input data elements and
 	// for all the input elements fire off a thread to do the compute
 	var cellPtr = builder.GetBuilder("TwoSampleTTest")
-	err := cellPtr.SetGoodnessPolarity(gp)
+	err = cellPtr.SetGoodnessPolarity(gp)
 	if err != nil {
 		log.Fatal(fmt.Sprint("director - build - SetGoodnessPolarity - error message : ", err))
 	}

@@ -1,11 +1,11 @@
 package mysql_director_test
 
 import (
-	"fmt"
-	"log"
+	// "fmt"
+	// "log"
 	"testing"
 	"github.com/NOAA-GSL/vxDataProcessor/pkg/mysql_director"
-	"github.com/couchbase/gocb/v2"
+	// "github.com/couchbase/gocb/v2"
 )
 
 func TestDirector_test_connection(t *testing.T) {

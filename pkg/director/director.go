@@ -12,10 +12,10 @@ import (
 )
 
 type CB_connection struct {
-	CB_cluster *gocb.Cluster,
-	CB_bucket *gocb.Bucket,
-	CB_scope *gocb.Scope,
-	CB_collection *gocb.Collection,
+	CB_cluster *gocb.Cluster
+	CB_bucket *gocb.Bucket
+	CB_scope *gocb.Scope
+	CB_collection *gocb.Collection
 }
 
 var gp = builder.GoodnessPolarity(1)

@@ -33,9 +33,10 @@ will cause a return of 0.
 import (
 	"errors"
 	"fmt"
+	"log"
+
 	"github.com/aclements/go-moremath/stats"
 	"github.com/go-playground/validator/v10"
-	"log"
 )
 
 var validate *validator.Validate = validator.New()
@@ -92,8 +93,8 @@ func getValue(scc ScorecardCell, difference float64, pval float64) (int, error) 
 	} else {
 		if errs := validate.Var(pval, "required"); errs != nil {
 			fmt.Println(errs)
-			scc.Value = 100
-			return 100, errors.New(fmt.Sprint("TwoSampleTTestBuilder getValue", errs))
+			scc.Value = -9999
+			return -9999, errors.New(fmt.Sprint("TwoSampleTTestBuilder getValue", errs))
 		} else {
 			if pval <= float64(scc.MajorThreshold) {
 				scc.Value = 2
@@ -130,7 +131,7 @@ func (scc *ScorecardCell) ComputeSignificance(derivedData DerivedDataElement) er
 		meanCtl := stats.Mean(derivedData.CtlPop)
 		meanExp := stats.Mean(derivedData.ExpPop)
 		difference := (meanCtl - meanExp)
-		scc.StatValue = ret.P
+		scc.Pvalue = ret.P
 		scc.Value, err = getValue(*scc, difference, ret.P)
 		if err != nil {
 			log.Print(err)
@@ -138,7 +139,7 @@ func (scc *ScorecardCell) ComputeSignificance(derivedData DerivedDataElement) er
 		}
 	} else {
 		log.Print(err)
-		scc.StatValue = -9999
+		scc.Pvalue = -9999
 		scc.Value = -9999
 		return errors.New(fmt.Sprint("TwoSampleTTestBuilder ComputeSignificance", err))
 	}

@@ -37,12 +37,9 @@ var inputData = builder.DerivedDataElement{
 	ExpPop: []float64{0.1, 1.5, 3.0, 4.1},
 }
 
-// var cb_host string
-// var cb_user string
-// var cb_password string
-// var cb_bucket string
-// var cb_scope string = "_default"
-// var cb_collection string = "SCORECARD"
+func TestString() string {
+	return "this is a string from mysql_director"
+}
 
 func getCredentials() *CB_credentials {
 	var cb_credentials  = CB_credentials{}

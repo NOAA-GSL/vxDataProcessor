@@ -57,7 +57,7 @@ type ScorecardCell struct {
 	GoodnessPolarity GoodnessPolarity
 	MajorThreshold   Threshold
 	MinorThreshold   Threshold
-	StatValue        float64
+	Pvalue           float64
 	Value            int
 }
 
@@ -66,7 +66,6 @@ type ScorecardCellBuilder interface {
 	SetMajorThreshold(Threshold)
 	SetMinorThreshold(Threshold)
 	SetInputData(DerivedDataElement)
-	//DeriveData(InputData)
 	ComputeSignificance(DerivedDataElement)
 }
 

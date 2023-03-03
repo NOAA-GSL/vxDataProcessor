@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strconv"
 	"strings"
 	"time"
 
@@ -38,16 +37,20 @@ var inputData = builder.DerivedDataElement{
 	ExpPop: []float64{0.1, 1.5, 3.0, 4.1},
 }
 
-func checkFileExists(filePath string) bool {
+func CheckFileExists(filePath string) bool {
 	_, error := os.Stat(filePath)
-	return !errors.Is(error, os.ErrNotExist)
+	if error == nil {
+		return true
+	} else {
+		return false
+	}
 }
 
 func GetCredentials() (*CB_credentials, error) {
 	var cb_credentials  = CB_credentials{}
 	cb_credentials.cb_scope = "_default"
-	var filename = os.Getenv("HOME") + strconv.QuoteRune(os.PathSeparator) + "adb-cb4-credentials"
-	if ! checkFileExists(filename) {
+	var filename = fmt.Sprint(os.Getenv("HOME"), "/adb-cb4-credentials")
+	if ! CheckFileExists(filename) {
 		log.Print(fmt.Sprint("mysql_director  - credential does not exist - ", filename))
 		return nil, errors.New(fmt.Sprint("mysql_director error credential file does not exist", filename))
 	}
@@ -70,14 +73,14 @@ func GetCredentials() (*CB_credentials, error) {
 	for _, each_ln := range text {
 		s := strings.Split(each_ln, ":")
 		switch s[0] {
-		case "host":
-			cb_credentials.cb_host = s[1]
+		case "cb_host":
+			cb_credentials.cb_host = strings.TrimSpace(s[1])
 		case "cb_user":
-			cb_credentials.cb_user = s[1]
+			cb_credentials.cb_user = strings.TrimSpace(s[1])
 		case "cb_password":
-			cb_credentials.cb_password = s[1]
+			cb_credentials.cb_password = strings.TrimSpace(s[1])
 		case "cb_bucket":
-			cb_credentials.cb_bucket = s[1]
+			cb_credentials.cb_bucket = strings.TrimSpace(s[1])
 		case "cb_collection":
 			// for scorecards the collection is always 'SCORECARD'
 			cb_credentials.cb_collection = "SCORECARD"
@@ -120,19 +123,18 @@ func GetConnection() (*CB_connection, error) {
 	}
 	// Initialize the Connection
 	var cluster *gocb.Cluster
-	cluster, err = gocb.Connect("couchbases://"+ cb_credentials.cb_host, options)
+	cluster, err = gocb.Connect("couchbase://"+ cb_credentials.cb_host, options)
 	if err != nil {
         return nil, errors.New(fmt.Sprint("mysql_director gocb Connect error ", err))
 	}
 	cb_connection.CB_cluster = cluster
-	cb_connection.CB_bucket = cluster.Bucket(cb_credentials.cb_bucket)
-	err = cb_connection.CB_bucket.WaitUntilReady(5*time.Second, nil)
+	cb_connection.CB_bucket = cb_connection.CB_cluster.Bucket(cb_credentials.cb_bucket)
+	err = cb_connection.CB_bucket.WaitUntilReady(50*time.Second, nil)
 	if err != nil {
         return nil, errors.New(fmt.Sprint("mysql_director CB_bucket.WaitUntilReady error ", err))
 	}
 	cb_connection.CB_scope = cb_connection.CB_bucket.Scope(cb_credentials.cb_scope)
-	col := cb_connection.CB_scope.Collection(cb_credentials.cb_collection)
-	cb_connection.CB_collection = col
+	cb_connection.CB_collection = cb_connection.CB_bucket.Collection(cb_credentials.cb_collection)
 	return &cb_connection, nil
 }
 
@@ -150,7 +152,7 @@ func Build(documentId string) error {
         return errors.New(fmt.Sprint("mysql_director Build GetResult error ", err))
 	}
 	fmt.Print(docOut)
-	
+
 	// build the input data elements and
 	// for all the input elements fire off a thread to do the compute
 	var cellPtr = builder.GetBuilder("TwoSampleTTest")

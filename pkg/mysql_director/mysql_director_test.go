@@ -11,21 +11,20 @@ import (
 	"github.com/couchbase/gocb/v2"
 )
 
-
 func TestDirector_test_connection(t *testing.T) {
 	var filename = fmt.Sprint(os.Getenv("HOME"), "/adb-cb4-credentials")
-	if ! mysql_director.CheckFileExists(filename) {
+	if !mysql_director.CheckFileExists(filename) {
 		t.Fatal(fmt.Sprint("credential file does not exist :", filename))
 	}
 	var cb_connection, err = mysql_director.GetConnection()
 	if err != nil {
-        t.Fatal(fmt.Sprint("TestDirector_test_connection Build GetConnection error ", err))
+		t.Fatal(fmt.Sprint("TestDirector_test_connection Build GetConnection error ", err))
 	}
 
 	// read the test document from the test file
 	filename = "./testdata/test_scorecard.json"
-	if ! mysql_director.CheckFileExists(filename) {
-		t.Fatal(fmt.Sprint("mysql_test_director error cannot open test scorecard document: ", filename," error: ", err))
+	if !mysql_director.CheckFileExists(filename) {
+		t.Fatal(fmt.Sprint("mysql_test_director error cannot open test scorecard document: ", filename, " error: ", err))
 	}
 	var scorecardBytes, _ = os.ReadFile(filename)
 	var scorecard interface{}
@@ -34,7 +33,7 @@ func TestDirector_test_connection(t *testing.T) {
 		t.Fatal(fmt.Sprint("mysql_test_director error reading test scorecard", err))
 	}
 	// upsert the test scorecard document
-	_, err = cb_connection.CB_collection.Upsert("MDTEST:test_scorecard",scorecard, nil)
+	_, err = cb_connection.CB_collection.Upsert("MDTEST:test_scorecard", scorecard, nil)
 	if err != nil {
 		t.Fatal(fmt.Sprint("mysql_test_director error upserting test scorecard", err))
 	}
@@ -51,7 +50,7 @@ func TestDirector_test_connection(t *testing.T) {
 		t.Fatal(fmt.Sprint("mysql_test_director error getting MDTEST:test_scorecard Content", err))
 	}
 	// do a deep compare of the original and the retrieved unmarshalled document
-	if ! reflect.DeepEqual(scorecard, scorecardCB) {
+	if !reflect.DeepEqual(scorecard, scorecardCB) {
 		t.Fatal("mysql_test_director test scorecard from file and retrieved scorecard from couchbase are not equal")
 	}
 }

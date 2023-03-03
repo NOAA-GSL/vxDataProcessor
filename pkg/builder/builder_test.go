@@ -2,8 +2,8 @@ package builder_test
 
 import (
 	"fmt"
-	"testing"
 	"github.com/NOAA-GSL/vxDataProcessor/pkg/builder"
+	"testing"
 )
 
 var gp = builder.GoodnessPolarity(1)

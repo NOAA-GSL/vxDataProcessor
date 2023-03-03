@@ -14,18 +14,18 @@ import (
 )
 
 type CB_credentials struct {
-	cb_host string
-	cb_user string
-	cb_password string
-	cb_bucket string
-	cb_scope string
+	cb_host       string
+	cb_user       string
+	cb_password   string
+	cb_bucket     string
+	cb_scope      string
 	cb_collection string
 }
 
 type CB_connection struct {
-	CB_cluster *gocb.Cluster
-	CB_bucket *gocb.Bucket
-	CB_scope *gocb.Scope
+	CB_cluster    *gocb.Cluster
+	CB_bucket     *gocb.Bucket
+	CB_scope      *gocb.Scope
 	CB_collection *gocb.Collection
 }
 
@@ -47,10 +47,10 @@ func CheckFileExists(filePath string) bool {
 }
 
 func GetCredentials() (*CB_credentials, error) {
-	var cb_credentials  = CB_credentials{}
+	var cb_credentials = CB_credentials{}
 	cb_credentials.cb_scope = "_default"
 	var filename = fmt.Sprint(os.Getenv("HOME"), "/adb-cb4-credentials")
-	if ! CheckFileExists(filename) {
+	if !CheckFileExists(filename) {
 		log.Print(fmt.Sprint("mysql_director  - credential does not exist - ", filename))
 		return nil, errors.New(fmt.Sprint("mysql_director error credential file does not exist", filename))
 	}
@@ -88,28 +88,28 @@ func GetCredentials() (*CB_credentials, error) {
 		}
 	}
 	if cb_credentials.cb_host == "" {
-        return nil, errors.New(fmt.Sprint("mysql_director cb_credentials.cb_host has not been set", filename))
-    }
+		return nil, errors.New(fmt.Sprint("mysql_director cb_credentials.cb_host has not been set", filename))
+	}
 	if cb_credentials.cb_user == "" {
-        return nil, errors.New(fmt.Sprint("mysql_director cb_credentials.cb_user has not been set", filename))
-    }
+		return nil, errors.New(fmt.Sprint("mysql_director cb_credentials.cb_user has not been set", filename))
+	}
 	if cb_credentials.cb_password == "" {
-        return nil, errors.New(fmt.Sprint("mysql_director cb_credentials.cb_password has not been set", filename))
-    }
+		return nil, errors.New(fmt.Sprint("mysql_director cb_credentials.cb_password has not been set", filename))
+	}
 	if cb_credentials.cb_bucket == "" {
-        return nil, errors.New(fmt.Sprint("mysql_director cb_credentials.cb_bucket has not been set", filename))
-    }
+		return nil, errors.New(fmt.Sprint("mysql_director cb_credentials.cb_bucket has not been set", filename))
+	}
 	if cb_credentials.cb_collection == "" {
-        return nil, errors.New(fmt.Sprint("mysql_director cb_credentials.cb_collection has not been set", filename))
-    }
+		return nil, errors.New(fmt.Sprint("mysql_director cb_credentials.cb_collection has not been set", filename))
+	}
 	return &cb_credentials, nil
 }
 
 func GetConnection() (*CB_connection, error) {
 	var cb_credentials, err = GetCredentials()
 	if err != nil {
-        return nil, errors.New(fmt.Sprint("mysql_director GetCredentials error ", err))
-    }
+		return nil, errors.New(fmt.Sprint("mysql_director GetCredentials error ", err))
+	}
 
 	var cb_connection CB_connection
 	var options = gocb.ClusterOptions{
@@ -119,19 +119,19 @@ func GetConnection() (*CB_connection, error) {
 		},
 	}
 	if err = options.ApplyProfile(gocb.ClusterConfigProfileWanDevelopment); err != nil {
-        return nil, errors.New(fmt.Sprint("mysql_director gocb ApplyProfile error ", err))
+		return nil, errors.New(fmt.Sprint("mysql_director gocb ApplyProfile error ", err))
 	}
 	// Initialize the Connection
 	var cluster *gocb.Cluster
-	cluster, err = gocb.Connect("couchbase://"+ cb_credentials.cb_host, options)
+	cluster, err = gocb.Connect("couchbase://"+cb_credentials.cb_host, options)
 	if err != nil {
-        return nil, errors.New(fmt.Sprint("mysql_director gocb Connect error ", err))
+		return nil, errors.New(fmt.Sprint("mysql_director gocb Connect error ", err))
 	}
 	cb_connection.CB_cluster = cluster
 	cb_connection.CB_bucket = cb_connection.CB_cluster.Bucket(cb_credentials.cb_bucket)
 	err = cb_connection.CB_bucket.WaitUntilReady(50*time.Second, nil)
 	if err != nil {
-        return nil, errors.New(fmt.Sprint("mysql_director CB_bucket.WaitUntilReady error ", err))
+		return nil, errors.New(fmt.Sprint("mysql_director CB_bucket.WaitUntilReady error ", err))
 	}
 	cb_connection.CB_scope = cb_connection.CB_bucket.Scope(cb_credentials.cb_scope)
 	cb_connection.CB_collection = cb_connection.CB_bucket.Collection(cb_credentials.cb_collection)
@@ -142,14 +142,14 @@ func Build(documentId string) error {
 	// get the connection
 	var cb_connection, err = GetConnection()
 	if err != nil {
-        return errors.New(fmt.Sprint("mysql_director Build GetConnection error ", err))
+		return errors.New(fmt.Sprint("mysql_director Build GetConnection error ", err))
 	}
 
 	// get the scorecard document
 	var docOut *gocb.GetResult
 	docOut, err = cb_connection.CB_collection.Get(documentId, nil)
 	if err != nil {
-        return errors.New(fmt.Sprint("mysql_director Build GetResult error ", err))
+		return errors.New(fmt.Sprint("mysql_director Build GetResult error ", err))
 	}
 	fmt.Print(docOut)
 

@@ -1,50 +1,57 @@
-// +build integration
-
 package mysql_director_test
 
 import (
-	"errors"
+	"encoding/json"
 	"fmt"
+	"os"
+	"reflect"
+	"testing"
+
 	"github.com/NOAA-GSL/vxDataProcessor/pkg/mysql_director"
 	"github.com/couchbase/gocb/v2"
-	"log"
-	"os"
-	"strconv"
-	"testing"
 )
 
 
 func TestDirector_test_connection(t *testing.T) {
-	var filename = os.Getenv("HOME") + strconv.QuoteRune(os.PathSeparator) + "adb-cb4-credentials"
-	if ! mysql_director.checkFileExists(filename) {
+	var filename = fmt.Sprint(os.Getenv("HOME"), "/adb-cb4-credentials")
+	if ! mysql_director.CheckFileExists(filename) {
 		t.Fatal(fmt.Sprint("credential file does not exist :", filename))
 	}
-	var cb_connection *mysql_director.CB_connection = mysql_director.GetConnection()
+	var cb_connection, err = mysql_director.GetConnection()
+	if err != nil {
+        t.Fatal(fmt.Sprint("TestDirector_test_connection Build GetConnection error ", err))
+	}
 
 	// read the test document from the test file
-	var filename = "test_scorecard.json"
-	if ! checkFileExists(filename) {
-		t.Fatal(fmt.Sprintf("mysql_test_director error cannot open test scorecard document: ", filename," error: ", err))
+	filename = "./testdata/test_scorecard.json"
+	if ! mysql_director.CheckFileExists(filename) {
+		t.Fatal(fmt.Sprint("mysql_test_director error cannot open test scorecard document: ", filename," error: ", err))
 	}
-	scorecard, _ := ioutil.ReadFile(filename)
-	var scorecardData interface{}
-	err := json.Unmarshal(scorecardData, &data)
+	var scorecardBytes, _ = os.ReadFile(filename)
+	var scorecard interface{}
+	err = json.Unmarshal(scorecardBytes, &scorecard)
 	if err != nil {
-		t.Fatal(fmt.Sprintf("mysql_test_director error reading test scorecard", err))
+		t.Fatal(fmt.Sprint("mysql_test_director error reading test scorecard", err))
 	}
 	// upsert the test scorecard document
-	_, err = col.Upsert("u:jade",data, nil)
+	_, err = cb_connection.CB_collection.Upsert("MDTEST:test_scorecard",scorecard, nil)
 	if err != nil {
-		t.Fatal(fmt.Sprintf("mysql_test_director error upserting test scorecard", err))
+		t.Fatal(fmt.Sprint("mysql_test_director error upserting test scorecard", err))
 	}
-	// get the test scorecard document
+	// get the test scorecard document (this is a Result - not a document)
 	var scorecardDataIn *gocb.GetResult
-	var err error
-	scorecardDataIn, err = cb_connection.CB_collection.Get("documentId", nil)
+	scorecardDataIn, err = cb_connection.CB_collection.Get("MDTEST:test_scorecard", nil)
 	if err != nil {
-		t.Fatal(fmt.Sprintf("mysql_test_director error testing connection", err))
+		t.Fatal(fmt.Sprint("mysql_test_director error getting MDTEST:test_scorecard", err))
 	}
-	if ! reflect.DeepEqual(scoreData, scoredataIn) {
-		t.Fatal(fmt.Sprintf("mysql_test_director test scorecard from file and retrieved scorecard from couchbase are not equal")
+	// get the unmarshalled document (the Content) from the result
+	var scorecardCB interface{}
+	err = scorecardDataIn.Content(&scorecardCB)
+	if err != nil {
+		t.Fatal(fmt.Sprint("mysql_test_director error getting MDTEST:test_scorecard Content", err))
+	}
+	// do a deep compare of the original and the retrieved unmarshalled document
+	if ! reflect.DeepEqual(scorecard, scorecardCB) {
+		t.Fatal("mysql_test_director test scorecard from file and retrieved scorecard from couchbase are not equal")
 	}
 }

@@ -8,9 +8,9 @@ import (
 // Contains map of all jobs
 
 type Job struct {
-	Id      int    `json:"id"`
-	DocHash string `json:"dochash"`
-	Status  string `json:"status"`
+	ID     int    `json:"id"`
+	DocID  string `json:"docid"`
+	Status string `json:"status"`
 }
 
 type JobStore struct {
@@ -32,14 +32,14 @@ func (js *JobStore) CreateJob(hash string) int {
 	defer js.lock.Unlock()
 
 	job := Job{
-		Id:      js.nextId,
-		DocHash: hash,
-		Status:  "created", // what statuses do we want? Created, Processing, Finished, Failed?
+		ID:     js.nextId,
+		DocID:  hash,
+		Status: "created", // what statuses do we want? Created, Processing, Finished, Failed?
 	}
 
 	js.jobs[js.nextId] = job
 	js.nextId++
-	return job.Id
+	return job.ID
 }
 
 // GetJob retrieves a job from the store, by id. If no such id exists, an

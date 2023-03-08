@@ -31,13 +31,15 @@ func TestNewJobStore(t *testing.T) {
 	}
 }
 
+// TODO - test concurrency
+
 func TestJobStore_CreateJob(t *testing.T) {
 	t.Run("Test creating a job", func(t *testing.T) {
 		jobstore := NewJobStore()
 		want := Job{
-			Id:      0,
-			DocHash: "foo",
-			Status:  "created",
+			ID:     0,
+			DocID:  "foo",
+			Status: "created",
 		}
 
 		jobstore.CreateJob("foo")
@@ -51,9 +53,9 @@ func TestJobStore_CreateJob(t *testing.T) {
 	t.Run("Test creating a second job", func(t *testing.T) {
 		jobstore := NewJobStore()
 		want := Job{
-			Id:      1,
-			DocHash: "bar",
-			Status:  "created",
+			ID:     1,
+			DocID:  "bar",
+			Status: "created",
 		}
 
 		jobstore.CreateJob("foo")
@@ -91,9 +93,9 @@ func TestJobStore_GetJob(t *testing.T) {
 		jobstore.CreateJob("foo")
 
 		want := Job{
-			Id:      0,
-			DocHash: "foo",
-			Status:  "created",
+			ID:     0,
+			DocID:  "foo",
+			Status: "created",
 		}
 		got, _ := jobstore.GetJob(0)
 		if !reflect.DeepEqual(got, want) {
@@ -107,9 +109,9 @@ func TestJobStore_GetJob(t *testing.T) {
 		jobstore.CreateJob("bar")
 
 		want := Job{
-			Id:      0,
-			DocHash: "foo",
-			Status:  "created",
+			ID:     0,
+			DocID:  "foo",
+			Status: "created",
 		}
 		got, _ := jobstore.GetJob(0)
 		if !reflect.DeepEqual(got, want) {
@@ -125,8 +127,8 @@ func TestJobStore_GetAllJobs(t *testing.T) {
 		jobstore.CreateJob("bar")
 
 		want := []Job{
-			{Id: 0, DocHash: "foo", Status: "created"},
-			{Id: 1, DocHash: "bar", Status: "created"},
+			{ID: 0, DocID: "foo", Status: "created"},
+			{ID: 1, DocID: "bar", Status: "created"},
 		}
 		got := jobstore.GetAllJobs()
 		if !slices.Contains(got, want[0]) {
@@ -143,7 +145,7 @@ func TestJobStore_updateJobStatus(t *testing.T) {
 		jobstore := NewJobStore()
 		jobstore.CreateJob("foo")
 
-		want := Job{Id: 0, DocHash: "foo", Status: "mystatus"}
+		want := Job{ID: 0, DocID: "foo", Status: "mystatus"}
 		err := jobstore.updateJobStatus(0, "mystatus")
 		if err != nil {
 			t.Errorf("JobStore.updateJobStatus() got an unexpected error: %v", err.Error())

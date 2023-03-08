@@ -48,8 +48,8 @@ func Test_jobServer_getAllJobsHandler(t *testing.T) {
 		c, _ := gin.CreateTestContext(w)
 		js := NewJobServer()
 
-		js.store.CreateJob("foo")
-		js.store.CreateJob("bar")
+		_, _ = js.store.CreateJob("foo")
+		_, _ = js.store.CreateJob("bar")
 		js.getAllJobsHandler(c)
 
 		assert.Equal(t, http.StatusOK, w.Code)

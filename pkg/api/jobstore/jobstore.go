@@ -27,19 +27,23 @@ func NewJobStore() *JobStore {
 }
 
 // CreateJob creates a new job in the store.
-func (js *JobStore) CreateJob(hash string) int {
+func (js *JobStore) CreateJob(docID string) (int, error) {
 	js.lock.Lock()
 	defer js.lock.Unlock()
 
+	if docID == "" {
+		return 0, fmt.Errorf("expected a non-empty docID")
+	}
+
 	job := Job{
 		ID:     js.nextId,
-		DocID:  hash,
+		DocID:  docID,
 		Status: "created", // what statuses do we want? Created, Processing, Finished, Failed?
 	}
 
 	js.jobs[js.nextId] = job
 	js.nextId++
-	return job.ID
+	return job.ID, nil
 }
 
 // GetJob retrieves a job from the store, by id. If no such id exists, an

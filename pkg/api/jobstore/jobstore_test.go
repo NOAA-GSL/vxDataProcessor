@@ -42,7 +42,7 @@ func TestJobStore_CreateJob(t *testing.T) {
 			Status: "created",
 		}
 
-		jobstore.CreateJob("foo")
+		_, _ = jobstore.CreateJob("foo")
 
 		got, _ := jobstore.GetJob(0)
 		if !reflect.DeepEqual(got, want) {
@@ -58,12 +58,26 @@ func TestJobStore_CreateJob(t *testing.T) {
 			Status: "created",
 		}
 
-		jobstore.CreateJob("foo")
-		jobstore.CreateJob("bar")
+		_, _ = jobstore.CreateJob("foo")
+		_, _ = jobstore.CreateJob("bar")
 
 		got, _ := jobstore.GetJob(1)
 		if !reflect.DeepEqual(got, want) {
 			t.Errorf("JobStore.CreateJob() = %v, want %v", got, want)
+		}
+	})
+
+	t.Run("Test creating an empty job", func(t *testing.T) {
+		jobstore := NewJobStore()
+		want := "expected a non-empty docID"
+
+		_, err := jobstore.CreateJob("")
+		if err == nil {
+			t.Error("JobStore.CreateJob() - expected an error but got none")
+		}
+
+		if err.Error() != want {
+			t.Errorf("JobStore.updateJobStatus got error '%v', wanted error '%v'", err.Error(), want)
 		}
 	})
 
@@ -90,7 +104,7 @@ func TestJobStore_GetJob(t *testing.T) {
 
 	t.Run("Test getting a job", func(t *testing.T) {
 		jobstore := NewJobStore()
-		jobstore.CreateJob("foo")
+		_, _ = jobstore.CreateJob("foo")
 
 		want := Job{
 			ID:     0,
@@ -105,8 +119,8 @@ func TestJobStore_GetJob(t *testing.T) {
 
 	t.Run("Test getting the correct job", func(t *testing.T) {
 		jobstore := NewJobStore()
-		jobstore.CreateJob("foo")
-		jobstore.CreateJob("bar")
+		_, _ = jobstore.CreateJob("foo")
+		_, _ = jobstore.CreateJob("bar")
 
 		want := Job{
 			ID:     0,
@@ -123,8 +137,8 @@ func TestJobStore_GetJob(t *testing.T) {
 func TestJobStore_GetAllJobs(t *testing.T) {
 	t.Run("Test getting multiple jobs", func(t *testing.T) {
 		jobstore := NewJobStore()
-		jobstore.CreateJob("foo")
-		jobstore.CreateJob("bar")
+		_, _ = jobstore.CreateJob("foo")
+		_, _ = jobstore.CreateJob("bar")
 
 		want := []Job{
 			{ID: 0, DocID: "foo", Status: "created"},
@@ -143,7 +157,7 @@ func TestJobStore_GetAllJobs(t *testing.T) {
 func TestJobStore_updateJobStatus(t *testing.T) {
 	t.Run("Set to random string", func(t *testing.T) {
 		jobstore := NewJobStore()
-		jobstore.CreateJob("foo")
+		_, _ = jobstore.CreateJob("foo")
 
 		want := Job{ID: 0, DocID: "foo", Status: "mystatus"}
 		err := jobstore.updateJobStatus(0, "mystatus")
@@ -160,7 +174,7 @@ func TestJobStore_updateJobStatus(t *testing.T) {
 
 	t.Run("Errors as expected", func(t *testing.T) {
 		jobstore := NewJobStore()
-		jobstore.CreateJob("foo")
+		_, _ = jobstore.CreateJob("foo")
 
 		want := "job with id=1 not found"
 		err := jobstore.updateJobStatus(1, "mystatus")

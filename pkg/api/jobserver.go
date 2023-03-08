@@ -37,7 +37,11 @@ func (js *jobServer) createJobHandler(c *gin.Context) {
 		return
 	}
 
-	id := js.store.CreateJob(rj.DocID)
+	id, err := js.store.CreateJob(rj.DocID)
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error()) //TODO: Better error message
+		return
+	}
 	c.JSON(http.StatusOK, gin.H{"id": id})
 }
 

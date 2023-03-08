@@ -28,7 +28,7 @@ func (js *jobServer) getAllJobsHandler(c *gin.Context) {
 // Handles requests to create a new Job in the store
 func (js *jobServer) createJobHandler(c *gin.Context) {
 	type RequestJob struct {
-		Hash string `json:"hash"`
+		DocID string `json:"docid"`
 	}
 
 	var rj RequestJob
@@ -37,8 +37,8 @@ func (js *jobServer) createJobHandler(c *gin.Context) {
 		return
 	}
 
-	id := js.store.CreateJob(rj.Hash)
-	c.JSON(http.StatusOK, gin.H{"Id": id})
+	id := js.store.CreateJob(rj.DocID)
+	c.JSON(http.StatusOK, gin.H{"id": id})
 }
 
 // Handles requests to get a specific Job in the store

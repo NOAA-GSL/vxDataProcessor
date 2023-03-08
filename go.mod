@@ -2,7 +2,10 @@ module github.com/NOAA-GSL/vxDataProcessor
 
 go 1.20
 
-require github.com/gin-gonic/gin v1.9.0
+require (
+	github.com/gin-gonic/gin v1.9.0
+	golang.org/x/exp v0.0.0-20230307190834-24139beb5833
+)
 
 require (
 	github.com/bytedance/sonic v1.8.0 // indirect

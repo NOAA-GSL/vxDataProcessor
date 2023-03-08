@@ -20,5 +20,8 @@ func Start() {
 			"message": "pong",
 		})
 	})
-	router.Run() // listen and serve on 0.0.0.0:8080
+	err := router.Run() // listen and serve on 0.0.0.0:8080
+	if err != nil {
+		panic(err)
+	}
 }

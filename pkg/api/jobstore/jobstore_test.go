@@ -1,9 +1,11 @@
 package jobstore
 
 import (
+	"fmt"
 	"reflect"
-	"sync"
 	"testing"
+
+	"golang.org/x/exp/slices"
 )
 
 func TestNewJobStore(t *testing.T) {
@@ -30,213 +32,145 @@ func TestNewJobStore(t *testing.T) {
 }
 
 func TestJobStore_CreateJob(t *testing.T) {
-	type fields struct {
-		lock   sync.Mutex
-		jobs   map[int]Job
-		nextId int
-	}
-	type args struct {
-		hash string
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		args   args
-		want   int
-	}{
-		// test cases
-		// TODO - how can we check the hash is as desired? I'm not sure these tests are all that useful.
-		{
-			name:   "Test Creating Job",
-			fields: fields{lock: sync.Mutex{}, jobs: map[int]Job{}, nextId: 0},
-			args:   args{hash: "myhash"},
-			want:   0,
-		},
-		{
-			name: "Test Creating Second Job",
-			fields: fields{
-				lock: sync.Mutex{},
-				jobs: map[int]Job{
-					0: {Id: 0, DocHash: "myhash", Status: "created"},
-				},
-				nextId: 1},
-			args: args{hash: "myhash"},
-			want: 1,
-		},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			js := &JobStore{
-				lock:   test.fields.lock, // TODO - avoid copying a Mutex. Pointers and sync.Locker could be interesting.
-				jobs:   test.fields.jobs,
-				nextId: test.fields.nextId,
-			}
-			if got := js.CreateJob(test.args.hash); got != test.want {
-				t.Errorf("JobStore.CreateJob() = %v, want %v", got, test.want)
-			}
-		})
-	}
+	t.Run("Test creating a job", func(t *testing.T) {
+		jobstore := NewJobStore()
+		want := Job{
+			Id:      0,
+			DocHash: "foo",
+			Status:  "created",
+		}
+
+		jobstore.CreateJob("foo")
+
+		got, _ := jobstore.GetJob(0)
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("JobStore.CreateJob() = %v, want %v", got, want)
+		}
+	})
+
+	t.Run("Test creating a second job", func(t *testing.T) {
+		jobstore := NewJobStore()
+		want := Job{
+			Id:      1,
+			DocHash: "bar",
+			Status:  "created",
+		}
+
+		jobstore.CreateJob("foo")
+		jobstore.CreateJob("bar")
+
+		got, _ := jobstore.GetJob(1)
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("JobStore.CreateJob() = %v, want %v", got, want)
+		}
+	})
+
+	// TODO - what happens if we get the same docID submitted multiple times?
 }
 
 func TestJobStore_GetJob(t *testing.T) {
-	type fields struct {
-		lock   sync.Mutex
-		jobs   map[int]Job
-		nextId int
-	}
-	type args struct {
-		id int
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		want    Job
-		wantErr bool
-	}{
-		// test cases
-		{
-			name: "Test Getting Job",
-			fields: fields{
-				lock: sync.Mutex{},
-				jobs: map[int]Job{
-					0: {Id: 0, DocHash: "myhash", Status: "created"},
-				},
-				nextId: 0},
-			args:    args{id: 0},
-			want:    Job{Id: 0, DocHash: "myhash", Status: "created"},
-			wantErr: false,
-		},
-		{
-			name: "Test Getting Multiple Jobs",
-			fields: fields{
-				lock: sync.Mutex{},
-				jobs: map[int]Job{
-					0: {Id: 0, DocHash: "myhash", Status: "created"},
-					1: {Id: 1, DocHash: "myhash1", Status: "created"},
-				},
-				nextId: 0},
-			want:    Job{Id: 0, DocHash: "myhash", Status: "created"},
-			wantErr: false,
-		},
-		{
-			name:    "Test Getting Nonexistant Job",
-			fields:  fields{lock: sync.Mutex{}, jobs: map[int]Job{}, nextId: 0},
-			args:    args{id: 0},
-			wantErr: true,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			js := &JobStore{
-				lock:   tt.fields.lock,
-				jobs:   tt.fields.jobs,
-				nextId: tt.fields.nextId,
-			}
-			got, err := js.GetJob(tt.args.id)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("JobStore.GetJob() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("JobStore.GetJob() = %v, want %v", got, tt.want)
-			}
-		})
-	}
+	t.Run("Test getting a nonexistant job", func(t *testing.T) {
+		jobstore := NewJobStore()
+
+		jobID := 0
+		_, err := jobstore.GetJob(jobID)
+		if err == nil {
+			t.Error("JobStore.GetJob() Wanted an error but didn't get one")
+			return
+		}
+
+		wantedErr := fmt.Sprintf("job with id=%v not found", jobID)
+		if err != nil && err.Error() != wantedErr {
+			t.Errorf("JobStore.GetJob() got error: '%v', want error: '%v'", err, wantedErr)
+			return
+		}
+	})
+
+	t.Run("Test getting a job", func(t *testing.T) {
+		jobstore := NewJobStore()
+		jobstore.CreateJob("foo")
+
+		want := Job{
+			Id:      0,
+			DocHash: "foo",
+			Status:  "created",
+		}
+		got, _ := jobstore.GetJob(0)
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("JobStore.GetJob() = %v, want %v", got, want)
+		}
+	})
+
+	t.Run("Test getting the correct job", func(t *testing.T) {
+		jobstore := NewJobStore()
+		jobstore.CreateJob("foo")
+		jobstore.CreateJob("bar")
+
+		want := Job{
+			Id:      0,
+			DocHash: "foo",
+			Status:  "created",
+		}
+		got, _ := jobstore.GetJob(0)
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("JobStore.GetJob() = %v, want %v", got, want)
+		}
+	})
 }
 
 func TestJobStore_GetAllJobs(t *testing.T) {
-	type fields struct {
-		lock   sync.Mutex
-		jobs   map[int]Job
-		nextId int
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		want   []Job
-	}{
-		{
-			name: "Test Getting Multiple Jobs",
-			fields: fields{
-				lock: sync.Mutex{},
-				jobs: map[int]Job{
-					0: {Id: 0, DocHash: "myhash", Status: "created"},
-					1: {Id: 1, DocHash: "myhash1", Status: "created"},
-				},
-				nextId: 0},
-			want: []Job{
-				{Id: 0, DocHash: "myhash", Status: "created"},
-				{Id: 1, DocHash: "myhash1", Status: "created"},
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			js := &JobStore{
-				lock:   tt.fields.lock,
-				jobs:   tt.fields.jobs,
-				nextId: tt.fields.nextId,
-			}
-			if got := js.GetAllJobs(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("JobStore.GetAllJobs() = %v, want %v", got, tt.want)
-			}
-		})
-	}
+	t.Run("Test getting multiple jobs", func(t *testing.T) {
+		jobstore := NewJobStore()
+		jobstore.CreateJob("foo")
+		jobstore.CreateJob("bar")
+
+		want := []Job{
+			{Id: 0, DocHash: "foo", Status: "created"},
+			{Id: 1, DocHash: "bar", Status: "created"},
+		}
+		got := jobstore.GetAllJobs()
+		if !slices.Contains(got, want[0]) {
+			t.Errorf("JobStore.GetAllJobs() Job %v not in jobs: %v", want[0], got)
+		}
+		if !slices.Contains(got, want[1]) {
+			t.Errorf("JobStore.GetAllJobs() Job %v not in jobs: %v", want[1], got)
+		}
+	})
 }
 
 func TestJobStore_updateJobStatus(t *testing.T) {
-	type fields struct {
-		lock   sync.Mutex
-		jobs   map[int]Job
-		nextId int
-	}
-	type args struct {
-		id     int
-		status string
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		wantErr bool
-	}{
-		// TODO: Assert that the status is updated as expected
-		{
-			name: "Set to random string",
-			fields: fields{
-				lock: sync.Mutex{},
-				jobs: map[int]Job{
-					0: {Id: 0, DocHash: "myhash", Status: "created"},
-					1: {Id: 1, DocHash: "myhash1", Status: "created"},
-				},
-				nextId: 0},
-			args:    args{0, "foo"},
-			wantErr: false,
-		},
-		{
-			name: "Errors as expected",
-			fields: fields{
-				lock: sync.Mutex{},
-				jobs: map[int]Job{
-					0: {Id: 0, DocHash: "myhash", Status: "created"},
-					1: {Id: 1, DocHash: "myhash1", Status: "created"},
-				},
-				nextId: 0},
-			args:    args{3, "foo"},
-			wantErr: true,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			js := &JobStore{
-				lock:   tt.fields.lock,
-				jobs:   tt.fields.jobs,
-				nextId: tt.fields.nextId,
-			}
-			if err := js.updateJobStatus(tt.args.id, tt.args.status); (err != nil) != tt.wantErr {
-				t.Errorf("JobStore.updateJobStatus() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
+	t.Run("Set to random string", func(t *testing.T) {
+		jobstore := NewJobStore()
+		jobstore.CreateJob("foo")
+
+		want := Job{Id: 0, DocHash: "foo", Status: "mystatus"}
+		err := jobstore.updateJobStatus(0, "mystatus")
+		if err != nil {
+			t.Errorf("JobStore.updateJobStatus() got an unexpected error: %v", err.Error())
+			return
+		}
+
+		got, _ := jobstore.GetJob(0)
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("JobStore.updateJobStatus() = %v, want %v", got, want)
+		}
+	})
+
+	t.Run("Errors as expected", func(t *testing.T) {
+		jobstore := NewJobStore()
+		jobstore.CreateJob("foo")
+
+		want := "job with id=1 not found"
+		err := jobstore.updateJobStatus(1, "mystatus")
+		if err == nil {
+			t.Error("JobStore.updateJobStatus() didn't error as expected")
+			return
+		}
+
+		if err.Error() != want {
+			t.Errorf("JobStore.updateJobStatus got error '%v', wanted error '%v'", err.Error(), want)
+		}
+
+	})
+
 }

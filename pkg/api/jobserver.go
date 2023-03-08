@@ -28,12 +28,12 @@ func (js *jobServer) getAllJobsHandler(c *gin.Context) {
 // Handles requests to create a new Job in the store
 func (js *jobServer) createJobHandler(c *gin.Context) {
 	type RequestJob struct {
-		DocID string `json:"docid"`
+		DocID string `json:"docid" binding:"required"`
 	}
 
 	var rj RequestJob
 	if err := c.ShouldBindJSON(&rj); err != nil {
-		c.String(http.StatusBadRequest, err.Error())
+		c.String(http.StatusBadRequest, err.Error()) //TODO: Better error message
 		return
 	}
 

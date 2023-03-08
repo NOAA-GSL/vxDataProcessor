@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func Start() {
+func SetupRouter() *gin.Engine {
 	router := gin.Default()
 	server := NewJobServer()
 
@@ -20,8 +20,6 @@ func Start() {
 			"message": "pong",
 		})
 	})
-	err := router.Run() // listen and serve on 0.0.0.0:8080
-	if err != nil {
-		panic(err)
-	}
+
+	return router
 }

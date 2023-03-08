@@ -68,7 +68,7 @@ func (js *JobStore) GetAllJobs() []Job {
 	return allJobs
 }
 
-// UpdateJobStatus changes the status of the job to
+// UpdateJobStatus changes the status of the job to the specified string
 func (js *JobStore) updateJobStatus(id int, status string) error {
 	js.lock.Lock()
 	defer js.lock.Unlock()
@@ -76,6 +76,7 @@ func (js *JobStore) updateJobStatus(id int, status string) error {
 	j, ok := js.jobs[id]
 	if ok {
 		j.Status = status
+		js.jobs[id] = j
 		return nil
 	} else {
 		return fmt.Errorf("job with id=%d not found", id)

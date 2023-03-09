@@ -58,7 +58,10 @@ func Test_jobServer_getAllJobsHandler(t *testing.T) {
 
 		js.getAllJobsHandler(c)
 		got := []jobstore.Job{}
-		json.Unmarshal(w.Body.Bytes(), &got)
+		err := json.Unmarshal(w.Body.Bytes(), &got)
+		if err != nil {
+			t.Error("Issue unmarshalling JSON response")
+		}
 
 		assert.Equal(t, http.StatusOK, w.Code)
 		assert.ElementsMatch(t, want, got)

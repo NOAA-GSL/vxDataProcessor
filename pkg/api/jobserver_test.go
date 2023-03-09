@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -44,16 +45,23 @@ func Test_jobServer_getAllJobsHandler(t *testing.T) {
 	})
 
 	t.Run("Test getting jobstore", func(t *testing.T) {
+		want := []jobstore.Job{
+			{ID: 0, DocID: "foo", Status: "created"},
+			{ID: 1, DocID: "bar", Status: "created"},
+		}
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
 		js := NewJobServer()
 
 		_, _ = js.store.CreateJob("foo")
 		_, _ = js.store.CreateJob("bar")
+
 		js.getAllJobsHandler(c)
+		got := []jobstore.Job{}
+		json.Unmarshal(w.Body.Bytes(), &got)
 
 		assert.Equal(t, http.StatusOK, w.Code)
-		assert.Equal(t, `[{"id":0,"docid":"foo","status":"created"},{"id":1,"docid":"bar","status":"created"}]`, w.Body.String())
+		assert.ElementsMatch(t, want, got)
 	})
 }
 

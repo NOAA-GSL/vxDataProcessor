@@ -2,7 +2,7 @@
 name: Feature
 about: Describe the requirements for a new feature
 title: ''
-labels: feature, "needs solution"
+labels: ["feature", "needs solution"]
 assignees: ''
 
 ---

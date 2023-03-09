@@ -44,7 +44,7 @@ func Test_jobServer_getAllJobsHandler(t *testing.T) {
 		assert.Equal(t, `[]`, w.Body.String())
 	})
 
-	t.Run("Test getting jobstore", func(t *testing.T) {
+	t.Run("Test getting a jobstore", func(t *testing.T) {
 		want := []jobstore.Job{
 			{ID: 0, DocID: "foo", Status: "created"},
 			{ID: 1, DocID: "bar", Status: "created"},

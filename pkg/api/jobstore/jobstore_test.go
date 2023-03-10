@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"golang.org/x/exp/slices"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNewJobStore(t *testing.T) {
@@ -145,12 +145,7 @@ func TestJobStore_GetAllJobs(t *testing.T) {
 			{ID: 1, DocID: "bar", Status: "created"},
 		}
 		got := jobstore.GetAllJobs()
-		if !slices.Contains(got, want[0]) {
-			t.Errorf("JobStore.GetAllJobs() Job %v not in jobs: %v", want[0], got)
-		}
-		if !slices.Contains(got, want[1]) {
-			t.Errorf("JobStore.GetAllJobs() Job %v not in jobs: %v", want[1], got)
-		}
+		assert.ElementsMatch(t, want, got)
 	})
 }
 

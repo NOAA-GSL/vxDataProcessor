@@ -1,0 +1,19 @@
+{
+    "sqltools.connections": [{
+        "mysqlOptions": {
+            "authProtocol": "default"
+        },
+        "previewLimit": 50,
+        "server": "wolphin.fsl.noaa.gov",
+        "port": 3306,
+        "driver": "MySQL",
+        "name": "wolphin",
+        "username": "readonly1",
+        "database": "mats_common",
+        "askForPassword": true
+    }],
+    "go.lintTool": "golangci-lint",
+    "go.lintFlags": [
+        "--fast"
+    ]
+}

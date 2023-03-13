@@ -4,6 +4,8 @@ go 1.19
 
 require (
 	github.com/couchbase/gocb/v2 v2.6.1
+	github.com/go-sql-driver/mysql v1.7.0
+	github.com/joho/godotenv v1.5.1
 	rsc.io/quote v1.5.2
 )
 
@@ -11,6 +13,7 @@ require (
 	github.com/couchbase/gocbcore/v10 v10.2.1 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
+	github.com/go-playground/validator v9.31.0+incompatible // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect

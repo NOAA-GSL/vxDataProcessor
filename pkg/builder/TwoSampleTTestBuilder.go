@@ -34,12 +34,12 @@ import (
 	"errors"
 	"fmt"
 	"log"
-
-	"github.com/aclements/go-moremath/stats"
 	"github.com/go-playground/validator/v10"
+	"github.com/aclements/go-moremath/stats"
 )
 
-var validate *validator.Validate = validator.New()
+// use a single instance of Validate, it caches struct info
+var validate *validator.Validate
 
 // setters:
 // The goodnessPolarity indicates if this population is positive good (like for TS/CSI)
@@ -58,7 +58,7 @@ func (scc *ScorecardCell) SetGoodnessPolarity(polarity GoodnessPolarity) error {
 		log.Print(errs)
 		return errors.New(fmt.Sprint("TwoSampleTTestBuilder SetGoodnessPolarity", errs))
 	} else {
-		scc.GoodnessPolarity = polarity
+		scc.goodnessPolarity = polarity
 	}
 	return nil // no errors
 }
@@ -69,7 +69,7 @@ func (scc *ScorecardCell) SetMajorThreshold(threshold Threshold) error {
 		log.Print(errs)
 		return errors.New(fmt.Sprint("TwoSampleTTestBuilder SetMajorThreshold", errs))
 	} else {
-		scc.MajorThreshold = threshold
+		scc.majorThreshold = threshold
 	}
 	return nil // no errors
 }
@@ -80,47 +80,61 @@ func (scc *ScorecardCell) SetMinorThreshold(threshold Threshold) error {
 		log.Print(errs)
 		return errors.New(fmt.Sprint("TwoSampleTTestBuilder SetMinorThreshold", errs))
 	} else {
-		scc.MinorThreshold = threshold
+		scc.minorThreshold = threshold
 	}
 	return nil // no errors
 }
 
 // get the return value based on the major and minor thresholds compared to the p-value
-func getValue(scc ScorecardCell, difference float64, pval float64) (int, error) {
+func deriveValue(scc *ScorecardCell, difference float64, pval float64) (int, error) {
 	if errs := validate.Var(difference, "required"); errs != nil {
 		log.Print(errs)
-		return 0, errors.New(fmt.Sprint("TwoSampleTTestBuilder getValue", errs))
+		return 0, errors.New(fmt.Sprint("TwoSampleTTestBuilder deriveValue", errs))
 	} else {
 		if errs := validate.Var(pval, "required"); errs != nil {
 			fmt.Println(errs)
-			scc.Value = -9999
-			return -9999, errors.New(fmt.Sprint("TwoSampleTTestBuilder getValue", errs))
+			return -9999, errors.New(fmt.Sprint("TwoSampleTTestBuilder deriveValue", errs))
 		} else {
-			if pval <= float64(scc.MajorThreshold) {
-				scc.Value = 2
-				return 2 * int(scc.GoodnessPolarity), nil
+			if pval <= float64(scc.majorThreshold) {
+				return 2 * int(scc.goodnessPolarity), nil
 			}
-			if pval <= float64(scc.MinorThreshold) {
-				scc.Value = 1
-				return 1 * int(scc.GoodnessPolarity), nil
+			if pval <= float64(scc.minorThreshold) {
+				return 1 * int(scc.goodnessPolarity), nil
 			}
 			return 0, nil
 		}
 	}
 }
 
-func (scc *ScorecardCell) ComputeSignificance(derivedData DerivedDataElement) error {
+// using the Query Result and the statistic perform statistic calculation, perform matching and store the result
+func (scc *ScorecardCell) DeriveInputData(qr QueryResult, statisticType string) error {
+	//scc.Value = resultPtr
+	// use the builder_stats pkg to process the statistic
+
+	// use the builder_stats pkg to perform matching on the input
+	return nil
+}
+
+func (scc *ScorecardCell) ComputeSignificance() error {
+	// scc should hvae already been populated
+	if scc.data.CtlPop == nil || scc.data.ExpPop == nil {
+		return errors.New(fmt.Sprint("TwoSampleTTestBuilder ComputeSignificance - no data"))
+	}
 	// alternate hypothesis is locationDiffers - i.e. null hypothesis is equality.
+	var derivedData DerivedDataElement  = scc.data
 	alt := stats.LocationDiffers
 	// If μ0 is non-zero, this tests if the average of the difference
 	// is significantly different from μ0, we assume a zero μ0.
 	μ0 := 0.0
 	if errs := validate.Var(derivedData.CtlPop, "required"); errs != nil {
 		log.Print(errs)
+		*scc.valuePtr = -9999  // have to dereference valuePtr - just because
 		return errors.New(fmt.Sprint("TwoSampleTTestBuilder ComputeSignificance", errs))
 	}
 	if errs := validate.Var(derivedData.ExpPop, "required"); errs != nil {
 		log.Print(errs)
+		*scc.valuePtr = -9999 // have to dereference valuePtr - just because
+		//scc.Value = &v
 		return errors.New(fmt.Sprint("TwoSampleTTestBuilder ComputeSignificance", errs))
 	}
 	//&TTestResult{N1: n1, N2: n2, T: t, DoF: dof, AltHypothesis: alt, P: p}
@@ -131,27 +145,74 @@ func (scc *ScorecardCell) ComputeSignificance(derivedData DerivedDataElement) er
 		meanCtl := stats.Mean(derivedData.CtlPop)
 		meanExp := stats.Mean(derivedData.ExpPop)
 		difference := (meanCtl - meanExp)
-		scc.Pvalue = ret.P
-		scc.Value, err = getValue(*scc, difference, ret.P)
+		scc.pvalue = ret.P
+		 // have to dereference valuePtr - just because
+		*scc.valuePtr, err = deriveValue(scc, difference, ret.P)
+		//scc.Value = &v
 		if err != nil {
 			log.Print(err)
-			return errors.New(fmt.Sprint("TwoSampleTTestBuilder ComputeSignificance - getValue error: ", err))
+			//scc.Value = &v
+			return errors.New(fmt.Sprint("TwoSampleTTestBuilder ComputeSignificance - deriveValue error: ", err))
 		}
 	} else {
 		log.Print(err)
-		scc.Pvalue = -9999
-		scc.Value = -9999
+		scc.pvalue = -9999 // pvalue is not a pointer
+		*scc.valuePtr = -9999 // have to dereference valuePtr - just because
+		//scc.Value = &v
 		return errors.New(fmt.Sprint("TwoSampleTTestBuilder ComputeSignificance", err))
 	}
 	return nil // no errors
 }
 
-func (scc *ScorecardCell) SetInputData(inputData DerivedDataElement) error {
-	// put the code to derive the data from the inputData HERE!
-	scc.Data = inputData
-	return nil // no errors
+
+// return the internal value that has been derived
+func (scc *ScorecardCell) GetValue() int {
+	// NOTE: a reference to a non-interface method with a value receiver using
+	// a pointer will automatically dereference that pointer
+	return *scc.valuePtr
 }
 
 func NewTwoSampleTTestBuilder() *ScorecardCell {
+	validate = validator.New()
 	return &ScorecardCell{}
 }
+func (scc *ScorecardCell)SetValuePtr(valuePtr int) error {
+	if errs := validate.Var(valuePtr, "required"); errs != nil {
+		log.Print(errs)
+		*scc.valuePtr = -9999
+		return errors.New(fmt.Sprint("TwoSampleTTestBuilder ComputeSignificance", errs))
+	}
+	scc.valuePtr = &valuePtr
+	return nil
+}
+
+func Build(cellPtr *ScorecardCell, qr QueryResult, statisticType string) error {
+	// build the input data elements and
+	// for all the input elements fire off a thread to do the compute
+	var err error
+	err = cellPtr.SetGoodnessPolarity(cellPtr.goodnessPolarity)
+	if err != nil {
+		return errors.New(fmt.Sprint("mysql_director Build SetGoodnessPolarity error ", err))
+	}
+	err = cellPtr.SetMinorThreshold(cellPtr.minorThreshold)
+	if err != nil {
+		return errors.New(fmt.Sprint("mysql_director - build - SetminorThreshold - error message : ", err))
+	}
+	err = cellPtr.SetMajorThreshold(cellPtr.majorThreshold)
+	if err != nil {
+		return errors.New(fmt.Sprint("mysql_director - build - SetmajorThreshold - error message : ", err))
+	}
+	err = cellPtr.DeriveInputData(qr, statisticType)
+	if err != nil {
+		return errors.New(fmt.Sprint("mysql_director - build - SetInputData - error message : ", err))
+	}
+	 // computes the significance for the data derived in DeriveInputData and stored in cellPtr.data
+	err = cellPtr.ComputeSignificance()
+	if err != nil {
+		return errors.New(fmt.Sprint("mysql_director - build - ComputeSignificance - error message : ", err))
+	}
+	// insert the elements into the in-memory document
+	// upsert the document
+	return nil
+}
+

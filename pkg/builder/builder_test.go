@@ -25,19 +25,18 @@ func TestTwoSampleTTestBuilder_test_identical(t *testing.T) {
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_identical - SetMajorThreshold - error message : ", err))
 	}
-	err = cellPtr.SetInputData(builder.DerivedDataElement{
-		CtlPop: []float64{0.2, 1.3, 3.2, 4.5},
-		ExpPop: []float64{0.2, 1.3, 3.2, 4.5},
-	})
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_identical - SetInputData - error message : ", err))
 	}
-	err = cellPtr.ComputeSignificance(cellPtr.Data)
+	err = cellPtr.ComputeSignificance(cellPtr)
 	if err == nil {
 		t.Fatal("TestTwoSampleTTestBuilder_test_identical - ComputeSignificance - no error message : should be 'sample has zero variance'")
 	}
 }
 func TestTwoSampleTTestBuilder_test_2(t *testing.T) {
+	var cellPtr = builder.NewTwoSampleTTestBuilder()
+	var value = new(int)
+	cellPtr.SetValuePtr(*value)
 	err := cellPtr.SetGoodnessPolarity(gp)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_2 - SetGoodnessPolarity - error message : ", err))
@@ -50,19 +49,14 @@ func TestTwoSampleTTestBuilder_test_2(t *testing.T) {
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_2 - SetMajorThreshold - error message : ", err))
 	}
-	err = cellPtr.SetInputData(builder.DerivedDataElement{
-		CtlPop: []float64{1.0, 1.1, 1.2, 1.15, 1.09},
-		ExpPop: []float64{0.9, 1.0, 1.1, 1.08, 1.05},
-	})
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_2 - SetInputData - error message : ", err))
 	}
-	err = cellPtr.ComputeSignificance(cellPtr.Data)
+	err = cellPtr.ComputeSignificance(cellPtr)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_1 - ComputeSignificance - error message : ", err))
 	}
-	fmt.Println("Pval is", cellPtr.Pvalue, "value is ", cellPtr.Value)
-	if cellPtr.Value != 2 {
+	if cellPtr.valuePtr != 2 {
 		t.Fatal("test_2_wrong value :", cellPtr.Value)
 	}
 }

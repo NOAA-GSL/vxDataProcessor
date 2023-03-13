@@ -1,33 +1,32 @@
 package builder
 
 /*
-please refer to https://gist.github.com/vaskoz/10073335 for an
-example of a classic builder pattern.
-
 Contents of a ScorecardCell
 A ScorecardCell is a structure that represents a cell
 in a scorecard display.
 
 Each cell must have derivedData which is a
-struct that has a control and an experimental array of floats.
+struct that has two arrays of numbers, a control and an experimental.
 
 Each cell must also have a GoodnessPolarity which is either a -1 or a 1
 and defines whether a negative difference between the means
 of the experimental array and the control array is better when
 it is negative or better when it is positive.
 
-Each cell must also have major and minor thresholds which help to define the value.
+Each cell must also have major and minor thresholds which define
+the confidence thresholds against which the statistical  probability value will be compared.
 
-Each ScorecardCell must also have a resultant value.
+Each ScorecardCell must also have a resultant value pointer. This pointer points to
+the result location into which the computeSignificance will write the result.
 
 A ScorecardCellBuilder is an interface that provides several functions:
 	setGoodnessPolarity - sets the positive or negative direction of "goodness"
 	setMajorThreshold - sets the major threshold
 	setMinorThreshold - sets the minor threshold
-	deriveData - creates DerivedData from InputData
-	computeSignificance - calculates a value of a cell
-	build() - converts an array of DerivedDataElements into
-	an array of ScoredcardCell values (which are ints)
+	deriveInputData - creates DerivedData from InputData. This requires that the function
+	performs time matching on the input populations, then performs a statistic calculation,
+	and then writes the DerivedDataElement into the scorecardCell Data.
+	computeSignificance - calculates and writes the value of a cell.
 
 	An instance of a ScorecardCell struct implements a ScorecardCellBuilder
 	interface by defining all the functions of the interface like...
@@ -42,6 +41,9 @@ A ScorecardCellBuilder is an interface that provides several functions:
 	significance values for an array of input data elements.
 */
 
+type statFunc func(StatType)
+type StatType string
+
 type DerivedDataElement struct {
 	CtlPop []float64
 	ExpPop []float64
@@ -53,20 +55,25 @@ type DerivedData []DerivedDataElement
 type GoodnessPolarity int
 type Threshold float64
 type ScorecardCell struct {
-	Data             DerivedDataElement
-	GoodnessPolarity GoodnessPolarity
-	MajorThreshold   Threshold
-	MinorThreshold   Threshold
-	Pvalue           float64
-	Value            int
+	data             DerivedDataElement
+	goodnessPolarity GoodnessPolarity
+	majorThreshold   Threshold
+	minorThreshold   Threshold
+	pvalue           float64
+	valuePtr            *int
 }
 
+
+type QueryResult = *[]struct{} // either CTCRecord or ScalarRecord or PreCalcRecord
 type ScorecardCellBuilder interface {
 	SetGoodnessPolarity(GoodnessPolarity)
 	SetMajorThreshold(Threshold)
 	SetMinorThreshold(Threshold)
-	SetInputData(DerivedDataElement)
-	ComputeSignificance(DerivedDataElement)
+	DeriveInputData(input QueryResult, statisticType string)
+	ComputeSignificance(scc *ScorecardCell)
+	SetValuePtr(valuePtr *int)
+	GetValue()
+	Build(cellPtr *ScorecardCell, inputData struct{})
 }
 
 func GetBuilder(builderType string) *ScorecardCell {

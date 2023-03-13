@@ -1,4 +1,4 @@
-package mysql_director_test
+package manager_test
 
 import (
 	"encoding/json"
@@ -7,23 +7,23 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/NOAA-GSL/vxDataProcessor/pkg/mysql_director"
+	"github.com/NOAA-GSL/vxDataProcessor/pkg/manager"
 	"github.com/couchbase/gocb/v2"
 )
 
 func TestDirector_test_connection(t *testing.T) {
 	var filename = fmt.Sprint(os.Getenv("HOME"), "/adb-cb4-credentials")
-	if !mysql_director.CheckFileExists(filename) {
+	if !manager.CheckFileExists(filename) {
 		t.Fatal(fmt.Sprint("credential file does not exist :", filename))
 	}
-	var cb_connection, err = mysql_director.GetConnection()
+	var cb_connection, err = manager.GetConnection()
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestDirector_test_connection Build GetConnection error ", err))
 	}
 
 	// read the test document from the test file
 	filename = "./testdata/test_scorecard.json"
-	if !mysql_director.CheckFileExists(filename) {
+	if !manager.CheckFileExists(filename) {
 		t.Fatal(fmt.Sprint("mysql_test_director error cannot open test scorecard document: ", filename, " error: ", err))
 	}
 	var scorecardBytes, _ = os.ReadFile(filename)

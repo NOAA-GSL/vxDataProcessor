@@ -29,12 +29,40 @@ import (
 	"github.com/NOAA-GSL/vxDataProcessor/pkg/builder"
 	"github.com/NOAA-GSL/vxDataProcessor/pkg/builder_stats"
 	"context"
-	_ "github.com/go-sql-driver/mysql"
+	"github.com/go-sql-driver/mysql"
 	"database/sql"
 )
 
 
-// these should come from the scorecard
+// the special sql types i.e. sql.NullInt46 sql.NullFloat64 are for handling null values
+// see http://go-database-sql.org/nulls.html
+type CTCRecord = struct {
+	hit sql.NullInt
+	miss sql.NullInt
+	fa sql.NullInt
+	cn sql.NullInt
+	time sql.NullInt64
+}
+type CTCRecords = []*CTCrecord
+
+type ScalarRecord = struct {
+	squareDiffSum sql.NullFloat64
+	NSum sql.NullInt32
+	obsModelDiffSum sql.NullFloat64
+	modelSum sql.NullFloat64
+	obsSum sql.NullFloat64
+	absSum sql.NullFloat64
+	time sql.NullInt64
+}
+type ScalarRecords = []*ScalarRecord
+type PreCalcRecord struct {
+	value NullFloat64
+	time NullInt64
+}
+type PreCalcRecords = []*PreCalcRecord
+
+type record *struct{}
+type records []record
 
 var gp builder.GoodnessPolarity
 var minorThreshold builder.Threshold
@@ -80,28 +108,64 @@ func NewMysqlDirector(mysqlCredentials DbCredentials) (*Director, error) {
 func queryData(stmnt string, data *struct{}) error {
 	var err error
     var rows* sql.Rows
+	var dataType string = "PreCalcRecord"
+	var record record
+	var records []records
+
+	if strings.contains(stmnt, "hit") {
+		dataType = "CTCRecord"
+	}
+	if strings.contains(stmnt,"squareDiffSum") {
+		dataType = "ScalarRecord"
+	}
 	rows, err = mysqlDirector.db.Query(stmnt)
 	if err != nil {
 		// handle this error better than this
 		panic(err)
 	  }
 	defer rows.Close()
-	var columNames []string
-	columNames, err = rows.Columns
-	for _, v := range columNames {
-		if v == "hits" {
-			return true
+	switch dataType {
+	case "PreCalcRecord":
+		record = &new(PreCalcRecord)
+		records = make(PreCalcRecords)
+		for rows.Next() {
+			err = rows.Scan(&record.value, &record.timetime)
+			if err != nil {
+				if record.value.valid && record.time.valid {
+					records.append(&record)
+				}
+			} else {
+				log.Errorf ("mysqlDirector.Query error reading PreCalcRecord row %q", err)
+			}
+		}
+	case "CTCRecord":
+		record = new(CTCRecord)
+		records = make(CTCRecords)
+		for rows.Next() {
+			err = rows.Scan(&record.hit, &record.miss, &record.fa, &record.cn, &record.time)
+			if err != nil {
+				if record.hit.valid && record.miss.valid && record.fa.valid && record.cn.valid && record.time.valid {
+					records.append(&record)
+				}
+			} else {
+				log.Errorf ("mysqlDirector.Query error reading CTCRecord row %q", err)
+			}
+		}
+	case "ScalarRecord":
+		record = new(ScalarRecord)
+		records = make(ScalarRecords)
+		for rows.Next() {
+			err = rows.Scan(&record.squareDiffSum, &record.NSum, &record.obsModelDiffSum, &record.modelSum, &record.obsSum, &record.absSum, &record.time)
+			if err != nil {
+				// check for NULL values
+				if record.squareDiffSum.valid &&  record.NSum.valid && record.obsModelDiffSum.valid && record.modelSum.valid && record.obsSum.valid && record.absSum.valid && record.time.valid {
+					records.append(&record)
+				}
+			} else {
+				log.Errorf ("mysqlDirector.Query error reading ScalarRecord row %q", err)
+			}
 		}
 	}
-	fmt.Println(columNames)
-	for rows.Next() {
-		err = rows.Scan(data)
-		// handle error
-		if err != nil {
-			panic(err)
-		}
-	}
-	return nil
 }
 
 func processSub(resultElem ScorecardBlock, queryElem ScorecardBlock) error{

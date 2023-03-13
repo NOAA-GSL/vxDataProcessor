@@ -1,6 +1,10 @@
 package builder_stats
 
-
+import (
+    "fmt"
+    "math"
+    "github.com/go-playground/validator/v10"
+)
 // if fields contains square_diff_sum => QueryResult is ScalarRecord
 // else if fields contain hits => QueryResult is CTCRecord
 // else QueryResult is PreCalcRecord
@@ -13,12 +17,12 @@ type CTCRecord = struct {
 }
 type ScalarRecord = struct {
 	squareDiffSum float64
-	NSum int
+	NSum float64
 	obsModelDiffSum float64
 	modelSum float64
 	obsSum float64
 	absSum float64
-	time int64
+	time float64
 }
 type PreCalcRecord struct {
 	value float64
@@ -26,9 +30,11 @@ type PreCalcRecord struct {
 }
 
 type DataSet struct{
-    ctlPop []float64
-    expPop []float64
+    ctlPop []PreCalcRecord
+    expPop []PreCalcRecord
 }
+
+var validate *validator.Validate
 
 /*
 These are stats functions that are used to derive scorecard stats from raw populations.
@@ -36,73 +42,131 @@ There is also a time matching function. These functions are used by the builder 
 */
 
 // calculates the statistic for ctc plots
-func calculateStatCTC(hit int, fa int, miss int, cn int, statistic string) ([]float64, error){
-/*    if isNaN(hit) || isNaN(fa) || isNaN(miss) || isNaN(cn) return nil;
-        var queryVal;
-        switch (statistic) {
-        case 'TSS (True Skill Score)':
-            queryVal = ((hit * cn - fa * miss) / ((hit + miss) * (fa + cn))) * 100;
-            break;
-        // some PODy measures look for a value over a threshold, some look for under
-        case 'PODy (POD of value < threshold)':
-        case 'PODy (POD of value > threshold)':
-            queryVal = hit / (hit + miss) * 100;
-            break;
-        // some PODn measures look for a value under a threshold, some look for over
-        case 'PODn (POD of value > threshold)':
-        case 'PODn (POD of value < threshold)':
-            queryVal = cn / (cn + fa) * 100;
-            break;
-        case 'POFD (Probability of False Detection)':
-            queryVal = fa / (fa + cn) * 100;
-            break;
-        case 'FAR (False Alarm Ratio)':
-            queryVal = fa / (fa + hit) * 100;
-            break;
-        case 'Bias (forecast/actual)':
-            queryVal = (hit + fa) / (hit + miss);
-            break;
-        case 'CSI (Critical Success Index)':
-            queryVal = hit / (hit + miss + fa) * 100;
-            break;
-        case 'HSS (Heidke Skill Score)':
-            queryVal = 2 * (cn * hit - miss * fa) / ((cn + fa) * (fa + hit) + (cn + miss) * (miss + hit)) * 100;
-            break;
-        case 'ETS (Equitable Threat Score)':
-            queryVal = (hit - ((hit + fa) * (hit + miss) / (hit + fa + miss + cn))) / ((hit + fa + miss) - ((hit + fa) * (hit + miss) / (hit + fa + miss + cn))) * 100;
-            break;
+func calculateStatCTC(hit int, fa int, miss int, cn int, statistic string) (int, error){
+    if errs := validate.Var(hit, "required"); errs != nil {
+		return 0, fmt.Errorf("builder_stats calculateStatCTC %q", errs)
     }
-    return queryVal;
-*/
-return nil, nil
+    if errs := validate.Var(fa, "required"); errs != nil {
+		return 0, fmt.Errorf("builder_stats calculateStatCTC %q", errs)
+    }
+    if errs := validate.Var(cn, "required"); errs != nil {
+		return 0, fmt.Errorf("builder_stats calculateStatCTC %q", errs)
+    }
+    if errs := validate.Var(miss, "required"); errs != nil {
+		return 0, fmt.Errorf("builder_stats calculateStatCTC %q", errs)
+    }
+    if errs := validate.Var(statistic, "required"); errs != nil {
+		return 0, fmt.Errorf("builder_stats calculateStatCTC %q", errs)
+    }
+    var value int
+    switch (statistic) {
+        case "TSS (True Skill Score)":
+            value = ((hit * cn - fa * miss) / ((hit + miss) * (fa + cn))) * 100;
+        // some PODy measures look for a value over a threshold, some look for under
+        case "PODy (POD of value < threshold)":
+        case "PODy (POD of value > threshold)":
+            value = hit / (hit + miss) * 100;
+        // some PODn measures look for a value under a threshold, some look for over
+        case "PODn (POD of value > threshold)":
+        case "PODn (POD of value < threshold)":
+            value = cn / (cn + fa) * 100;
+        case "POFD (Probability of False Detection)":
+            value = fa / (fa + cn) * 100;
+        case "FAR (False Alarm Ratio)":
+            value = fa / (fa + hit) * 100;
+        case "Bias (forecast/actual)":
+            value = (hit + fa) / (hit + miss);
+        case "CSI (Critical Success Index)":
+            value = hit / (hit + miss + fa) * 100;
+        case "HSS (Heidke Skill Score)":
+            value = 2 * (cn * hit - miss * fa) / ((cn + fa) * (fa + hit) + (cn + miss) * (miss + hit)) * 100;
+        case "ETS (Equitable Threat Score)":
+            value = (hit - ((hit + fa) * (hit + miss) / (hit + fa + miss + cn))) / ((hit + fa + miss) - ((hit + fa) * (hit + miss) / (hit + fa + miss + cn))) * 100;
+        default:
+            return 0, fmt.Errorf("builder_stats.calculateStatCTC: ", "Invalid statistic:", statistic)
+    }
+    return value, nil;
 }
 
 // calculates the statistic for scalar partial sums plots
-func calculateStatScalar (squareDiffSum float64, NSumfloat64, obsModelDiffSumfloat64, modelSumfloat64, obsSumfloat64, absSumfloat64, statistic string)([]float64, error) {
-/*    if (isNaN(squareDiffSum) || isNaN(NSum) || isNaN(obsModelDiffSum) || isNaN(modelSum) || isNaN(obsSum) || isNaN(absSum)) return null;
-    var queryVal;
+func calculateStatScalar (squareDiffSum, NSum, obsModelDiffSum, modelSum, obsSum, absSum float64, statistic string)(float64, error) {
+    if errs := validate.Var(squareDiffSum, "required"); errs != nil {
+		return 0, fmt.Errorf("builder_stats calculateStatCTC %q", errs)
+    }
+    if errs := validate.Var(NSum, "required"); errs != nil {
+		return 0, fmt.Errorf("builder_stats calculateStatCTC %q", errs)
+    }
+    if errs := validate.Var(obsModelDiffSum, "required"); errs != nil {
+		return 0, fmt.Errorf("builder_stats calculateStatCTC %q", errs)
+    }
+    if errs := validate.Var(modelSum, "required"); errs != nil {
+		return 0, fmt.Errorf("builder_stats calculateStatCTC %q", errs)
+    }
+    if errs := validate.Var(obsSum, "required"); errs != nil {
+		return 0, fmt.Errorf("builder_stats calculateStatCTC %q", errs)
+    }
+    if errs := validate.Var(absSum, "required"); errs != nil {
+		return 0, fmt.Errorf("builder_stats calculateStatCTC %q", errs)
+    }
+    if errs := validate.Var(statistic, "required"); errs != nil {
+		return 0, fmt.Errorf("builder_stats calculateStatCTC %q", errs)
+    }
+    var value float64
     switch (statistic) {
-        case 'RMSE':
-            queryVal = Math.sqrt(squareDiffSum / NSum);
+        case "RMSE":
+            value = math.Sqrt(squareDiffSum / NSum);
             break;
-        case 'Bias (Model - Obs)':
-            queryVal = (modelSum - obsSum) / NSum;
+        case "Bias (Model - Obs)":
+            value = (modelSum - obsSum) / NSum;
             break;
-        case 'MAE (temp and dewpoint only)':
-        case 'MAE':
-            queryVal = absSum / NSum;
+        case "MAE (temp and dewpoint only)":
+        case "MAE":
+            value = absSum / NSum;
             break;
     }
-    if (isNaN(queryVal)) return null;
-    return queryVal;
-    */
-    return nil, nil
+    return value, nil;
+
 }
 
-// function for removing unmatched data from a dataset containing multiple curves
-func GetMatchedDataSet(InputData DataSet)([]float64, error){
-    /*
-    subSecs = []
+// function for removing unmatched data from a dataset containing two curves
+// The intersection of the ctlData and the expData based on the time elements.
+// This function assumes that the two slices are sorted by the time element (which is an epoch)
+func GetMatchedDataSet(data DataSet)(DataSet, error){
+    var result DataSet
+    var indexCtl int = 0
+    var indexExp int = 0
+    var ctlLength int = len(data.ctlPop)
+    var expLength int = len(data.expPop)
+    var maxLen = int(math.Max(float64(ctlLength),float64(expLength)))
+    var resultIndex int = 0
+     for {
+        if data.ctlPop[indexCtl].time == data.expPop[indexExp].time {
+            // time matches and valid values so append to result
+            result.ctlPop[resultIndex].time=data.ctlPop[indexCtl].time
+            result.ctlPop[resultIndex].value=data.ctlPop[indexCtl].value
+            result.expPop[resultIndex].time=data.expPop[indexCtl].time
+            result.expPop[resultIndex].value=data.expPop[indexCtl].value
+            // increment indexes
+            indexCtl++
+            indexExp++
+        } else {
+            // times did not match - increment the earliest one
+            if data.ctlPop[indexCtl].time < data.expPop[indexExp].time {
+                // increment the ctlPop index
+                indexCtl++
+            } else {
+                indexExp++
+            }
+            // continue with new index
+            continue
+        }
+        resultIndex++
+        if resultIndex >= maxLen {
+            break
+        }
+    }
+
+/*    subSecs = int64
     independentVarGroups = []
     independentVarHasPoint = []
     currIndependentVar
@@ -110,10 +174,9 @@ func GetMatchedDataSet(InputData DataSet)([]float64, error){
     data
     di
 
-    // matching in this function is based on a curve's independent variable. For a timeseries, the independentVar is epoch,
-    //determine whether data.x or data.y is the independent variable, and which is the stat value
-    const independentVarName = 'x'
-    const statVarName = 'y'
+    // matching in this function is based on a curve"s time variable which is an epoch.
+    const independentVarName = "x"
+    const statVarName = "y"
 
     // find the matching independentVars shared across all curves
     for (curveIndex = 0; curveIndex < 2; curveIndex++) {
@@ -159,9 +222,7 @@ func GetMatchedDataSet(InputData DataSet)([]float64, error){
 
         dataset[curveIndex] = data;
     }
-
-    return dataset;
-    */
-    return nil, nil
+*/
+    return dataset, nil
 }
 

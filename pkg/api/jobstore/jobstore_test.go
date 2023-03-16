@@ -35,43 +35,43 @@ func TestNewJobStore(t *testing.T) {
 
 func TestJobStore_CreateJob(t *testing.T) {
 	t.Run("Test creating a job", func(t *testing.T) {
-		jobstore := NewJobStore()
+		js := NewJobStore()
 		want := Job{
 			ID:     0,
 			DocID:  "foo",
 			Status: "created",
 		}
 
-		_, _ = jobstore.CreateJob("foo")
+		_, _ = js.CreateJob("foo")
 
-		got, _ := jobstore.GetJob(0)
+		got, _ := js.GetJob(0)
 		if !reflect.DeepEqual(got, want) {
 			t.Errorf("JobStore.CreateJob() = %v, want %v", got, want)
 		}
 	})
 
 	t.Run("Test creating a second job", func(t *testing.T) {
-		jobstore := NewJobStore()
+		js := NewJobStore()
 		want := Job{
 			ID:     1,
 			DocID:  "bar",
 			Status: "created",
 		}
 
-		_, _ = jobstore.CreateJob("foo")
-		_, _ = jobstore.CreateJob("bar")
+		_, _ = js.CreateJob("foo")
+		_, _ = js.CreateJob("bar")
 
-		got, _ := jobstore.GetJob(1)
+		got, _ := js.GetJob(1)
 		if !reflect.DeepEqual(got, want) {
 			t.Errorf("JobStore.CreateJob() = %v, want %v", got, want)
 		}
 	})
 
 	t.Run("Test creating an empty job", func(t *testing.T) {
-		jobstore := NewJobStore()
+		js := NewJobStore()
 		want := "expected a non-empty docID"
 
-		_, err := jobstore.CreateJob("")
+		_, err := js.CreateJob("")
 		if err == nil {
 			t.Error("JobStore.CreateJob() - expected an error but got none")
 		}
@@ -86,10 +86,10 @@ func TestJobStore_CreateJob(t *testing.T) {
 
 func TestJobStore_GetJob(t *testing.T) {
 	t.Run("Test getting a nonexistant job", func(t *testing.T) {
-		jobstore := NewJobStore()
+		js := NewJobStore()
 
 		jobID := 0
-		_, err := jobstore.GetJob(jobID)
+		_, err := js.GetJob(jobID)
 		if err == nil {
 			t.Error("JobStore.GetJob() Wanted an error but didn't get one")
 			return
@@ -103,31 +103,31 @@ func TestJobStore_GetJob(t *testing.T) {
 	})
 
 	t.Run("Test getting a job", func(t *testing.T) {
-		jobstore := NewJobStore()
-		_, _ = jobstore.CreateJob("foo")
+		js := NewJobStore()
+		_, _ = js.CreateJob("foo")
 
 		want := Job{
 			ID:     0,
 			DocID:  "foo",
 			Status: "created",
 		}
-		got, _ := jobstore.GetJob(0)
+		got, _ := js.GetJob(0)
 		if !reflect.DeepEqual(got, want) {
 			t.Errorf("JobStore.GetJob() = %v, want %v", got, want)
 		}
 	})
 
 	t.Run("Test getting the correct job", func(t *testing.T) {
-		jobstore := NewJobStore()
-		_, _ = jobstore.CreateJob("foo")
-		_, _ = jobstore.CreateJob("bar")
+		js := NewJobStore()
+		_, _ = js.CreateJob("foo")
+		_, _ = js.CreateJob("bar")
 
 		want := Job{
 			ID:     0,
 			DocID:  "foo",
 			Status: "created",
 		}
-		got, _ := jobstore.GetJob(0)
+		got, _ := js.GetJob(0)
 		if !reflect.DeepEqual(got, want) {
 			t.Errorf("JobStore.GetJob() = %v, want %v", got, want)
 		}
@@ -136,123 +136,123 @@ func TestJobStore_GetJob(t *testing.T) {
 
 func TestJobStore_GetAllJobs(t *testing.T) {
 	t.Run("Test getting multiple jobs", func(t *testing.T) {
-		jobstore := NewJobStore()
-		_, _ = jobstore.CreateJob("foo")
-		_, _ = jobstore.CreateJob("bar")
+		js := NewJobStore()
+		_, _ = js.CreateJob("foo")
+		_, _ = js.CreateJob("bar")
 
 		want := []Job{
 			{ID: 0, DocID: "foo", Status: "created"},
 			{ID: 1, DocID: "bar", Status: "created"},
 		}
-		got := jobstore.GetAllJobs()
+		got := js.GetAllJobs()
 		assert.ElementsMatch(t, want, got)
 	})
 }
 
 func TestJobStore_GetJobsToProcess(t *testing.T) {
 	t.Run("Test getting a single job from the store", func(t *testing.T) {
-		jobstore := NewJobStore()
-		_, _ = jobstore.CreateJob("foo")
-		_, _ = jobstore.CreateJob("bar")
+		js := NewJobStore()
+		_, _ = js.CreateJob("foo")
+		_, _ = js.CreateJob("bar")
 
-		assert.Equal(t, 0, jobstore.nextIDToProcess)
+		assert.Equal(t, 0, js.nextIDToProcess)
 
 		want := []Job{{ID: 0, DocID: "foo", Status: "created"}}
-		got, _ := jobstore.GetJobsToProcess(1)
+		got, _ := js.GetJobsToProcess(1)
 		assert.Equal(t, want, got)
-		assert.Equal(t, 1, jobstore.nextIDToProcess)
+		assert.Equal(t, 1, js.nextIDToProcess)
 
 		want2 := []Job{{ID: 1, DocID: "bar", Status: "created"}}
-		got2, _ := jobstore.GetJobsToProcess(1)
+		got2, _ := js.GetJobsToProcess(1)
 		assert.Equal(t, want2, got2)
-		assert.Equal(t, 2, jobstore.nextIDToProcess)
+		assert.Equal(t, 2, js.nextIDToProcess)
 	})
 
 	t.Run("Test getting multiple jobs from the store", func(t *testing.T) {
-		jobstore := NewJobStore()
-		_, _ = jobstore.CreateJob("foo")
-		_, _ = jobstore.CreateJob("bar")
-		_, _ = jobstore.CreateJob("baz")
-		_, _ = jobstore.CreateJob("bas")
-		_, _ = jobstore.CreateJob("fred")
+		js := NewJobStore()
+		_, _ = js.CreateJob("foo")
+		_, _ = js.CreateJob("bar")
+		_, _ = js.CreateJob("baz")
+		_, _ = js.CreateJob("bas")
+		_, _ = js.CreateJob("fred")
 
 		want := []Job{{ID: 0, DocID: "foo", Status: "created"}}
-		got, _ := jobstore.GetJobsToProcess(1)
+		got, _ := js.GetJobsToProcess(1)
 		assert.Equal(t, want, got)
-		assert.Equal(t, 1, jobstore.nextIDToProcess)
+		assert.Equal(t, 1, js.nextIDToProcess)
 
 		want2 := []Job{{ID: 1, DocID: "bar", Status: "created"}}
-		got2, _ := jobstore.GetJobsToProcess(1)
+		got2, _ := js.GetJobsToProcess(1)
 		assert.Equal(t, want2, got2)
-		assert.Equal(t, 2, jobstore.nextIDToProcess)
+		assert.Equal(t, 2, js.nextIDToProcess)
 
 		want3 := []Job{{ID: 2, DocID: "baz", Status: "created"}, {ID: 3, DocID: "bas", Status: "created"}}
-		got3, _ := jobstore.GetJobsToProcess(2)
+		got3, _ := js.GetJobsToProcess(2)
 		assert.Equal(t, want3, got3)
-		assert.Equal(t, 4, jobstore.nextIDToProcess)
+		assert.Equal(t, 4, js.nextIDToProcess)
 	})
 
 	t.Run("Test getting a job not in the store", func(t *testing.T) {
-		jobstore := NewJobStore()
-		_, _ = jobstore.CreateJob("foo")
+		js := NewJobStore()
+		_, _ = js.CreateJob("foo")
 
 		want := []Job{{ID: 0, DocID: "foo", Status: "created"}}
-		got, _ := jobstore.GetJobsToProcess(1)
+		got, _ := js.GetJobsToProcess(1)
 		assert.Equal(t, want, got)
-		assert.Equal(t, 1, jobstore.nextIDToProcess)
+		assert.Equal(t, 1, js.nextIDToProcess)
 
 		wantErr := "No unprocessed jobs available"
 		want2 := []Job{}
-		got2, err := jobstore.GetJobsToProcess(1)
+		got2, err := js.GetJobsToProcess(1)
 		assert.Equal(t, wantErr, err.Error())
 		assert.Equal(t, got2, want2)
-		assert.Equal(t, 1, jobstore.nextIDToProcess)
+		assert.Equal(t, 1, js.nextIDToProcess)
 	})
 
 	t.Run("Test getting a partially-filled slice of jobs", func(t *testing.T) {
-		jobstore := NewJobStore()
-		_, _ = jobstore.CreateJob("foo")
-		_, _ = jobstore.CreateJob("bar")
+		js := NewJobStore()
+		_, _ = js.CreateJob("foo")
+		_, _ = js.CreateJob("bar")
 
 		want := []Job{{ID: 0, DocID: "foo", Status: "created"}}
-		got, _ := jobstore.GetJobsToProcess(1)
+		got, _ := js.GetJobsToProcess(1)
 		assert.Equal(t, want, got)
-		assert.Equal(t, 1, jobstore.nextIDToProcess)
+		assert.Equal(t, 1, js.nextIDToProcess)
 
 		want2 := []Job{{ID: 1, DocID: "bar", Status: "created"}}
-		got2, err := jobstore.GetJobsToProcess(2)
+		got2, err := js.GetJobsToProcess(2)
 		if err != nil {
 			t.Errorf("Unexpected error %v", err.Error())
 		}
 		assert.Equal(t, want2, got2)
-		assert.Equal(t, 2, jobstore.nextIDToProcess)
+		assert.Equal(t, 2, js.nextIDToProcess)
 	})
 }
 
 func TestJobStore_updateJobStatus(t *testing.T) {
 	t.Run("Set to random string", func(t *testing.T) {
-		jobstore := NewJobStore()
-		_, _ = jobstore.CreateJob("foo")
+		js := NewJobStore()
+		_, _ = js.CreateJob("foo")
 
 		want := Job{ID: 0, DocID: "foo", Status: "mystatus"}
-		err := jobstore.updateJobStatus(0, "mystatus")
+		err := js.updateJobStatus(0, "mystatus")
 		if err != nil {
 			t.Errorf("JobStore.updateJobStatus() got an unexpected error: %v", err.Error())
 			return
 		}
 
-		got, _ := jobstore.GetJob(0)
+		got, _ := js.GetJob(0)
 		if !reflect.DeepEqual(got, want) {
 			t.Errorf("JobStore.updateJobStatus() = %v, want %v", got, want)
 		}
 	})
 
 	t.Run("Errors as expected", func(t *testing.T) {
-		jobstore := NewJobStore()
-		_, _ = jobstore.CreateJob("foo")
+		js := NewJobStore()
+		_, _ = js.CreateJob("foo")
 
 		want := "job with id=1 not found"
-		err := jobstore.updateJobStatus(1, "mystatus")
+		err := js.updateJobStatus(1, "mystatus")
 		if err == nil {
 			t.Error("JobStore.updateJobStatus() didn't error as expected")
 			return

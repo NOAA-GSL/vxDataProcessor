@@ -22,7 +22,6 @@ type JobStore struct {
 func NewJobStore() *JobStore {
 	js := &JobStore{}
 	js.jobs = make(map[int]Job)
-	js.nextId = 0
 	return js
 }
 

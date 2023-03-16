@@ -14,8 +14,8 @@ type Job struct {
 }
 
 type JobStore struct {
-	lock            sync.Mutex // lock for modifying jobs & nextID
-	processLock     sync.Mutex // lock for updating nextIDToProcess
+	lock            sync.RWMutex // lock for modifying jobs & nextID
+	processLock     sync.Mutex   // lock for updating nextIDToProcess
 	jobs            map[int]Job
 	nextID          int
 	nextIDToProcess int
@@ -50,8 +50,8 @@ func (js *JobStore) CreateJob(docID string) (int, error) {
 // GetJob retrieves a job from the store, by id. If no such id exists, an
 // error is returned.
 func (js *JobStore) GetJob(id int) (Job, error) {
-	js.lock.Lock()
-	defer js.lock.Unlock()
+	js.lock.RLock()
+	defer js.lock.RUnlock()
 
 	j, ok := js.jobs[id]
 	if ok {
@@ -63,8 +63,8 @@ func (js *JobStore) GetJob(id int) (Job, error) {
 
 // GetAllJobs returns all the jobs in the store, in arbitrary order.
 func (js *JobStore) GetAllJobs() []Job {
-	js.lock.Lock()
-	defer js.lock.Unlock()
+	js.lock.RLock()
+	defer js.lock.RUnlock()
 
 	allJobs := make([]Job, 0, len(js.jobs))
 	for _, job := range js.jobs {

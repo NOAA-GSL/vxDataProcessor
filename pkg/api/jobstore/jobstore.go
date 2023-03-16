@@ -14,9 +14,11 @@ type Job struct {
 }
 
 type JobStore struct {
-	lock   sync.Mutex
-	jobs   map[int]Job
-	nextId int
+	lock            sync.Mutex // lock for modifying jobs & nextID
+	processLock     sync.Mutex // lock for updating nextIDToProcess
+	jobs            map[int]Job
+	nextId          int
+	nextIDToProcess int
 }
 
 func NewJobStore() *JobStore {
@@ -69,6 +71,31 @@ func (js *JobStore) GetAllJobs() []Job {
 		allJobs = append(allJobs, job)
 	}
 	return allJobs
+}
+
+// GetJobsToProcess Returns up to the numJobs number of jobs that haven't been processed
+func (js *JobStore) GetJobsToProcess(numJobs int) ([]Job, error) {
+	js.processLock.Lock()
+	defer js.processLock.Unlock()
+
+	jobsToProcess := []Job{}
+	for i := js.nextIDToProcess; i < js.nextIDToProcess+numJobs; i++ {
+		fmt.Printf("processID: %v, i: %v\n", js.nextIDToProcess, i)
+		j, err := js.GetJob(i)
+		if err != nil {
+			// No job with that ID, return
+			if len(jobsToProcess) == 0 {
+				return []Job{}, fmt.Errorf("No unprocessed jobs available")
+			} else {
+				// Return what we have
+				js.nextIDToProcess = js.nextIDToProcess + len(jobsToProcess)
+				return jobsToProcess, nil
+			}
+		}
+		jobsToProcess = append(jobsToProcess, j)
+	}
+	js.nextIDToProcess = js.nextIDToProcess + len(jobsToProcess)
+	return jobsToProcess, nil
 }
 
 // UpdateJobStatus changes the status of the job to the specified string

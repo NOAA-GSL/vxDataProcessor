@@ -18,7 +18,7 @@ func TestNewJobStore(t *testing.T) {
 			name: "Test New Job Store",
 			want: &JobStore{
 				jobs:   map[int]Job{},
-				nextId: 0,
+				nextID: 0,
 			},
 		},
 	}

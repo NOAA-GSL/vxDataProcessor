@@ -17,7 +17,7 @@ type JobStore struct {
 	lock            sync.Mutex // lock for modifying jobs & nextID
 	processLock     sync.Mutex // lock for updating nextIDToProcess
 	jobs            map[int]Job
-	nextId          int
+	nextID          int
 	nextIDToProcess int
 }
 
@@ -37,13 +37,13 @@ func (js *JobStore) CreateJob(docID string) (int, error) {
 	}
 
 	job := Job{
-		ID:     js.nextId,
+		ID:     js.nextID,
 		DocID:  docID,
 		Status: "created", // what statuses do we want? Created, Processing, Finished, Failed?
 	}
 
-	js.jobs[js.nextId] = job
-	js.nextId++
+	js.jobs[js.nextID] = job
+	js.nextID++
 	return job.ID, nil
 }
 

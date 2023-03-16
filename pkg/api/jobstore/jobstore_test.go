@@ -152,8 +152,8 @@ func TestJobStore_GetAllJobs(t *testing.T) {
 func TestJobStore_GetJobsToProcess(t *testing.T) {
 	t.Run("Test getting a single job from the store", func(t *testing.T) {
 		jobstore := NewJobStore()
-		jobstore.CreateJob("foo")
-		jobstore.CreateJob("bar")
+		_, _ = jobstore.CreateJob("foo")
+		_, _ = jobstore.CreateJob("bar")
 
 		assert.Equal(t, 0, jobstore.nextIDToProcess)
 
@@ -170,11 +170,11 @@ func TestJobStore_GetJobsToProcess(t *testing.T) {
 
 	t.Run("Test getting multiple jobs from the store", func(t *testing.T) {
 		jobstore := NewJobStore()
-		jobstore.CreateJob("foo")
-		jobstore.CreateJob("bar")
-		jobstore.CreateJob("baz")
-		jobstore.CreateJob("bas")
-		jobstore.CreateJob("fred")
+		_, _ = jobstore.CreateJob("foo")
+		_, _ = jobstore.CreateJob("bar")
+		_, _ = jobstore.CreateJob("baz")
+		_, _ = jobstore.CreateJob("bas")
+		_, _ = jobstore.CreateJob("fred")
 
 		want := []Job{{ID: 0, DocID: "foo", Status: "created"}}
 		got, _ := jobstore.GetJobsToProcess(1)
@@ -194,7 +194,7 @@ func TestJobStore_GetJobsToProcess(t *testing.T) {
 
 	t.Run("Test getting a job not in the store", func(t *testing.T) {
 		jobstore := NewJobStore()
-		jobstore.CreateJob("foo")
+		_, _ = jobstore.CreateJob("foo")
 
 		want := []Job{{ID: 0, DocID: "foo", Status: "created"}}
 		got, _ := jobstore.GetJobsToProcess(1)
@@ -211,8 +211,8 @@ func TestJobStore_GetJobsToProcess(t *testing.T) {
 
 	t.Run("Test getting a partially-filled slice of jobs", func(t *testing.T) {
 		jobstore := NewJobStore()
-		jobstore.CreateJob("foo")
-		jobstore.CreateJob("bar")
+		_, _ = jobstore.CreateJob("foo")
+		_, _ = jobstore.CreateJob("bar")
 
 		want := []Job{{ID: 0, DocID: "foo", Status: "created"}}
 		got, _ := jobstore.GetJobsToProcess(1)

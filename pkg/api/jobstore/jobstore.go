@@ -80,7 +80,6 @@ func (js *JobStore) GetJobsToProcess(numJobs int) ([]Job, error) {
 
 	jobsToProcess := []Job{}
 	for i := js.nextIDToProcess; i < js.nextIDToProcess+numJobs; i++ {
-		fmt.Printf("processID: %v, i: %v\n", js.nextIDToProcess, i)
 		j, err := js.GetJob(i)
 		if err != nil {
 			// No job with that ID, return

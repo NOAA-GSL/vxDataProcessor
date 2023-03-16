@@ -2,7 +2,9 @@ package jobstore
 
 import (
 	"fmt"
+	"math/rand"
 	"reflect"
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -31,7 +33,15 @@ func TestNewJobStore(t *testing.T) {
 	}
 }
 
-// TODO - test concurrency
+func randomString(n int) string {
+	const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
+	s := make([]byte, n)
+	for i := range s {
+		s[i] = letters[rand.Intn(len(letters))]
+	}
+	return string(s)
+}
 
 func TestJobStore_CreateJob(t *testing.T) {
 	t.Run("Test creating a job", func(t *testing.T) {
@@ -81,6 +91,24 @@ func TestJobStore_CreateJob(t *testing.T) {
 		}
 	})
 
+	t.Run("This runs safely concurrently", func(t *testing.T) {
+		wantedCount := 100
+		js := NewJobStore()
+
+		var wg sync.WaitGroup
+		wg.Add(wantedCount)
+
+		for i := 0; i < wantedCount; i++ {
+			go func() {
+				_, _ = js.CreateJob(randomString(10))
+				wg.Done()
+			}()
+		}
+		wg.Wait()
+
+		assert.Equal(t, wantedCount, len(js.jobs))
+
+	})
 	// TODO - what happens if we get the same docID submitted multiple times?
 }
 
@@ -226,6 +254,44 @@ func TestJobStore_GetJobsToProcess(t *testing.T) {
 		}
 		assert.Equal(t, want2, got2)
 		assert.Equal(t, 2, js.nextIDToProcess)
+	})
+
+	// TODO - check what happens if we concurrently try to access more jobs than available.
+	t.Run("This runs safely concurrently", func(t *testing.T) {
+		wantedCount := 100
+		wantedJobs := 2
+
+		js := NewJobStore()
+
+		var wg sync.WaitGroup
+		wg.Add(wantedCount / wantedJobs)
+
+		// Create our jobs
+		for i := 0; i < wantedCount; i++ {
+			_, _ = js.CreateJob(randomString(10))
+			if testing.Verbose() {
+				t.Logf("created job %v\n", i)
+			}
+		}
+
+		for i := 0; i < wantedCount/wantedJobs; i++ {
+			go func(i int) {
+				jobs, err := js.GetJobsToProcess(wantedJobs)
+				if err != nil {
+					t.Error("Unexpected error")
+				}
+				if testing.Verbose() {
+					// Each worker should get wantedJobs number of jobs
+					for _, job := range jobs {
+						t.Logf("Worker %v - Got Job ID: %v\n", i, job.ID)
+					}
+				}
+				wg.Done()
+			}(i)
+		}
+		wg.Wait()
+
+		assert.Equal(t, wantedCount, js.nextIDToProcess)
 	})
 }
 

@@ -149,6 +149,86 @@ func TestJobStore_GetAllJobs(t *testing.T) {
 	})
 }
 
+func TestJobStore_GetJobsToProcess(t *testing.T) {
+	t.Run("Test getting a single job from the store", func(t *testing.T) {
+		jobstore := NewJobStore()
+		jobstore.CreateJob("foo")
+		jobstore.CreateJob("bar")
+
+		assert.Equal(t, 0, jobstore.nextIDToProcess)
+
+		want := []Job{{ID: 0, DocID: "foo", Status: "created"}}
+		got, _ := jobstore.GetJobsToProcess(1)
+		assert.Equal(t, want, got)
+		assert.Equal(t, 1, jobstore.nextIDToProcess)
+
+		want2 := []Job{{ID: 1, DocID: "bar", Status: "created"}}
+		got2, _ := jobstore.GetJobsToProcess(1)
+		assert.Equal(t, want2, got2)
+		assert.Equal(t, 2, jobstore.nextIDToProcess)
+	})
+
+	t.Run("Test getting multiple jobs from the store", func(t *testing.T) {
+		jobstore := NewJobStore()
+		jobstore.CreateJob("foo")
+		jobstore.CreateJob("bar")
+		jobstore.CreateJob("baz")
+		jobstore.CreateJob("bas")
+		jobstore.CreateJob("fred")
+
+		want := []Job{{ID: 0, DocID: "foo", Status: "created"}}
+		got, _ := jobstore.GetJobsToProcess(1)
+		assert.Equal(t, want, got)
+		assert.Equal(t, 1, jobstore.nextIDToProcess)
+
+		want2 := []Job{{ID: 1, DocID: "bar", Status: "created"}}
+		got2, _ := jobstore.GetJobsToProcess(1)
+		assert.Equal(t, want2, got2)
+		assert.Equal(t, 2, jobstore.nextIDToProcess)
+
+		want3 := []Job{{ID: 2, DocID: "baz", Status: "created"}, {ID: 3, DocID: "bas", Status: "created"}}
+		got3, _ := jobstore.GetJobsToProcess(2)
+		assert.Equal(t, want3, got3)
+		assert.Equal(t, 4, jobstore.nextIDToProcess)
+	})
+
+	t.Run("Test getting a job not in the store", func(t *testing.T) {
+		jobstore := NewJobStore()
+		jobstore.CreateJob("foo")
+
+		want := []Job{{ID: 0, DocID: "foo", Status: "created"}}
+		got, _ := jobstore.GetJobsToProcess(1)
+		assert.Equal(t, want, got)
+		assert.Equal(t, 1, jobstore.nextIDToProcess)
+
+		wantErr := "No unprocessed jobs available"
+		want2 := []Job{}
+		got2, err := jobstore.GetJobsToProcess(1)
+		assert.Equal(t, wantErr, err.Error())
+		assert.Equal(t, got2, want2)
+		assert.Equal(t, 1, jobstore.nextIDToProcess)
+	})
+
+	t.Run("Test getting a partially-filled slice of jobs", func(t *testing.T) {
+		jobstore := NewJobStore()
+		jobstore.CreateJob("foo")
+		jobstore.CreateJob("bar")
+
+		want := []Job{{ID: 0, DocID: "foo", Status: "created"}}
+		got, _ := jobstore.GetJobsToProcess(1)
+		assert.Equal(t, want, got)
+		assert.Equal(t, 1, jobstore.nextIDToProcess)
+
+		want2 := []Job{{ID: 1, DocID: "bar", Status: "created"}}
+		got2, err := jobstore.GetJobsToProcess(2)
+		if err != nil {
+			t.Errorf("Unexpected error %v", err.Error())
+		}
+		assert.Equal(t, want2, got2)
+		assert.Equal(t, 2, jobstore.nextIDToProcess)
+	})
+}
+
 func TestJobStore_updateJobStatus(t *testing.T) {
 	t.Run("Set to random string", func(t *testing.T) {
 		jobstore := NewJobStore()

@@ -10,7 +10,7 @@ import (
 )
 
 func TestPingEndpoint(t *testing.T) {
-	router := SetupRouter()
+	router := SetupRouter(nil)
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/ping", nil)
@@ -22,7 +22,7 @@ func TestPingEndpoint(t *testing.T) {
 
 func TestJobsEndpoint(t *testing.T) {
 	t.Run("Test Creating a Job", func(t *testing.T) {
-		router := SetupRouter()
+		router := SetupRouter(nil)
 
 		// Setup
 		w := httptest.NewRecorder()
@@ -37,7 +37,7 @@ func TestJobsEndpoint(t *testing.T) {
 	})
 
 	t.Run("Test Getting All Jobs", func(t *testing.T) {
-		router := SetupRouter()
+		router := SetupRouter(nil)
 
 		// Setup
 		// TODO - is there a better way to insert state?
@@ -58,7 +58,7 @@ func TestJobsEndpoint(t *testing.T) {
 }
 
 func TestJobsIDEndpoint(t *testing.T) {
-	router := SetupRouter()
+	router := SetupRouter(nil)
 
 	// Setup
 	w := httptest.NewRecorder()

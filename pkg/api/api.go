@@ -6,9 +6,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func SetupRouter() *gin.Engine {
+func SetupRouter(js *jobstore.JobStore) *gin.Engine {
 	router := gin.Default()
-	server := NewJobServer()
+	server := NewJobServer(js)
 
 	router.POST("/jobs/", server.createJobHandler)
 	router.GET("/jobs/", server.getAllJobsHandler)

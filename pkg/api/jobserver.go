@@ -14,9 +14,12 @@ type jobServer struct {
 	store *jobstore.JobStore
 }
 
-func NewJobServer() *jobServer {
-	store := jobstore.NewJobStore()
-	return &jobServer{store: store}
+func NewJobServer(js *jobstore.JobStore) *jobServer {
+	if js == nil {
+		js = jobstore.NewJobStore()
+	}
+
+	return &jobServer{store: js}
 }
 
 // Handles requests to get all Jobs in the store

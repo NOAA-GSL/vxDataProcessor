@@ -15,7 +15,7 @@ import (
 
 func TestNewJobServer2(t *testing.T) {
 	filledJS := jobstore.NewJobStore()
-	filledJS.CreateJob("foo")
+	_, _ = filledJS.CreateJob("foo")
 
 	type args struct {
 		js *jobstore.JobStore

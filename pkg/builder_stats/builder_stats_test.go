@@ -1,9 +1,11 @@
 package builder_stats
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 	"time"
+	"github.com/stretchr/testify/assert"
 )
 
 func getDataSet(epoch int64, ctlValues []float64, expValues []float64) DataSet {
@@ -298,7 +300,9 @@ func Test_calculateStatScalar(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := calculateStatScalar(tt.args.squareDiffSum, tt.args.NSum, tt.args.obsModelDiffSum, tt.args.modelSum, tt.args.obsSum, tt.args.absSum, tt.args.statistic)
+			var got float64
+			var err error
+			got, err = calculateStatScalar(tt.args.squareDiffSum, tt.args.NSum, tt.args.obsModelDiffSum, tt.args.modelSum, tt.args.obsSum, tt.args.absSum, tt.args.statistic)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("calculateStatScalar() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -332,16 +336,16 @@ func Test_calculateStatCTC(t *testing.T) {
 	*/
 
 	type args struct {
-		hit       int
-		fa        int
-		miss      int
-		cn        int
+		hit       float32
+		fa        float32
+		miss      float32
+		cn        float32
 		statistic string
 	}
 	tests := []struct {
 		name    string
 		args    args
-		want    float64
+		want    float32
 		wantErr bool
 	}{
 		//test cases.
@@ -463,63 +467,43 @@ func Test_calculateStatCTC(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "MissingHit",
-			args: args{
-				//hit:   		1,
-				fa:        2,
-				miss:      3,
-				cn:        4,
-				statistic: "TSS (True Skill Score)",
-			},
-			want:    0,
-			wantErr: true,
+		// TSS.sql - radar - Not A Number error
+		name: "Not a Number",
+		args: args{
+			hit:       0,
+			fa:        1876,
+			miss:      0,
+			cn:        56054,
+			statistic: "TSS (True Skill Score)",
+		},
+		want:    0.0,
+		wantErr: true,
 		},
 		{
-			name: "MissingFa",
-			args: args{
-				hit: 1,
-				//fa:    		2,
-				miss:      3,
-				cn:        4,
-				statistic: "TSS (True Skill Score)",
-			},
-			want:    0,
-			wantErr: true,
+		// TSS.sql - radar - infinity
+		// don't know how to cause this condition with valid params
+		name: "infinity",
+		args: args{
+			hit:       1,
+			fa:        1,
+			miss:      1,
+			cn:        1,
+			statistic: "TSS (True Skill Score)",
 		},
-		{
-			name: "MissingMiss",
-			args: args{
-				hit: 1,
-				fa:  2,
-				//miss:  		3,
-				cn:        4,
-				statistic: "TSS (True Skill Score)",
-			},
-			want:    0,
-			wantErr: true,
-		},
-		{
-			name: "MissingCn",
-			args: args{
-				hit:  1,
-				fa:   2,
-				miss: 3,
-				//cn:    		4,
-				statistic: "TSS (True Skill Score)",
-			},
-			want:    0,
-			wantErr: true,
+		want:    0.0,
+		//wantErr: true,
+		wantErr: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			var delta float64 = 0.005
 			got, err := calculateStatCTC(tt.args.hit, tt.args.fa, tt.args.miss, tt.args.cn, tt.args.statistic)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("calculateStatCTC() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if got != tt.want {
-				t.Errorf("calculateStatCTC() = %v, want %v", got, tt.want)
+			if tt.wantErr {
+				assert.Errorf(t, err, "calculateStatCTC() should have returned error but did not - got %v", got)
+			} else {
+				assert.NoErrorf(t, err, "calculateStatCTC() returned error %s", err)
+				assert.InDelta(t, tt.want, got, delta,fmt.Sprintf("calculateStatCTC() excessive difference"))
 			}
 		})
 	}

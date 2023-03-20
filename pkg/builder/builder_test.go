@@ -2,9 +2,9 @@ package builder_test
 
 import (
 	"fmt"
-	"time"
 	"github.com/NOAA-GSL/vxDataProcessor/pkg/builder"
 	"testing"
+	"time"
 )
 
 var gp = builder.GoodnessPolarity(1)
@@ -32,20 +32,20 @@ func TestTwoSampleTTestBuilder_test_identical(t *testing.T) {
 
 	var epoch = time.Now().Unix()
 	var ctlData []interface{}
-	for i:=0; i<10; i++ {
-		var rec = builder.PreCalcRecord {
+	for i := 0; i < 10; i++ {
+		var rec = builder.PreCalcRecord{
 			Value: float64(i) * 1.1,
-			Time: int64(i) + epoch,
+			Time:  int64(i) + epoch,
 		}
-		ctlData = append(ctlData,rec)
+		ctlData = append(ctlData, rec)
 	}
 	var expData []interface{}
-	for i:=0; i<10; i++ {
-		var rec = builder.PreCalcRecord {
+	for i := 0; i < 10; i++ {
+		var rec = builder.PreCalcRecord{
 			Value: float64(i) * 1.1,
-			Time: int64(i) + epoch,
+			Time:  int64(i) + epoch,
 		}
-		expData = append (expData,rec)
+		expData = append(expData, rec)
 	}
 	var queryResultPtr *builder.QueryResult = new(builder.QueryResult)
 	queryResultPtr.CtlData = &ctlData
@@ -84,20 +84,20 @@ func TestTwoSampleTTestBuilder_test_2(t *testing.T) {
 	}
 	var epoch = time.Now().Unix()
 	var ctlData []interface{}
-	for i:=0; i<10; i++ {
-		var rec = builder.PreCalcRecord {
+	for i := 0; i < 10; i++ {
+		var rec = builder.PreCalcRecord{
 			Value: float64(i) * 1.01,
-			Time: int64(i) + epoch,
+			Time:  int64(i) + epoch,
 		}
-		ctlData = append(ctlData,rec)
+		ctlData = append(ctlData, rec)
 	}
 	var expData []interface{}
-	for i:=0; i<10; i++ {
-		var rec = builder.PreCalcRecord {
+	for i := 0; i < 10; i++ {
+		var rec = builder.PreCalcRecord{
 			Value: float64(i) * 1.2,
-			Time: int64(i) + epoch,
+			Time:  int64(i) + epoch,
 		}
-		expData = append (expData,rec)
+		expData = append(expData, rec)
 	}
 	var queryResultPtr *builder.QueryResult = new(builder.QueryResult)
 	queryResultPtr.CtlData = &ctlData
@@ -112,8 +112,8 @@ func TestTwoSampleTTestBuilder_test_2(t *testing.T) {
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_2 - ComputeSignificance - error message : ", err))
 	}
-	if *((*cellPtr)).ValuePtr != 2 {
-		t.Fatal("test_2_wrong value :", *((*cellPtr)).ValuePtr)
+	if *(*cellPtr).ValuePtr != 2 {
+		t.Fatal("test_2_wrong value :", *(*cellPtr).ValuePtr)
 	}
 }
 
@@ -136,20 +136,20 @@ func TestTwoSampleTTestBuilder_test_1(t *testing.T) {
 	}
 	var epoch = time.Now().Unix()
 	var ctlData []interface{}
-	for i:=0; i<10; i++ {
-		var rec = builder.PreCalcRecord {
+	for i := 0; i < 10; i++ {
+		var rec = builder.PreCalcRecord{
 			Value: float64(i) * 1.01,
-			Time: int64(i) + epoch,
+			Time:  int64(i) + epoch,
 		}
-		ctlData = append(ctlData,rec)
+		ctlData = append(ctlData, rec)
 	}
 	var expData []interface{}
-	for i:=0; i<10; i++ {
-		var rec = builder.PreCalcRecord {
+	for i := 0; i < 10; i++ {
+		var rec = builder.PreCalcRecord{
 			Value: float64(i) * 1.2,
-			Time: int64(i) + epoch,
+			Time:  int64(i) + epoch,
 		}
-		expData = append (expData,rec)
+		expData = append(expData, rec)
 	}
 	var queryResultPtr *builder.QueryResult = new(builder.QueryResult)
 	queryResultPtr.CtlData = &ctlData
@@ -164,8 +164,8 @@ func TestTwoSampleTTestBuilder_test_1(t *testing.T) {
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_1 - ComputeSignificance - error message : ", err))
 	}
-	if *((*cellPtr)).ValuePtr != 2 {
-		t.Fatal("test_2_wrong value :", *((*cellPtr)).ValuePtr)
+	if *(*cellPtr).ValuePtr != 2 {
+		t.Fatal("test_2_wrong value :", *(*cellPtr).ValuePtr)
 	}
 
 	err = (*cellPtr).ComputeSignificance()
@@ -199,20 +199,20 @@ func TestTwoSampleTTestBuilder_test_0(t *testing.T) {
 
 	var epoch = time.Now().Unix()
 	var ctlData []interface{}
-	for i:=0; i<10; i++ {
-		var rec = builder.PreCalcRecord {
+	for i := 0; i < 10; i++ {
+		var rec = builder.PreCalcRecord{
 			Value: float64(i) * 1.001,
-			Time: int64(i) + epoch,
+			Time:  int64(i) + epoch,
 		}
-		ctlData = append(ctlData,rec)
+		ctlData = append(ctlData, rec)
 	}
 	var expData []interface{}
-	for i:=0; i<10; i++ {
-		var rec = builder.PreCalcRecord {
+	for i := 0; i < 10; i++ {
+		var rec = builder.PreCalcRecord{
 			Value: float64(i) * 1.001,
-			Time: int64(i) + epoch,
+			Time:  int64(i) + epoch,
 		}
-		expData = append (expData,rec)
+		expData = append(expData, rec)
 	}
 	var queryResultPtr *builder.QueryResult = new(builder.QueryResult)
 	queryResultPtr.CtlData = &ctlData
@@ -233,7 +233,6 @@ func TestTwoSampleTTestBuilder_test_0(t *testing.T) {
 	}
 }
 
-
 func TestTwoSampleTTestBuilder_different_lengths(t *testing.T) {
 	err := (*cellPtr).SetGoodnessPolarity(gp)
 	if err != nil {
@@ -253,20 +252,20 @@ func TestTwoSampleTTestBuilder_different_lengths(t *testing.T) {
 
 	var epoch = time.Now().Unix()
 	var ctlData []interface{}
-	for i:=0; i<10; i++ {
-		var rec = builder.PreCalcRecord {
+	for i := 0; i < 10; i++ {
+		var rec = builder.PreCalcRecord{
 			Value: float64(i) * 1.01,
-			Time: int64(i) + epoch,
+			Time:  int64(i) + epoch,
 		}
-		ctlData = append(ctlData,rec)
+		ctlData = append(ctlData, rec)
 	}
 	var expData []interface{}
-	for i:=0; i<9; i++ {
-		var rec = builder.PreCalcRecord {
+	for i := 0; i < 9; i++ {
+		var rec = builder.PreCalcRecord{
 			Value: float64(i) * 1.2,
-			Time: int64(i) + epoch,
+			Time:  int64(i) + epoch,
 		}
-		expData = append (expData,rec)
+		expData = append(expData, rec)
 	}
 	var queryResultPtr *builder.QueryResult = new(builder.QueryResult)
 	queryResultPtr.CtlData = &ctlData

@@ -58,7 +58,7 @@ type ScorecardCell struct {
 	majorThreshold   Threshold
 	minorThreshold   Threshold
 	Pvalue           float64
-	ValuePtr            *int
+	ValuePtr         *int
 }
 
 type QueryResult struct {

@@ -21,42 +21,41 @@ structure where the cell result value is to be placed.
 	  5. politely die and go away.
 */
 
-
 import (
-	"fmt"
-	"time"
-	"reflect"
-	"strings"
-	"github.com/NOAA-GSL/vxDataProcessor/pkg/builder"
 	"context"
 	"database/sql"
+	"fmt"
+	"github.com/NOAA-GSL/vxDataProcessor/pkg/builder"
 	_ "github.com/go-sql-driver/mysql"
+	"reflect"
+	"strings"
+	"time"
 )
 
 // the special sql types i.e. sql.NullInt64 sql.NullFloat64 are for handling null values
 // see http://go-database-sql.org/nulls.html
 type CTCRecord struct {
-	hit sql.NullInt32
+	hit  sql.NullInt32
 	miss sql.NullInt32
-	fa sql.NullInt32
-	cn sql.NullInt32
+	fa   sql.NullInt32
+	cn   sql.NullInt32
 	time sql.NullInt32
 }
 type CTCRecords = []*CTCRecord
 
 type ScalarRecord struct {
-	squareDiffSum sql.NullFloat64
-	NSum sql.NullInt32
+	squareDiffSum   sql.NullFloat64
+	NSum            sql.NullInt32
 	obsModelDiffSum sql.NullFloat64
-	modelSum sql.NullFloat64
-	obsSum sql.NullFloat64
-	absSum sql.NullFloat64
-	time sql.NullInt64
+	modelSum        sql.NullFloat64
+	obsSum          sql.NullFloat64
+	absSum          sql.NullFloat64
+	time            sql.NullInt64
 }
 type ScalarRecords = []*ScalarRecord
 type PreCalcRecord struct {
 	value sql.NullFloat64
-	time sql.NullInt64
+	time  sql.NullInt64
 }
 type PreCalcRecords = []*PreCalcRecord
 
@@ -79,7 +78,7 @@ func getMySqlConnection(mysqlCredentials DbCredentials) (*sql.DB, error) {
 	// get the connection
 	var driver = "mysql"
 	//user:password@tcp(localhost:5555)
-	var dataSource  = fmt.Sprintf("%s:%s@tcp(%s)", mysqlCredentials.user, mysqlCredentials.password, mysqlCredentials.host)
+	var dataSource = fmt.Sprintf("%s:%s@tcp(%s)", mysqlCredentials.user, mysqlCredentials.password, mysqlCredentials.host)
 	var db *sql.DB
 	db, err := sql.Open(driver, dataSource)
 	if err != nil {
@@ -94,6 +93,7 @@ func getMySqlConnection(mysqlCredentials DbCredentials) (*sql.DB, error) {
 }
 
 var mysqlDirector = Director{}
+
 func NewMysqlDirector(mysqlCredentials DbCredentials) (*Director, error) {
 	var db, err = getMySqlConnection(mysqlCredentials)
 	if err != nil {
@@ -105,20 +105,20 @@ func NewMysqlDirector(mysqlCredentials DbCredentials) (*Director, error) {
 }
 
 func queryData(stmnt string, queryResultDataPtr *[]interface{}) (dataType string, err error) {
-    var rows* sql.Rows
+	var rows *sql.Rows
 	// There is undoubtedly a better way to do this!
 	dataType = "PreCalcRecord"
 	if strings.Contains(stmnt, "hit") {
 		dataType = "CTCRecord"
 	}
-	if strings.Contains(stmnt,"squareDiffSum") {
+	if strings.Contains(stmnt, "squareDiffSum") {
 		dataType = "ScalarRecord"
 	}
 	rows, err = mysqlDirector.db.Query(stmnt)
 	if err != nil {
 		err = fmt.Errorf("mysql_director queryData Query failed: %q", stmnt)
 		return dataType, err
-	  }
+	}
 	defer rows.Close()
 	switch dataType {
 	case "PreCalcRecord":
@@ -130,7 +130,7 @@ func queryData(stmnt string, queryResultDataPtr *[]interface{}) (dataType string
 					*queryResultDataPtr = append(*queryResultDataPtr, recordPtr)
 				}
 			} else {
-				err = fmt.Errorf ("mysqlDirector.Query error reading PreCalcRecord row %q", err)
+				err = fmt.Errorf("mysqlDirector.Query error reading PreCalcRecord row %q", err)
 				return dataType, err
 			}
 		}
@@ -145,7 +145,7 @@ func queryData(stmnt string, queryResultDataPtr *[]interface{}) (dataType string
 					*queryResultDataPtr = append(*queryResultDataPtr, recordPtr)
 				}
 			} else {
-				err = fmt.Errorf ("mysqlDirector.Query error reading CTCRecord row %q", err)
+				err = fmt.Errorf("mysqlDirector.Query error reading CTCRecord row %q", err)
 				return dataType, err
 			}
 		}
@@ -155,11 +155,11 @@ func queryData(stmnt string, queryResultDataPtr *[]interface{}) (dataType string
 			err = rows.Scan(recordPtr.squareDiffSum, recordPtr.NSum, recordPtr.obsModelDiffSum, recordPtr.modelSum, recordPtr.obsSum, recordPtr.absSum, recordPtr.time)
 			if err != nil {
 				// check for NULL values
-				if recordPtr.squareDiffSum.Valid &&  recordPtr.NSum.Valid && recordPtr.obsModelDiffSum.Valid && recordPtr.modelSum.Valid && recordPtr.obsSum.Valid && recordPtr.absSum.Valid && recordPtr.time.Valid {
+				if recordPtr.squareDiffSum.Valid && recordPtr.NSum.Valid && recordPtr.obsModelDiffSum.Valid && recordPtr.modelSum.Valid && recordPtr.obsSum.Valid && recordPtr.absSum.Valid && recordPtr.time.Valid {
 					*queryResultDataPtr = append(*queryResultDataPtr, recordPtr)
 				}
 			} else {
-				err = fmt.Errorf ("mysqlDirector.Query error reading ScalarRecord row %q", err)
+				err = fmt.Errorf("mysqlDirector.Query error reading ScalarRecord row %q", err)
 				return dataType, err
 			}
 		}
@@ -177,10 +177,10 @@ func contains(s []string, str string) bool {
 	return false
 }
 
-func processSub(resultElem ScorecardBlock, queryElem ScorecardBlock, statistics []string) error{
+func processSub(resultElem ScorecardBlock, queryElem ScorecardBlock, statistics []string) error {
 	var statisticType string
 	var elemName = reflect.TypeOf(resultElem).Name()
-	if contains(statistics,elemName) {
+	if contains(statistics, elemName) {
 		statisticType = elemName
 	}
 	if reflect.TypeOf(resultElem).String() == "struct" {
@@ -200,7 +200,7 @@ func processSub(resultElem ScorecardBlock, queryElem ScorecardBlock, statistics 
 			err = fmt.Errorf("mysql_director processSub error querying for ctlData - statement %q", ctlQueryStatement)
 			return err
 		}
-		expDataType, err = queryData(expQueryStatement,&(*queryResultPtr.ExpData))
+		expDataType, err = queryData(expQueryStatement, &(*queryResultPtr.ExpData))
 		if err != nil {
 			err = fmt.Errorf("mysql_director processSub error querying for expData - statement %q", expQueryStatement)
 			return err
@@ -238,7 +238,7 @@ func Run(regionMap ScorecardBlock, queryMap ScorecardBlock) error {
 	for k := range regionMap {
 		statistics = append(statistics, k)
 	}
-    // process the regionMap (all the values will be filled in)
+	// process the regionMap (all the values will be filled in)
 	processSub(regionMap, queryMap, statistics)
 	// upsert the document
 	return nil

@@ -33,9 +33,9 @@ will cause a return of 0.
 import (
 	"errors"
 	"fmt"
-	"log"
-	"github.com/go-playground/validator/v10"
 	"github.com/aclements/go-moremath/stats"
+	"github.com/go-playground/validator/v10"
+	"log"
 )
 
 // use a single instance of Validate, it caches struct info
@@ -107,112 +107,114 @@ func deriveValue(scc *ScorecardCell, difference float64, pval float64) (int, err
 
 // using the experimental Query Result and the control QueryResult and the statistic
 // perform statistic calculation for each, perform matching and store the resultant  dataSet
-func deriveCTCInputData(scc *ScorecardCell, QR *QueryResult, statisticType string)  (dataSet DataSet, err error) {
-		// derive CTC statistical values for ctl and exp
-		var stat float32
-		var ctlData []PreCalcRecord
-		var expData []PreCalcRecord
-		ctlQR := *(QR.CtlData)
-		expQR := *(QR.ExpData)
-		var record CTCRecord
+func deriveCTCInputData(scc *ScorecardCell, QR *QueryResult, statisticType string) (dataSet DataSet, err error) {
+	// derive CTC statistical values for ctl and exp
+	var stat float32
+	var ctlData []PreCalcRecord
+	var expData []PreCalcRecord
+	ctlQR := *(QR.CtlData)
+	expQR := *(QR.ExpData)
+	var record CTCRecord
 
-		for i:=0; i< len(ctlQR); i++ {
-			record = (ctlQR)[i].(CTCRecord)
-			stat, err = CalculateStatCTC(record.Hit, record.Fa, record.Miss, record.Cn, statisticType)
-			if err == nil {
-				//include this one
-				ctlData = append(ctlData, PreCalcRecord {Value: float64(stat),Time: record.Time,})
-			} else {/*don't include it*/}
+	for i := 0; i < len(ctlQR); i++ {
+		record = (ctlQR)[i].(CTCRecord)
+		stat, err = CalculateStatCTC(record.Hit, record.Fa, record.Miss, record.Cn, statisticType)
+		if err == nil {
+			//include this one
+			ctlData = append(ctlData, PreCalcRecord{Value: float64(stat), Time: record.Time})
+		} else { /*don't include it*/
 		}
-		for i:=0; i< len(expQR); i++ {
-			record = (expQR)[i].(CTCRecord)
-			stat, err = CalculateStatCTC(record.Hit, record.Fa, record.Miss, record.Cn, statisticType)
-			if err == nil {
-				//include this one
-				expData = append(expData, PreCalcRecord {Value: float64(stat),Time: record.Time,})
-			} else {/*don't include it*/}
-		}
-		// define the dataSet - this is the data struct the holds the two arrays of time and stat value
-		dataSet = DataSet {ctlPop:ctlData, expPop:expData}
-		// By now we have a dataSet each element of which has only a Time and a Value (i.e. a PreCalcRecord).
-		return dataSet, err
 	}
-
-
-func deriveScalarInputData(scc *ScorecardCell, qPtr *QueryResult, statisticType string)  (dataSet DataSet, err error) {
-		// derive Scalar statistical values for ctl and exp
-		var stat float64
-		var record ScalarRecord
-		var ctlData []PreCalcRecord
-		var expData []PreCalcRecord
-		//var matchedData DataSet
-		ctlQR := *(qPtr.CtlData)
-		expQR := *(qPtr.ExpData)
-
-		for i:=0; i< len(ctlQR); i++ {
-			record = (ctlQR)[i].(ScalarRecord)
-			stat, err = CalculateStatScalar(record.SquareDiffSum, record.NSum, record.ObsModelDiffSum, record.ModelSum, record.ObsSum, record.AbsSum, statisticType)
-			if err == nil {
-				//include this one
-				ctlData = append(ctlData, PreCalcRecord {Value: float64(stat),Time: record.Time,})
-			} else {/*don't include it*/}
+	for i := 0; i < len(expQR); i++ {
+		record = (expQR)[i].(CTCRecord)
+		stat, err = CalculateStatCTC(record.Hit, record.Fa, record.Miss, record.Cn, statisticType)
+		if err == nil {
+			//include this one
+			expData = append(expData, PreCalcRecord{Value: float64(stat), Time: record.Time})
+		} else { /*don't include it*/
 		}
-		for i:=0; i< len(expQR); i++ {
-			record = (expQR)[i].(ScalarRecord)
-			stat, err = CalculateStatScalar(record.SquareDiffSum, record.NSum, record.ObsModelDiffSum, record.ModelSum, record.ObsSum, record.AbsSum, statisticType)
-			if err == nil {
-				//include this one
-				expData = append(expData, PreCalcRecord {Value: float64(stat),Time: record.Time,})
-			}
+	}
+	// define the dataSet - this is the data struct the holds the two arrays of time and stat value
+	dataSet = DataSet{ctlPop: ctlData, expPop: expData}
+	// By now we have a dataSet each element of which has only a Time and a Value (i.e. a PreCalcRecord).
+	return dataSet, err
+}
+
+func deriveScalarInputData(scc *ScorecardCell, qPtr *QueryResult, statisticType string) (dataSet DataSet, err error) {
+	// derive Scalar statistical values for ctl and exp
+	var stat float64
+	var record ScalarRecord
+	var ctlData []PreCalcRecord
+	var expData []PreCalcRecord
+	//var matchedData DataSet
+	ctlQR := *(qPtr.CtlData)
+	expQR := *(qPtr.ExpData)
+
+	for i := 0; i < len(ctlQR); i++ {
+		record = (ctlQR)[i].(ScalarRecord)
+		stat, err = CalculateStatScalar(record.SquareDiffSum, record.NSum, record.ObsModelDiffSum, record.ModelSum, record.ObsSum, record.AbsSum, statisticType)
+		if err == nil {
+			//include this one
+			ctlData = append(ctlData, PreCalcRecord{Value: float64(stat), Time: record.Time})
+		} else { /*don't include it*/
 		}
-		// return the unmatched Scalar dataSet
-		dataSet = DataSet {ctlPop:ctlData,expPop:expData}
-		return dataSet, err
+	}
+	for i := 0; i < len(expQR); i++ {
+		record = (expQR)[i].(ScalarRecord)
+		stat, err = CalculateStatScalar(record.SquareDiffSum, record.NSum, record.ObsModelDiffSum, record.ModelSum, record.ObsSum, record.AbsSum, statisticType)
+		if err == nil {
+			//include this one
+			expData = append(expData, PreCalcRecord{Value: float64(stat), Time: record.Time})
+		}
+	}
+	// return the unmatched Scalar dataSet
+	dataSet = DataSet{ctlPop: ctlData, expPop: expData}
+	return dataSet, err
 }
 
 func derivePreCalcInputData(scc *ScorecardCell, qPtr *QueryResult, statisticType string) (dataSet DataSet, err error) {
-		// data is precalculated - don't need to derive stats
-		// have to use just the values to create the data set (type DataSet)
-		var ctlData PreCalcRecords
-		ctlData = make(PreCalcRecords, len(*(qPtr.CtlData)))
-		var expData PreCalcRecords
-		expData = make(PreCalcRecords, len(*(qPtr.ExpData)))
+	// data is precalculated - don't need to derive stats
+	// have to use just the values to create the data set (type DataSet)
+	var ctlData PreCalcRecords
+	ctlData = make(PreCalcRecords, len(*(qPtr.CtlData)))
+	var expData PreCalcRecords
+	expData = make(PreCalcRecords, len(*(qPtr.ExpData)))
 
-		for i:=0; i< len(*(qPtr.CtlData)); i++ {
-			ctlData = append(ctlData, (*(qPtr.CtlData))[i].(PreCalcRecord))
-		}
-		for i:=0; i< len(expData); i++ {
-			expData = append(expData, (*(qPtr.CtlData))[i].(PreCalcRecord))
-		}
-		// return the unmatched PreCalculated dataSet
-		dataSet = DataSet {ctlPop:ctlData,expPop:expData}
-		return dataSet, err
+	for i := 0; i < len(*(qPtr.CtlData)); i++ {
+		ctlData = append(ctlData, (*(qPtr.CtlData))[i].(PreCalcRecord))
+	}
+	for i := 0; i < len(expData); i++ {
+		expData = append(expData, (*(qPtr.CtlData))[i].(PreCalcRecord))
+	}
+	// return the unmatched PreCalculated dataSet
+	dataSet = DataSet{ctlPop: ctlData, expPop: expData}
+	return dataSet, err
 }
 
-func (scc *ScorecardCell)DeriveInputData(qrPtr *QueryResult, statisticType string, dataType string) (err error) {
+func (scc *ScorecardCell) DeriveInputData(qrPtr *QueryResult, statisticType string, dataType string) (err error) {
 	var dataSet DataSet
 	var matchedDataSet DataSet
-		switch dataType {
-		case "CTCRecord":
-			dataSet, err = deriveCTCInputData(scc, qrPtr, statisticType)
-		case "ScalarRecord":
-			dataSet, err = deriveScalarInputData(scc, qrPtr, statisticType)
-		case "PreCalcRecord":
-			dataSet, err = derivePreCalcInputData(scc, qrPtr, statisticType)
-		default:
-			err = fmt.Errorf("TwoSampleTTestBuilder DeriveInputData unsupported data type: %q", dataType)
-		}
-		// match the unmatched DataSet
-		matchedDataSet, err = GetMatchedDataSet(dataSet)
-		// convert matched DataSet to DerivedDataElement
-		var de DerivedDataElement
-		de.CtlPop = make([]float64, len(matchedDataSet.ctlPop))
-		de.ExpPop = make([]float64, len(matchedDataSet.expPop))
-		for i:=0; i< len(matchedDataSet.ctlPop); i++ {
-			de.CtlPop = append(de.CtlPop, matchedDataSet.ctlPop[i].Value)
-			de.ExpPop = append(de.ExpPop, matchedDataSet.expPop[i].Value)
-		}
-		scc.Data = de
+	switch dataType {
+	case "CTCRecord":
+		dataSet, err = deriveCTCInputData(scc, qrPtr, statisticType)
+	case "ScalarRecord":
+		dataSet, err = deriveScalarInputData(scc, qrPtr, statisticType)
+	case "PreCalcRecord":
+		dataSet, err = derivePreCalcInputData(scc, qrPtr, statisticType)
+	default:
+		err = fmt.Errorf("TwoSampleTTestBuilder DeriveInputData unsupported data type: %q", dataType)
+	}
+	// match the unmatched DataSet
+	matchedDataSet, err = GetMatchedDataSet(dataSet)
+	// convert matched DataSet to DerivedDataElement
+	var de DerivedDataElement
+	de.CtlPop = make([]float64, len(matchedDataSet.ctlPop))
+	de.ExpPop = make([]float64, len(matchedDataSet.expPop))
+	for i := 0; i < len(matchedDataSet.ctlPop); i++ {
+		de.CtlPop = append(de.CtlPop, matchedDataSet.ctlPop[i].Value)
+		de.ExpPop = append(de.ExpPop, matchedDataSet.expPop[i].Value)
+	}
+	scc.Data = de
 	return err
 }
 
@@ -222,14 +224,14 @@ func (scc *ScorecardCell) ComputeSignificance() error {
 		return errors.New(fmt.Sprint("TwoSampleTTestBuilder ComputeSignificance - no data"))
 	}
 	// alternate hypothesis is locationDiffers - i.e. null hypothesis is equality.
-	var derivedData DerivedDataElement  = scc.Data
+	var derivedData DerivedDataElement = scc.Data
 	alt := stats.LocationDiffers
 	// If μ0 is non-zero, this tests if the average of the difference
 	// is significantly different from μ0, we assume a zero μ0.
 	μ0 := 0.0
 	if errs := validate.Var(derivedData.CtlPop, "required"); errs != nil {
 		log.Print(errs)
-		*scc.ValuePtr = -9999  // have to dereference valuePtr - just because
+		*scc.ValuePtr = -9999 // have to dereference valuePtr - just because
 		return errors.New(fmt.Sprint("TwoSampleTTestBuilder ComputeSignificance", errs))
 	}
 	if errs := validate.Var(derivedData.ExpPop, "required"); errs != nil {
@@ -246,7 +248,7 @@ func (scc *ScorecardCell) ComputeSignificance() error {
 		meanExp := stats.Mean(derivedData.ExpPop)
 		difference := (meanCtl - meanExp)
 		scc.Pvalue = ret.P
-		 // have to dereference valuePtr - just because
+		// have to dereference valuePtr - just because
 		*scc.ValuePtr, err = deriveValue(scc, difference, ret.P)
 		//scc.Value = &v
 		if err != nil {
@@ -256,14 +258,13 @@ func (scc *ScorecardCell) ComputeSignificance() error {
 		}
 	} else {
 		log.Print(err)
-		scc.Pvalue = -9999 // pvalue is not a pointer
+		scc.Pvalue = -9999    // pvalue is not a pointer
 		*scc.ValuePtr = -9999 // have to dereference valuePtr - just because
 		//scc.Value = &v
 		return errors.New(fmt.Sprint("TwoSampleTTestBuilder ComputeSignificance", err))
 	}
 	return nil // no errors
 }
-
 
 // return the internal value that has been derived
 func (scc *ScorecardCell) GetValue() int {
@@ -276,7 +277,7 @@ func NewTwoSampleTTestBuilder() *ScorecardCell {
 	validate = validator.New()
 	return &ScorecardCell{}
 }
-func (scc *ScorecardCell)SetValuePtr(valuePtr int) error {
+func (scc *ScorecardCell) SetValuePtr(valuePtr int) error {
 	if errs := validate.Var(valuePtr, "required"); errs != nil {
 		log.Print(errs)
 		var errorVal int = -9999
@@ -287,8 +288,7 @@ func (scc *ScorecardCell)SetValuePtr(valuePtr int) error {
 	return nil
 }
 
-
-func (scc *ScorecardCell)Build(qrPtr *QueryResult, statisticType string, dataType string) error {
+func (scc *ScorecardCell) Build(qrPtr *QueryResult, statisticType string, dataType string) error {
 	//DerivePreCalcInputData(ctlQR PreCalcRecords, expQR PreCalcRecords, statisticType string)
 	// build the input data elements and
 	// for all the input elements fire off a thread to do the compute
@@ -309,7 +309,7 @@ func (scc *ScorecardCell)Build(qrPtr *QueryResult, statisticType string, dataTyp
 	if err != nil {
 		return errors.New(fmt.Sprint("mysql_director - build - SetInputData - error message : ", err))
 	}
-	 // computes the significance for the data derived in DeriveInputData and stored in cellPtr.data
+	// computes the significance for the data derived in DeriveInputData and stored in cellPtr.data
 	err = scc.ComputeSignificance()
 	if err != nil {
 		return errors.New(fmt.Sprint("mysql_director - build - ComputeSignificance - error message : ", err))
@@ -318,4 +318,3 @@ func (scc *ScorecardCell)Build(qrPtr *QueryResult, statisticType string, dataTyp
 	// upsert the document
 	return nil
 }
-

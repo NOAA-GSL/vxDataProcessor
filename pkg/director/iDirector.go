@@ -1,4 +1,5 @@
 package director
+
 /*
 A director holds the database connection where the actual control and
 experimental data resides. For our legacy apps this is the mysql database.
@@ -23,13 +24,14 @@ import (
 // but mysql probably only user, password, and
 // host (which is actually a connection string including host and port)
 type DbCredentials struct {
-	user string
-	password string
-	host string
-	bucket string
-	scope string
+	user       string
+	password   string
+	host       string
+	bucket     string
+	scope      string
 	collection string
-  }
+}
+
 // see https://bitfieldconsulting.com/golang/map-string-interface
 // for an explanation of any (map[string]interface{} or map[string]any)
 // This is a way to define a map with a non defined structure.
@@ -37,9 +39,9 @@ type ScorecardBlock map[string]any
 
 type Director struct {
 	mysqlCredentials DbCredentials
-	db *sql.DB
-	queryBlock ScorecardBlock
-	resultBlock ScorecardBlock
+	db               *sql.DB
+	queryBlock       ScorecardBlock
+	resultBlock      ScorecardBlock
 }
 
 type DirectorInterface interface {
@@ -54,5 +56,3 @@ func GetDirector(directorType string, mysqlCredentials DbCredentials) (*Director
 		return nil, fmt.Errorf("Director GetDirector unsupported directorType: %q", directorType)
 	}
 }
-
-

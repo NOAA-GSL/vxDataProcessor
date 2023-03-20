@@ -9,7 +9,7 @@ import (
 // these are floats because of the division in the CalculateStatCTC func
 type CTCRecord struct {
 	Hit  float32
-	Miss  float32
+	Miss float32
 	Fa   float32
 	Cn   float32
 	Time int64
@@ -49,39 +49,39 @@ There is also a time matching function. These functions are used by the builder 
 func CalculateStatCTC(hit float32, fa float32, miss float32, cn float32, statistic string) (float32, error) {
 	var err error
 	var value float32
-  validate = validator.New()
-  if err = validate.Var(hit, "gte=0"); err != nil {
-    value = 0
+	validate = validator.New()
+	if err = validate.Var(hit, "gte=0"); err != nil {
+		value = 0
 		return value, fmt.Errorf("builder_stats calculateStatCTC %q", err)
 	}
 	if err = validate.Var(fa, "gte=0"); err != nil {
-    value = 0
+		value = 0
 		return value, fmt.Errorf("builder_stats calculateStatCTC %q", err)
 	}
 	if err = validate.Var(cn, "gte=0"); err != nil {
-    value = 0
+		value = 0
 		return value, fmt.Errorf("builder_stats calculateStatCTC %q", err)
 	}
 	if err = validate.Var(miss, "gte=0"); err != nil {
-    value = 0
+		value = 0
 		return value, fmt.Errorf("builder_stats calculateStatCTC %q", err)
 	}
 	if err = validate.Var(statistic, "gte=0"); err != nil {
-    value = 0
-    return value, fmt.Errorf("builder_stats calculateStatCTC %q", err)
+		value = 0
+		return value, fmt.Errorf("builder_stats calculateStatCTC %q", err)
 	}
 
-  switch statistic {
+	switch statistic {
 	case "TSS (True Skill Score)": //radar
 		value = ((hit*cn - fa*miss) / ((hit + miss) * (fa + cn))) * 100
 	// some PODy measures look for a value over a threshold, some look for under
 	case "PODy (POD of value < threshold)": //ceiling
-    value = hit / (hit + miss) * 100
+		value = hit / (hit + miss) * 100
 	case "PODy (POD of value > threshold)": //radar
 		value = hit / (hit + miss) * 100
 	// some PODn measures look for a value under a threshold, some look for over
 	case "PODn (POD of value > threshold)": //ceiling
-    value = cn / (cn + fa) * 100
+		value = cn / (cn + fa) * 100
 	case "PODn (POD of value < threshold)": // radar
 		value = cn / (cn + fa) * 100
 	case "FAR (False Alarm Ratio)": // radar
@@ -94,15 +94,15 @@ func CalculateStatCTC(hit float32, fa float32, miss float32, cn float32, statist
 		value = (hit - ((hit + fa) * (hit + miss) / (hit + fa + miss + cn))) / ((hit + fa + miss) - ((hit + fa) * (hit + miss) / (hit + fa + miss + cn))) * 100
 	default:
 		err = fmt.Errorf(fmt.Sprintf("builder_stats.calculateStatCTC: %q %q", "Invalid statistic:", statistic))
-    return 0, err
+		return 0, err
 	}
-  if math.IsNaN(float64(value)){
-    err = fmt.Errorf("builder_stats.calculateStatCTC value is NaN")
-  }
-  if math.IsInf(float64(value),0) {
-    err = fmt.Errorf("builder_stats.calculateStatCTC value is Infinity")
-  }
-  return value, err
+	if math.IsNaN(float64(value)) {
+		err = fmt.Errorf("builder_stats.calculateStatCTC value is NaN")
+	}
+	if math.IsInf(float64(value), 0) {
+		err = fmt.Errorf("builder_stats.calculateStatCTC value is Infinity")
+	}
+	return value, err
 }
 
 // calculates the statistic for scalar partial sums plots
@@ -164,29 +164,29 @@ func GetMatchedDataSet(dataSet DataSet) (DataSet, error) {
 		}
 	}()
 
-		for {
-			if dataSet.ctlPop[indexCtl].Time == dataSet.expPop[indexExp].Time {
-				// time matches and valid values so append to result
-				result.ctlPop[resultIndex] = dataSet.ctlPop[indexCtl]
-				result.expPop[resultIndex] = dataSet.expPop[indexExp]
+	for {
+		if dataSet.ctlPop[indexCtl].Time == dataSet.expPop[indexExp].Time {
+			// time matches and valid values so append to result
+			result.ctlPop[resultIndex] = dataSet.ctlPop[indexCtl]
+			result.expPop[resultIndex] = dataSet.expPop[indexExp]
+			indexCtl++
+			indexExp++
+		} else {
+			// times did not match - increment the earliest one
+			if result.ctlPop[indexCtl].Time < result.expPop[indexExp].Time {
+				// increment the ctlPop index
 				indexCtl++
-				indexExp++
 			} else {
-				// times did not match - increment the earliest one
-				if result.ctlPop[indexCtl].Time < result.expPop[indexExp].Time {
-					// increment the ctlPop index
-					indexCtl++
-				} else {
-					// increment the expPop index
-					indexExp++
-				}
-				// continue with new index
-				continue
+				// increment the expPop index
+				indexExp++
 			}
-			resultIndex++
-			if resultIndex >= maxLen {
-				break
-			}
+			// continue with new index
+			continue
 		}
+		resultIndex++
+		if resultIndex >= maxLen {
+			break
+		}
+	}
 	return result, err
 }

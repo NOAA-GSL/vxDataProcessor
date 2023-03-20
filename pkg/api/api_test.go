@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/NOAA-GSL/vxDataProcessor/pkg/api/jobstore"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -74,4 +75,59 @@ func TestJobsIDEndpoint(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Equal(t, `{"id":0,"docid":"myid1","status":"created"}`, w.Body.String())
+}
+
+func TestWorker(t *testing.T) {
+	t.Run("Test that jobs are sent to the proc function", func(t *testing.T) {
+		jobs := make(chan jobstore.Job)
+		status := make(chan string)
+		job := jobstore.Job{
+			ID:     1,
+			DocID:  "foo",
+			Status: "created",
+		}
+		proc := &TestProcess{}
+		go Worker(1, proc, jobs, status)
+		jobs <- job
+
+		for {
+			select {
+			case st := <-status:
+				proc.lock.Lock()
+				defer proc.lock.Unlock()
+				assert.Equal(t, "foo", proc.DocID)
+				assert.Equal(t, true, proc.Processed)
+				assert.Equal(t, "Finished foo", st)
+				return
+			default:
+				continue
+			}
+		}
+	})
+
+	t.Run("Test that we handle errors", func(t *testing.T) {
+		jobs := make(chan jobstore.Job)
+		status := make(chan string)
+		job := jobstore.Job{
+			ID:     1,
+			DocID:  "foo",
+			Status: "created",
+		}
+		proc := &TestProcess{
+			TriggerError: true,
+		}
+		go Worker(2, proc, jobs, status)
+		jobs <- job
+
+		for {
+			select {
+			case st := <-status:
+				assert.Equal(t, "Unable to process foo", st)
+				assert.Equal(t, false, proc.Processed)
+				return
+			default:
+				continue
+			}
+		}
+	})
 }

@@ -16,7 +16,8 @@ func main() {
 
 	// setup worker pool to recieve jobs to pass on to process and to send status updates
 	for w := 1; w <= 5; w++ {
-		go api.Worker(w, jobs, status)
+		proc := &api.TestProcess{}
+		go api.Worker(w, proc, jobs, status)
 	}
 
 	router := api.SetupRouter(js)

@@ -3,7 +3,7 @@ package api
 import (
 	"fmt"
 	"net/http"
-	"time"
+	"sync"
 
 	"github.com/NOAA-GSL/vxDataProcessor/pkg/api/jobstore"
 	"github.com/gin-gonic/gin"
@@ -27,22 +27,53 @@ func SetupRouter(js *jobstore.JobStore) *gin.Engine {
 	return router
 }
 
-func Worker(id int, jobs <-chan jobstore.Job, status chan<- string) {
+// Processor is an interface used to inject calculation functions into the Worker
+type Processor interface {
+	Run(string) error
+}
+
+// testProcess Implements the Calculator interface with some hooks for triggering testing behavior
+// TODO - this will be moved to the _test file once we have an actual processor to use
+type TestProcess struct {
+	lock         sync.Mutex
+	DocID        string
+	Processed    bool
+	TriggerError bool
+}
+
+func (tc *TestProcess) Run(str string) error {
+	tc.lock.Lock()
+	defer tc.lock.Unlock()
+	if tc.TriggerError == true {
+		return fmt.Errorf("Unable to process %v", tc.DocID)
+	}
+	tc.DocID = str
+	fmt.Println("Processed", tc.DocID)
+	tc.Processed = true
+	return nil
+}
+
+// Worker receives jobs on a channel, processes them, and reports the status on a return channel
+func Worker(id int, proc Processor, jobs <-chan jobstore.Job, status chan<- string) {
 	for {
 		job := <-jobs // block until we get a job
-		fmt.Println("worker", id, "started  docID", job.DocID)
+		fmt.Println("Worker", id, "started docID", job.DocID)
 		// status <- "processing" // We'll need a way to associate these with a job
 
 		// Do work
 		fmt.Println("Worker", id, "processing docID", job.DocID)
-		time.Sleep(time.Second)
+		err := proc.Run(job.DocID)
+		if err != nil {
+			status <- fmt.Sprintf("Unable to process %v", job.DocID)
+		}
 
 		// report status
-		// status <- "finished"
-		fmt.Println("worker", id, "finished docID", job.DocID)
+		status <- fmt.Sprintf("Finished %v", job.DocID)
+		fmt.Println("Worker", id, "finished docID", job.DocID)
 	}
 }
 
+// Dispatch pulls jobs out of the given jobstore in order and places them in a channel
 func Dispatch(jobChan chan<- jobstore.Job, js *jobstore.JobStore) {
 	for {
 		n := 2 // number of jobs to pull off the queue

@@ -44,7 +44,7 @@ type TestProcess struct {
 func (tc *TestProcess) Run(str string) error {
 	tc.lock.Lock()
 	defer tc.lock.Unlock()
-	if tc.TriggerError == true {
+	if tc.TriggerError {
 		return fmt.Errorf("Unable to process %v", tc.DocID)
 	}
 	tc.DocID = str

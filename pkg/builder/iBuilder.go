@@ -49,31 +49,32 @@ type DerivedDataElement struct {
 	ExpPop []float64
 }
 
-type DerivedData []DerivedDataElement
-
 // -1 or 1
 type GoodnessPolarity int
 type Threshold float64
 type ScorecardCell struct {
-	data             DerivedDataElement
+	Data             DerivedDataElement
 	goodnessPolarity GoodnessPolarity
 	majorThreshold   Threshold
 	minorThreshold   Threshold
-	pvalue           float64
-	valuePtr            *int
+	Pvalue           float64
+	ValuePtr            *int
 }
 
+type QueryResult struct {
+	CtlData *([]interface{})
+	ExpData *([]interface{})
+}
 
-type QueryResult = *[]struct{} // either CTCRecord or ScalarRecord or PreCalcRecord
 type ScorecardCellBuilder interface {
 	SetGoodnessPolarity(GoodnessPolarity)
 	SetMajorThreshold(Threshold)
 	SetMinorThreshold(Threshold)
-	DeriveInputData(input QueryResult, statisticType string)
+	DeriveCTCInputData(QueryResult QueryResult, statisticType string, dataType string)
 	ComputeSignificance(scc *ScorecardCell)
 	SetValuePtr(valuePtr *int)
 	GetValue()
-	Build(cellPtr *ScorecardCell, inputData struct{})
+	Build(qr QueryResult, statisticType string, dataType string)
 }
 
 func GetBuilder(builderType string) *ScorecardCell {

@@ -1,4 +1,4 @@
-package builder_stats
+package builder
 
 import (
 	"fmt"
@@ -6,26 +6,32 @@ import (
 	"math"
 )
 
-type CTCRecord = struct {
-	hit  int
-	miss int
-	fa   int
-	cn   int
-	time int64
+// these are floats because of the division in the CalculateStatCTC func
+type CTCRecord struct {
+	Hit  float32
+	Miss  float32
+	Fa   float32
+	Cn   float32
+	Time int64
 }
-type ScalarRecord = struct {
-	squareDiffSum   float64
+type CTCRecords = []CTCRecord
+
+type ScalarRecord struct {
+	SquareDiffSum   float64
 	NSum            float64
-	obsModelDiffSum float64
-	modelSum        float64
-	obsSum          float64
-	absSum          float64
-	time            float64
+	ObsModelDiffSum float64
+	ModelSum        float64
+	ObsSum          float64
+	AbsSum          float64
+	Time            int64
 }
+type ScalarRecords []ScalarRecord
+
 type PreCalcRecord struct {
-	value float64
-	time  int64
+	Value float64
+	Time  int64
 }
+type PreCalcRecords []PreCalcRecord
 
 type DataSet struct {
 	ctlPop []PreCalcRecord
@@ -40,7 +46,7 @@ There is also a time matching function. These functions are used by the builder 
 */
 
 // calculates the statistic for ctc plots
-func calculateStatCTC(hit float32, fa float32, miss float32, cn float32, statistic string) (float32, error) {
+func CalculateStatCTC(hit float32, fa float32, miss float32, cn float32, statistic string) (float32, error) {
 	var err error
 	var value float32
   validate = validator.New()
@@ -100,7 +106,7 @@ func calculateStatCTC(hit float32, fa float32, miss float32, cn float32, statist
 }
 
 // calculates the statistic for scalar partial sums plots
-func calculateStatScalar(squareDiffSum, NSum, obsModelDiffSum, modelSum, obsSum, absSum float64, statistic string) (float64, error) {
+func CalculateStatScalar(squareDiffSum, NSum, obsModelDiffSum, modelSum, obsSum, absSum float64, statistic string) (float64, error) {
 	var err error
 	var value float64
 	if err = validate.Var(squareDiffSum, "required"); err != nil {
@@ -143,11 +149,13 @@ func calculateStatScalar(squareDiffSum, NSum, obsModelDiffSum, modelSum, obsSum,
 // function for removing unmatched data from a dataset containing two curves
 // The intersection of the ctlData and the expData based on the time elements.
 // This function assumes that the two slices are sorted by the time element (which is an epoch)
-func GetMatchedDataSet(data DataSet) (DataSet, error) {
+// The DataSet consists of time and value elements only, since the statistical value has
+// already been derived
+func GetMatchedDataSet(dataSet DataSet) (DataSet, error) {
 	var result DataSet
 	var indexCtl int = 0
 	var indexExp int = 0
-	var maxLen = int(math.Max(float64(len(data.ctlPop)), float64(len(data.expPop))))
+	var maxLen = int(math.Max(float64(len(dataSet.ctlPop)), float64(len(dataSet.expPop))))
 	var resultIndex int = 0
 	var err error = nil
 	defer func() {
@@ -156,31 +164,29 @@ func GetMatchedDataSet(data DataSet) (DataSet, error) {
 		}
 	}()
 
-	for {
-		if data.ctlPop[indexCtl].time == data.expPop[indexExp].time {
-			// time matches and valid values so append to result
-			result.ctlPop[resultIndex].time = data.ctlPop[indexCtl].time
-			result.ctlPop[resultIndex].value = data.ctlPop[indexCtl].value
-			result.expPop[resultIndex].time = data.expPop[indexCtl].time
-			result.expPop[resultIndex].value = data.expPop[indexCtl].value
-			// increment indexes
-			indexCtl++
-			indexExp++
-		} else {
-			// times did not match - increment the earliest one
-			if data.ctlPop[indexCtl].time < data.expPop[indexExp].time {
-				// increment the ctlPop index
+		for {
+			if dataSet.ctlPop[indexCtl].Time == dataSet.expPop[indexExp].Time {
+				// time matches and valid values so append to result
+				result.ctlPop[resultIndex] = dataSet.ctlPop[indexCtl]
+				result.expPop[resultIndex] = dataSet.expPop[indexExp]
 				indexCtl++
-			} else {
 				indexExp++
+			} else {
+				// times did not match - increment the earliest one
+				if result.ctlPop[indexCtl].Time < result.expPop[indexExp].Time {
+					// increment the ctlPop index
+					indexCtl++
+				} else {
+					// increment the expPop index
+					indexExp++
+				}
+				// continue with new index
+				continue
 			}
-			// continue with new index
-			continue
+			resultIndex++
+			if resultIndex >= maxLen {
+				break
+			}
 		}
-		resultIndex++
-		if resultIndex >= maxLen {
-			break
-		}
-	}
 	return result, err
 }

@@ -1,4 +1,4 @@
-package builder_stats
+package builder
 
 import (
 	"fmt"
@@ -14,10 +14,10 @@ func getDataSet(epoch int64, ctlValues []float64, expValues []float64) DataSet {
 	var tmpc = make([]PreCalcRecord, ctlLen)
 	var tmpe = make([]PreCalcRecord, expLen)
 	for i := 0; i < ctlLen; i++ {
-		tmpc[i] = PreCalcRecord{time: epoch + int64(i), value: ctlValues[i]}
+		tmpc[i] = PreCalcRecord{Time: epoch + int64(i), Value: ctlValues[i]}
 	}
 	for i := 0; i < expLen; i++ {
-		tmpe[i] = PreCalcRecord{time: epoch + int64(i), value: expValues[i]}
+		tmpe[i] = PreCalcRecord{Time: epoch + int64(i), Value: expValues[i]}
 	}
 	var dataSet = DataSet{
 		ctlPop: tmpc,
@@ -302,7 +302,7 @@ func Test_calculateStatScalar(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			var got float64
 			var err error
-			got, err = calculateStatScalar(tt.args.squareDiffSum, tt.args.NSum, tt.args.obsModelDiffSum, tt.args.modelSum, tt.args.obsSum, tt.args.absSum, tt.args.statistic)
+			got, err = CalculateStatScalar(tt.args.squareDiffSum, tt.args.NSum, tt.args.obsModelDiffSum, tt.args.modelSum, tt.args.obsSum, tt.args.absSum, tt.args.statistic)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("calculateStatScalar() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -498,7 +498,7 @@ func Test_calculateStatCTC(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var delta float64 = 0.005
-			got, err := calculateStatCTC(tt.args.hit, tt.args.fa, tt.args.miss, tt.args.cn, tt.args.statistic)
+			got, err := CalculateStatCTC(tt.args.hit, tt.args.fa, tt.args.miss, tt.args.cn, tt.args.statistic)
 			if tt.wantErr {
 				assert.Errorf(t, err, "calculateStatCTC() should have returned error but did not - got %v", got)
 			} else {

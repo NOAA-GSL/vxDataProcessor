@@ -131,3 +131,23 @@ func TestWorker(t *testing.T) {
 		}
 	})
 }
+
+func TestDispatch(t *testing.T) {
+	t.Run("Test that jobs are dispatched", func(t *testing.T) {
+		jobs := make(chan jobstore.Job)
+		js := jobstore.NewJobStore()
+		_, _ = js.CreateJob("foo1")
+
+		go Dispatch(jobs, js)
+
+		for {
+			select {
+			case j := <-jobs:
+				assert.Equal(t, "foo1", j.DocID)
+				return
+			default:
+				continue
+			}
+		}
+	})
+}

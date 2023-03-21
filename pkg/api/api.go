@@ -45,16 +45,16 @@ type TestProcess struct {
 }
 
 // Run is a dummy method for testing that satisfies the Processor interface
-func (tc *TestProcess) Run(str string) error {
+func (tp *TestProcess) Run(str string) error {
 	// FIXME - this will be moved to the _test file once we have a real processor to use
-	tc.lock.Lock()
-	defer tc.lock.Unlock()
-	if tc.TriggerError {
-		return fmt.Errorf("Unable to process %v", tc.DocID)
+	tp.lock.Lock()
+	defer tp.lock.Unlock()
+	if tp.TriggerError {
+		return fmt.Errorf("TestProcess - Unable to process %v", tp.DocID)
 	}
-	tc.DocID = str
-	fmt.Println("Processed", tc.DocID)
-	tc.Processed = true
+	tp.DocID = str
+	fmt.Println("TestProcess - Processed", tp.DocID)
+	tp.Processed = true
 	return nil
 }
 

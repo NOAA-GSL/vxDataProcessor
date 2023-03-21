@@ -8,10 +8,11 @@ import (
 func main() {
 	// TODO - benchmark if it'd be better if these channels were buffered. They will block until a reciever frees up.
 	jobs := make(chan jobstore.Job)
-	status := make(chan string) // FIXME: this channel needs a status and jobID to associate with a Job
+	status := make(chan jobstore.Job)
 	js := jobstore.NewJobStore()
 
 	go api.Dispatch(jobs, js)
+	go api.StatusUpdater(status, js)
 
 	// create a pool of workers
 	for w := 1; w <= 5; w++ {

@@ -61,8 +61,8 @@ func Test_jobServer_getAllJobsHandler(t *testing.T) {
 
 	t.Run("Test getting a jobstore", func(t *testing.T) {
 		want := []jobstore.Job{
-			{ID: 0, DocID: "foo", Status: "created"},
-			{ID: 1, DocID: "bar", Status: "created"},
+			{ID: 0, DocID: "foo", Status: jobstore.StatusCreated},
+			{ID: 1, DocID: "bar", Status: jobstore.StatusCreated},
 		}
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)

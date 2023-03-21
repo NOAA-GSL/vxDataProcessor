@@ -47,11 +47,7 @@ func randomString(n int) string {
 func TestJobStore_CreateJob(t *testing.T) {
 	t.Run("Test creating a job", func(t *testing.T) {
 		js := NewJobStore()
-		want := Job{
-			ID:     0,
-			DocID:  "foo",
-			Status: "created",
-		}
+		want := Job{ID: 0, DocID: "foo", Status: StatusCreated}
 
 		_, _ = js.CreateJob("foo")
 
@@ -63,11 +59,7 @@ func TestJobStore_CreateJob(t *testing.T) {
 
 	t.Run("Test creating a second job", func(t *testing.T) {
 		js := NewJobStore()
-		want := Job{
-			ID:     1,
-			DocID:  "bar",
-			Status: "created",
-		}
+		want := Job{ID: 1, DocID: "bar", Status: StatusCreated}
 
 		_, _ = js.CreateJob("foo")
 		_, _ = js.CreateJob("bar")
@@ -135,11 +127,7 @@ func TestJobStore_GetJob(t *testing.T) {
 		js := NewJobStore()
 		_, _ = js.CreateJob("foo")
 
-		want := Job{
-			ID:     0,
-			DocID:  "foo",
-			Status: "created",
-		}
+		want := Job{ID: 0, DocID: "foo", Status: StatusCreated}
 		got, _ := js.GetJob(0)
 		if !reflect.DeepEqual(got, want) {
 			t.Errorf("JobStore.GetJob() = %v, want %v", got, want)
@@ -151,11 +139,7 @@ func TestJobStore_GetJob(t *testing.T) {
 		_, _ = js.CreateJob("foo")
 		_, _ = js.CreateJob("bar")
 
-		want := Job{
-			ID:     0,
-			DocID:  "foo",
-			Status: "created",
-		}
+		want := Job{ID: 0, DocID: "foo", Status: StatusCreated}
 		got, _ := js.GetJob(0)
 		if !reflect.DeepEqual(got, want) {
 			t.Errorf("JobStore.GetJob() = %v, want %v", got, want)
@@ -170,8 +154,8 @@ func TestJobStore_GetAllJobs(t *testing.T) {
 		_, _ = js.CreateJob("bar")
 
 		want := []Job{
-			{ID: 0, DocID: "foo", Status: "created"},
-			{ID: 1, DocID: "bar", Status: "created"},
+			{ID: 0, DocID: "foo", Status: StatusCreated},
+			{ID: 1, DocID: "bar", Status: StatusCreated},
 		}
 		got := js.GetAllJobs()
 		assert.ElementsMatch(t, want, got)
@@ -186,12 +170,12 @@ func TestJobStore_GetJobsToProcess(t *testing.T) {
 
 		assert.Equal(t, 0, js.nextIDToProcess)
 
-		want := []Job{{ID: 0, DocID: "foo", Status: "created"}}
+		want := []Job{{ID: 0, DocID: "foo", Status: StatusCreated}}
 		got, _ := js.GetJobsToProcess(1)
 		assert.Equal(t, want, got)
 		assert.Equal(t, 1, js.nextIDToProcess)
 
-		want2 := []Job{{ID: 1, DocID: "bar", Status: "created"}}
+		want2 := []Job{{ID: 1, DocID: "bar", Status: StatusCreated}}
 		got2, _ := js.GetJobsToProcess(1)
 		assert.Equal(t, want2, got2)
 		assert.Equal(t, 2, js.nextIDToProcess)
@@ -205,17 +189,20 @@ func TestJobStore_GetJobsToProcess(t *testing.T) {
 		_, _ = js.CreateJob("bas")
 		_, _ = js.CreateJob("fred")
 
-		want := []Job{{ID: 0, DocID: "foo", Status: "created"}}
+		want := []Job{{ID: 0, DocID: "foo", Status: StatusCreated}}
 		got, _ := js.GetJobsToProcess(1)
 		assert.Equal(t, want, got)
 		assert.Equal(t, 1, js.nextIDToProcess)
 
-		want2 := []Job{{ID: 1, DocID: "bar", Status: "created"}}
+		want2 := []Job{{ID: 1, DocID: "bar", Status: StatusCreated}}
 		got2, _ := js.GetJobsToProcess(1)
 		assert.Equal(t, want2, got2)
 		assert.Equal(t, 2, js.nextIDToProcess)
 
-		want3 := []Job{{ID: 2, DocID: "baz", Status: "created"}, {ID: 3, DocID: "bas", Status: "created"}}
+		want3 := []Job{
+			{ID: 2, DocID: "baz", Status: StatusCreated},
+			{ID: 3, DocID: "bas", Status: StatusCreated},
+		}
 		got3, _ := js.GetJobsToProcess(2)
 		assert.Equal(t, want3, got3)
 		assert.Equal(t, 4, js.nextIDToProcess)
@@ -225,7 +212,7 @@ func TestJobStore_GetJobsToProcess(t *testing.T) {
 		js := NewJobStore()
 		_, _ = js.CreateJob("foo")
 
-		want := []Job{{ID: 0, DocID: "foo", Status: "created"}}
+		want := []Job{{ID: 0, DocID: "foo", Status: StatusCreated}}
 		got, _ := js.GetJobsToProcess(1)
 		assert.Equal(t, want, got)
 		assert.Equal(t, 1, js.nextIDToProcess)
@@ -243,12 +230,12 @@ func TestJobStore_GetJobsToProcess(t *testing.T) {
 		_, _ = js.CreateJob("foo")
 		_, _ = js.CreateJob("bar")
 
-		want := []Job{{ID: 0, DocID: "foo", Status: "created"}}
+		want := []Job{{ID: 0, DocID: "foo", Status: StatusCreated}}
 		got, _ := js.GetJobsToProcess(1)
 		assert.Equal(t, want, got)
 		assert.Equal(t, 1, js.nextIDToProcess)
 
-		want2 := []Job{{ID: 1, DocID: "bar", Status: "created"}}
+		want2 := []Job{{ID: 1, DocID: "bar", Status: StatusCreated}}
 		got2, err := js.GetJobsToProcess(2)
 		if err != nil {
 			t.Errorf("Unexpected error %v", err.Error())
@@ -297,12 +284,12 @@ func TestJobStore_GetJobsToProcess(t *testing.T) {
 }
 
 func TestJobStore_updateJobStatus(t *testing.T) {
-	t.Run("Set to random string", func(t *testing.T) {
+	t.Run("Set to StatusProcessing", func(t *testing.T) {
 		js := NewJobStore()
 		_, _ = js.CreateJob("foo")
 
-		want := Job{ID: 0, DocID: "foo", Status: "mystatus"}
-		err := js.updateJobStatus(0, "mystatus")
+		want := Job{ID: 0, DocID: "foo", Status: StatusProcessing}
+		err := js.UpdateJobStatus(0, StatusProcessing)
 		if err != nil {
 			t.Errorf("JobStore.updateJobStatus() got an unexpected error: %v", err.Error())
 			return
@@ -319,7 +306,7 @@ func TestJobStore_updateJobStatus(t *testing.T) {
 		_, _ = js.CreateJob("foo")
 
 		want := "job with id=1 not found"
-		err := js.updateJobStatus(1, "mystatus")
+		err := js.UpdateJobStatus(1, StatusProcessing)
 		if err == nil {
 			t.Error("JobStore.updateJobStatus() didn't error as expected")
 			return

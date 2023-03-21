@@ -59,7 +59,7 @@ func (tc *TestProcess) Run(str string) error {
 }
 
 // Worker receives jobs on a channel, processes them, and reports the status on a return channel
-func Worker(id int, proc Processor, jobs <-chan jobstore.Job, status chan<- string) {
+func Worker(id int, proc Processor, jobs <-chan jobstore.Job, status chan<- jobstore.Job) {
 	for {
 		job := <-jobs // block until we get a job
 		fmt.Println("Worker", id, "started docID", job.DocID)
@@ -69,11 +69,15 @@ func Worker(id int, proc Processor, jobs <-chan jobstore.Job, status chan<- stri
 		fmt.Println("Worker", id, "processing docID", job.DocID)
 		err := proc.Run(job.DocID)
 		if err != nil {
-			status <- fmt.Sprintf("Unable to process %v", job.DocID)
+			job.Status = jobstore.StatusFailed
+			// status <- fmt.Sprintf("Unable to process %v", job.DocID)
+			status <- job
 		}
 
 		// report status
-		status <- fmt.Sprintf("Finished %v", job.DocID)
+		job.Status = jobstore.StatusCompleted
+		status <- job
+		// status <- fmt.Sprintf("Finished %v", job.DocID)
 		fmt.Println("Worker", id, "finished docID", job.DocID)
 	}
 }
@@ -97,3 +101,13 @@ func Dispatch(jobChan chan<- jobstore.Job, js *jobstore.JobStore) {
 	}
 }
 
+// StatusUpdater receives jobs to update in the given jobstore. It will block if the channel is empty.
+func StatusUpdater(statusChan <-chan jobstore.Job, js *jobstore.JobStore) {
+	for {
+		job := <-statusChan
+		err := js.UpdateJobStatus(job.ID, job.Status)
+		if err != nil {
+			fmt.Printf("Error - StatusUpdater: %v\n", err.Error())
+		}
+	}
+}

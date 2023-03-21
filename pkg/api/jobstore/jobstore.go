@@ -67,9 +67,9 @@ func (js *JobStatus) UnmarshalJSON(b []byte) error {
 
 // Job represents a single job in the JobStore
 type Job struct {
-	ID     int    `json:"id"`
-	DocID  string `json:"docid"`
-	Status string `json:"status"`
+	ID     int       `json:"id"`
+	DocID  string    `json:"docid"`
+	Status JobStatus `json:"status"` // Zero Value is "StatusCreated"
 }
 
 // FIXME - we'll want to handle removing Jobs from the JobStore so we don't
@@ -105,7 +105,7 @@ func (js *JobStore) CreateJob(docID string) (int, error) {
 	job := Job{
 		ID:     js.nextID,
 		DocID:  docID,
-		Status: "created", // what statuses do we want? Created, Processing, Finished, Failed?
+		Status: StatusCreated,
 	}
 
 	js.jobs[js.nextID] = job
@@ -163,36 +163,23 @@ func (js *JobStore) GetJobsToProcess(numJobs int) ([]Job, error) {
 	return jobsToProcess, nil
 }
 
-// updateJobStatus changes the status of the Job to the specified string or
-// returns an error if the Job doesn't exist.
-func (js *JobStore) updateJobStatus(id int, status string) error {
+// updateJobStatus changes the status of the Job to the specified JobStatus.
+//
+// It returns an error if the Job doesn't exist or if it's already been set to finished.
+func (js *JobStore) UpdateJobStatus(id int, status JobStatus) error {
 	js.lock.Lock()
 	defer js.lock.Unlock()
 
-	// FIXME - test if job is already set to "finished". If so, dissallow updating the status and return an error instead
-	j, ok := js.jobs[id]
+	job, ok := js.jobs[id]
 	if !ok {
 		return fmt.Errorf("job with id=%d not found", id)
 	}
-	j.Status = status
-	js.jobs[id] = j
+
+	if job.Status == StatusCompleted {
+		return fmt.Errorf("Job already marked as completed.")
+	}
+	job.Status = status
+
+	js.jobs[id] = job
 	return nil
-}
-
-// SetJobStatusProcessing sets the job status to processing or returns an
-// error if the Job doesn't exist.
-func (js *JobStore) SetJobStatusProcessing(id int) error {
-	return js.updateJobStatus(id, "processing")
-}
-
-// SetJobStatusCompleted sets the job status to completed or returns an
-// error if the Job doesn't exist.
-func (js *JobStore) SetJobStatusCompleted(id int) error {
-	return js.updateJobStatus(id, "completed")
-}
-
-// SetJobStatusFailed sets the job status to failed or returns an
-// error if the Job doesn't exist.
-func (js *JobStore) SetJobStatusFailed(id int) error {
-	return js.updateJobStatus(id, "failed")
 }

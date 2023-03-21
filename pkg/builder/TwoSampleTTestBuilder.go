@@ -33,6 +33,7 @@ will cause a return of 0.
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"github.com/aclements/go-moremath/stats"
 	"github.com/go-playground/validator/v10"
 	"log"
@@ -176,15 +177,13 @@ func derivePreCalcInputData(scc *ScorecardCell, qPtr *QueryResult, statisticType
 	// data is precalculated - don't need to derive stats
 	// have to use just the values to create the data set (type DataSet)
 	var ctlData PreCalcRecords
-	ctlData = make(PreCalcRecords, len(*(qPtr.CtlData)))
 	var expData PreCalcRecords
-	expData = make(PreCalcRecords, len(*(qPtr.ExpData)))
 
 	for i := 0; i < len(*(qPtr.CtlData)); i++ {
 		ctlData = append(ctlData, (*(qPtr.CtlData))[i].(PreCalcRecord))
 	}
-	for i := 0; i < len(expData); i++ {
-		expData = append(expData, (*(qPtr.CtlData))[i].(PreCalcRecord))
+	for i := 0; i < len(*(qPtr.ExpData)); i++ {
+		expData = append(expData, (*(qPtr.ExpData))[i].(PreCalcRecord))
 	}
 	// return the unmatched PreCalculated dataSet
 	dataSet = DataSet{ctlPop: ctlData, expPop: expData}
@@ -208,8 +207,6 @@ func (scc *ScorecardCell) DeriveInputData(qrPtr *QueryResult, statisticType stri
 	matchedDataSet, err = GetMatchedDataSet(dataSet)
 	// convert matched DataSet to DerivedDataElement
 	var de DerivedDataElement
-	de.CtlPop = make([]float64, len(matchedDataSet.ctlPop))
-	de.ExpPop = make([]float64, len(matchedDataSet.expPop))
 	for i := 0; i < len(matchedDataSet.ctlPop); i++ {
 		de.CtlPop = append(de.CtlPop, matchedDataSet.ctlPop[i].Value)
 		de.ExpPop = append(de.ExpPop, matchedDataSet.expPop[i].Value)
@@ -231,12 +228,14 @@ func (scc *ScorecardCell) ComputeSignificance() error {
 	μ0 := 0.0
 	if errs := validate.Var(derivedData.CtlPop, "required"); errs != nil {
 		log.Print(errs)
-		*scc.ValuePtr = -9999 // have to dereference valuePtr - just because
+		var v int = -9999
+		scc.ValuePtr = &v
 		return errors.New(fmt.Sprint("TwoSampleTTestBuilder ComputeSignificance", errs))
 	}
 	if errs := validate.Var(derivedData.ExpPop, "required"); errs != nil {
 		log.Print(errs)
-		*scc.ValuePtr = -9999 // have to dereference valuePtr - just because
+		var v int = -9999
+		scc.ValuePtr = &v
 		return errors.New(fmt.Sprint("TwoSampleTTestBuilder ComputeSignificance", errs))
 	}
 	//&TTestResult{N1: n1, N2: n2, T: t, DoF: dof, AltHypothesis: alt, P: p}
@@ -249,19 +248,29 @@ func (scc *ScorecardCell) ComputeSignificance() error {
 		difference := (meanCtl - meanExp)
 		scc.Pvalue = ret.P
 		// have to dereference valuePtr - just because
-		*scc.ValuePtr, err = deriveValue(scc, difference, ret.P)
-		//scc.Value = &v
+		var v int
+		v, err = deriveValue(scc, difference, ret.P)
+		scc.ValuePtr = &v
 		if err != nil {
 			log.Print(err)
 			//scc.Value = &v
 			return errors.New(fmt.Sprint("TwoSampleTTestBuilder ComputeSignificance - deriveValue error: ", err))
 		}
 	} else {
-		log.Print(err)
-		scc.Pvalue = -9999    // pvalue is not a pointer
-		*scc.ValuePtr = -9999 // have to dereference valuePtr - just because
-		//scc.Value = &v
-		return errors.New(fmt.Sprint("TwoSampleTTestBuilder ComputeSignificance", err))
+		if strings.Contains(fmt.Sprint(err), "zero variance") {
+			// we are not considering indentical sets to be errors
+			// set pval to 1 and value to 0
+			scc.Pvalue = 1
+			var v int = 0
+			scc.ValuePtr = &v
+			return nil
+		} else {
+			log.Print(err)
+			scc.Pvalue = -9999
+			var v int = -9999
+			scc.ValuePtr = &v
+			return errors.New(fmt.Sprint("TwoSampleTTestBuilder ComputeSignificance", err))
+		}
 	}
 	return nil // no errors
 }

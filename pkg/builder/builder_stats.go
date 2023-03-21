@@ -155,8 +155,8 @@ func GetMatchedDataSet(dataSet DataSet) (DataSet, error) {
 	var result DataSet
 	var indexCtl int = 0
 	var indexExp int = 0
-	var maxLen = int(math.Max(float64(len(dataSet.ctlPop)), float64(len(dataSet.expPop))))
-	var resultIndex int = 0
+	var lenCtl = len(dataSet.ctlPop)
+	var lenExp = len(dataSet.expPop)
 	var err error = nil
 	defer func() {
 		if r := recover(); r != nil {
@@ -167,13 +167,13 @@ func GetMatchedDataSet(dataSet DataSet) (DataSet, error) {
 	for {
 		if dataSet.ctlPop[indexCtl].Time == dataSet.expPop[indexExp].Time {
 			// time matches and valid values so append to result
-			result.ctlPop[resultIndex] = dataSet.ctlPop[indexCtl]
-			result.expPop[resultIndex] = dataSet.expPop[indexExp]
+			result.ctlPop = append(result.ctlPop, dataSet.ctlPop[indexCtl])
+			result.expPop = append(result.expPop, dataSet.expPop[indexExp])
 			indexCtl++
 			indexExp++
 		} else {
 			// times did not match - increment the earliest one
-			if result.ctlPop[indexCtl].Time < result.expPop[indexExp].Time {
+			if dataSet.ctlPop[indexCtl].Time < dataSet.expPop[indexExp].Time {
 				// increment the ctlPop index
 				indexCtl++
 			} else {
@@ -183,8 +183,7 @@ func GetMatchedDataSet(dataSet DataSet) (DataSet, error) {
 			// continue with new index
 			continue
 		}
-		resultIndex++
-		if resultIndex >= maxLen {
+		if indexCtl >= lenCtl || indexExp >= lenExp {
 			break
 		}
 	}

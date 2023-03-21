@@ -33,6 +33,7 @@ func TestNewJobStore(t *testing.T) {
 	}
 }
 
+// randomString is a test helper that returns a random string of the requested length
 func randomString(n int) string {
 	const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 

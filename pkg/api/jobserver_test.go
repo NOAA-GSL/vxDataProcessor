@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewJobServer2(t *testing.T) {
+func TestNewJobServer(t *testing.T) {
 	filledJS := jobstore.NewJobStore()
 	_, _ = filledJS.CreateJob("foo")
 

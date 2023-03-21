@@ -6,15 +6,14 @@ import (
 )
 
 func main() {
+	// TODO - benchmark if it'd be better if these channels were buffered. They will block until a reciever frees up.
 	jobs := make(chan jobstore.Job)
-	status := make(chan string) // this channel needs a status and jobID
+	status := make(chan string) // FIXME: this channel needs a status and jobID to associate with a Job
 	js := jobstore.NewJobStore()
 
-	// setup dispatcher to send jobs from queue to worker pool
-	// https://webdevstation.com/posts/simple-queue-implementation-in-golang/
 	go api.Dispatch(jobs, js)
 
-	// setup worker pool to recieve jobs to pass on to process and to send status updates
+	// create a pool of workers
 	for w := 1; w <= 5; w++ {
 		proc := &api.TestProcess{}
 		go api.Worker(w, proc, jobs, status)

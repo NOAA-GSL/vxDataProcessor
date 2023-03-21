@@ -121,13 +121,12 @@ func (js *JobStore) updateJobStatus(id int, status string) error {
 
 	// FIXME - test if job is already set to "finished". If so, dissallow updating the status and return an error instead
 	j, ok := js.jobs[id]
-	if ok {
-		j.Status = status
-		js.jobs[id] = j
-		return nil
-	} else {
+	if !ok {
 		return fmt.Errorf("job with id=%d not found", id)
 	}
+	j.Status = status
+	js.jobs[id] = j
+	return nil
 }
 
 // SetJobStatusProcessing sets the job status to processing or returns an

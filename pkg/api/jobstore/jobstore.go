@@ -11,9 +11,59 @@
 package jobstore
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"sync"
 )
+
+type JobStatus int
+
+const (
+	StatusCreated JobStatus = iota
+	StatusProcessing
+	StatusCompleted
+	StatusFailed
+)
+
+// String supports pretty-printing JobStatuses
+func (js JobStatus) String() string {
+	return []string{"created", "processing", "completed", "failed"}[js]
+}
+
+// toString is an internal helper function for marshalling to JSON
+var toString = map[JobStatus]string{
+	StatusCreated:    "created",
+	StatusProcessing: "processing",
+	StatusCompleted:  "completed",
+	StatusFailed:     "failed",
+}
+
+// toID is an internal helper function for unmarshalling from JSON
+var toID = map[string]JobStatus{
+	"created":    StatusCreated,
+	"processing": StatusProcessing,
+	"completed":  StatusCompleted,
+	"failed":     StatusFailed,
+}
+
+// MarshalJSON supports writing the iota to JSON as a string
+func (js JobStatus) MarshalJSON() ([]byte, error) {
+	buffer := bytes.NewBufferString(`"`)
+	buffer.WriteString(toString[js])
+	buffer.WriteString(`"`)
+	return buffer.Bytes(), nil
+}
+
+// UnmarshalJSON supports converting JSON strings to our iota
+func (js *JobStatus) UnmarshalJSON(b []byte) error {
+	var j string
+	if err := json.Unmarshal(b, &j); err != nil {
+		return err
+	}
+	*js = toID[j]
+	return nil
+}
 
 // Job represents a single job in the JobStore
 type Job struct {

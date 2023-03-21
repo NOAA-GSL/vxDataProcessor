@@ -1,3 +1,4 @@
+// Package api implements a Gin API server and handlers for the data processor.
 package api
 
 import (
@@ -9,6 +10,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// SetupRouter defines the routes the API server will respond to along with
+// their handlers
 func SetupRouter(js *jobstore.JobStore) *gin.Engine {
 	router := gin.Default()
 	server := NewJobServer(js)
@@ -32,16 +35,18 @@ type Processor interface {
 	Run(string) error
 }
 
-// testProcess Implements the Calculator interface with some hooks for triggering testing behavior
-// TODO - this will be moved to the _test file once we have an actual processor to use
+// TestProcess Implements the Calculator interface with some hooks for triggering testing behavior
 type TestProcess struct {
+	// FIXME - this will be moved to the _test file once we have a real processor to use
 	lock         sync.Mutex
 	DocID        string
 	Processed    bool
 	TriggerError bool
 }
 
+// Run is a dummy method for testing that satisfies the Processor interface
 func (tc *TestProcess) Run(str string) error {
+	// FIXME - this will be moved to the _test file once we have a real processor to use
 	tc.lock.Lock()
 	defer tc.lock.Unlock()
 	if tc.TriggerError {
@@ -73,7 +78,7 @@ func Worker(id int, proc Processor, jobs <-chan jobstore.Job, status chan<- stri
 	}
 }
 
-// Dispatch pulls jobs out of the given jobstore in order and places them in a channel
+// Dispatch pulls jobs out of the given jobstore in order and places them in a channel. It will block once the channel is full.
 func Dispatch(jobChan chan<- jobstore.Job, js *jobstore.JobStore) {
 	for {
 		n := 2 // number of jobs to pull off the queue

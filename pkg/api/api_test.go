@@ -90,19 +90,20 @@ func TestWorker(t *testing.T) {
 		go Worker(1, proc, jobs, status)
 		jobs <- job
 
-		want := jobstore.Job{
-			ID:     1,
-			DocID:  "foo",
-			Status: jobstore.StatusCompleted,
+		want := []jobstore.Job{
+			{ID: 1, DocID: "foo", Status: jobstore.StatusProcessing},
+			{ID: 1, DocID: "foo", Status: jobstore.StatusCompleted},
 		}
 		for {
 			select {
-			case got := <-status:
+			case got1 := <-status:
+				got2 := <-status // ignore the processing status
 				proc.lock.Lock()
 				defer proc.lock.Unlock()
+				assert.Equal(t, want[0], got1)
 				assert.Equal(t, "foo", proc.DocID)
 				assert.Equal(t, true, proc.Processed)
-				assert.Equal(t, want, got)
+				assert.Equal(t, want[1], got2)
 				return
 			default:
 				continue
@@ -124,15 +125,16 @@ func TestWorker(t *testing.T) {
 		go Worker(2, proc, jobs, status)
 		jobs <- job
 
-		want := jobstore.Job{
-			ID:     1,
-			DocID:  "foo",
-			Status: jobstore.StatusFailed,
+		want := []jobstore.Job{
+			{ID: 1, DocID: "foo", Status: jobstore.StatusProcessing},
+			{ID: 1, DocID: "foo", Status: jobstore.StatusFailed},
 		}
 		for {
 			select {
-			case got := <-status:
-				assert.Equal(t, want, got)
+			case got1 := <-status:
+				got2 := <-status // ignore the processing status
+				assert.Equal(t, want[0], got1)
+				assert.Equal(t, want[1], got2)
 				assert.Equal(t, false, proc.Processed)
 				return
 			default:

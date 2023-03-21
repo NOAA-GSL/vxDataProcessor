@@ -80,24 +80,29 @@ func TestJobsIDEndpoint(t *testing.T) {
 func TestWorker(t *testing.T) {
 	t.Run("Test that jobs are sent to the proc function", func(t *testing.T) {
 		jobs := make(chan jobstore.Job)
-		status := make(chan string)
+		status := make(chan jobstore.Job)
 		job := jobstore.Job{
 			ID:     1,
 			DocID:  "foo",
-			Status: "created",
+			Status: jobstore.StatusCreated,
 		}
 		proc := &TestProcess{}
 		go Worker(1, proc, jobs, status)
 		jobs <- job
 
+		want := jobstore.Job{
+			ID:     1,
+			DocID:  "foo",
+			Status: jobstore.StatusCompleted,
+		}
 		for {
 			select {
-			case st := <-status:
+			case got := <-status:
 				proc.lock.Lock()
 				defer proc.lock.Unlock()
 				assert.Equal(t, "foo", proc.DocID)
 				assert.Equal(t, true, proc.Processed)
-				assert.Equal(t, "Finished foo", st)
+				assert.Equal(t, want, got)
 				return
 			default:
 				continue
@@ -107,11 +112,11 @@ func TestWorker(t *testing.T) {
 
 	t.Run("Test that we handle errors", func(t *testing.T) {
 		jobs := make(chan jobstore.Job)
-		status := make(chan string)
+		status := make(chan jobstore.Job)
 		job := jobstore.Job{
 			ID:     1,
 			DocID:  "foo",
-			Status: "created",
+			Status: jobstore.StatusCreated,
 		}
 		proc := &TestProcess{
 			TriggerError: true,
@@ -119,10 +124,15 @@ func TestWorker(t *testing.T) {
 		go Worker(2, proc, jobs, status)
 		jobs <- job
 
+		want := jobstore.Job{
+			ID:     1,
+			DocID:  "foo",
+			Status: jobstore.StatusFailed,
+		}
 		for {
 			select {
-			case st := <-status:
-				assert.Equal(t, "Unable to process foo", st)
+			case got := <-status:
+				assert.Equal(t, want, got)
 				assert.Equal(t, false, proc.Processed)
 				return
 			default:

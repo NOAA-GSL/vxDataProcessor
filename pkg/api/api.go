@@ -63,21 +63,20 @@ func Worker(id int, proc Processor, jobs <-chan jobstore.Job, status chan<- jobs
 	for {
 		job := <-jobs // block until we get a job
 		fmt.Println("Worker", id, "started docID", job.DocID)
-		// status <- "processing" // We'll need a way to associate these with a job
+		job.Status = jobstore.StatusProcessing
+		status <- job
 
 		// Do work
 		fmt.Println("Worker", id, "processing docID", job.DocID)
 		err := proc.Run(job.DocID)
 		if err != nil {
 			job.Status = jobstore.StatusFailed
-			// status <- fmt.Sprintf("Unable to process %v", job.DocID)
 			status <- job
 		}
 
 		// report status
 		job.Status = jobstore.StatusCompleted
 		status <- job
-		// status <- fmt.Sprintf("Finished %v", job.DocID)
 		fmt.Println("Worker", id, "finished docID", job.DocID)
 	}
 }

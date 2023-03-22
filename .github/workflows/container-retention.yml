@@ -1,0 +1,49 @@
+name: Cleanup GHCR Images
+
+on: 
+  workflow_dispatch: # Manually
+  schedule:
+    - cron: '0 23 * * *' # Every day at an hour to midnight
+
+jobs:
+  purge-images:
+    name: Delete images from ghcr.io
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete untagged images
+        uses: snok/container-retention-policy@v2
+        with:
+          image-names: vxdataprocessor
+          cut-off: 1 day ago MST
+          account-type: org
+          org-name: noaa-gsl
+          untagged-only: true
+          token: ${{ secrets.GHCR_CLEANUP_PAT }}
+      - name: Delete sha-* images over two weeks old
+        uses: snok/container-retention-policy@v2
+        with:
+          image-names: vxdataprocessor
+          cut-off: 2 weeks ago MST
+          account-type: org
+          org-name: noaa-gsl
+          filter-tags: sha-*
+          keep-at-least: 10
+          token: ${{ secrets.GHCR_CLEANUP_PAT }}
+      - name: Delete pr-* images over two weeks old
+        uses: snok/container-retention-policy@v2
+        with:
+          image-names: vxdataprocessor
+          cut-off: 2 weeks ago MST
+          account-type: org
+          org-name: noaa-gsl
+          filter-tags: pr-*
+          token: ${{ secrets.GHCR_CLEANUP_PAT }}
+      - name: Delete branch images over two weeks old
+        uses: snok/container-retention-policy@v2
+        with:
+          image-names: vxdataprocessor
+          cut-off: 2 weeks ago MST
+          account-type: org
+          org-name: noaa-gsl
+          skip-tags: latest, v*, pr-*, sha-*, main
+          token: ${{ secrets.GHCR_CLEANUP_PAT }}

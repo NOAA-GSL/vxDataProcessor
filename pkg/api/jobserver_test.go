@@ -14,20 +14,35 @@ import (
 )
 
 func TestNewJobServer(t *testing.T) {
+	filledJS := jobstore.NewJobStore()
+	_, _ = filledJS.CreateJob("foo")
+
+	type args struct {
+		js *jobstore.JobStore
+	}
 	tests := []struct {
 		name string
+		args args
 		want *jobServer
 	}{
 		{
-			name: "Test New JobServer",
+			name: "Test New Empty JobServer",
+			args: args{nil},
 			want: &jobServer{
 				store: jobstore.NewJobStore(),
+			},
+		},
+		{
+			name: "Test New Filled JobServer",
+			args: args{filledJS},
+			want: &jobServer{
+				store: filledJS,
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := NewJobServer(); !reflect.DeepEqual(got, tt.want) {
+			if got := NewJobServer(tt.args.js); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("NewJobServer() = %v, want %v", got, tt.want)
 			}
 		})
@@ -38,7 +53,7 @@ func Test_jobServer_getAllJobsHandler(t *testing.T) {
 	t.Run("Test getting an empty jobstore", func(t *testing.T) {
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
-		NewJobServer().getAllJobsHandler(c)
+		NewJobServer(nil).getAllJobsHandler(c)
 
 		assert.Equal(t, http.StatusOK, w.Code)
 		assert.Equal(t, `[]`, w.Body.String())
@@ -46,12 +61,12 @@ func Test_jobServer_getAllJobsHandler(t *testing.T) {
 
 	t.Run("Test getting a jobstore", func(t *testing.T) {
 		want := []jobstore.Job{
-			{ID: 0, DocID: "foo", Status: "created"},
-			{ID: 1, DocID: "bar", Status: "created"},
+			{ID: 0, DocID: "foo", Status: jobstore.StatusCreated},
+			{ID: 1, DocID: "bar", Status: jobstore.StatusCreated},
 		}
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
-		js := NewJobServer()
+		js := NewJobServer(nil)
 
 		_, _ = js.store.CreateJob("foo")
 		_, _ = js.store.CreateJob("bar")
@@ -75,7 +90,7 @@ func Test_jobServer_createJobHandler(t *testing.T) {
 		var jsonStr = []byte(`{"random": "json"}`)
 		c.Request, _ = http.NewRequest("POST", "/jobs/", bytes.NewBuffer(jsonStr))
 
-		js := NewJobServer()
+		js := NewJobServer(nil)
 
 		js.createJobHandler(c)
 

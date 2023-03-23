@@ -43,77 +43,66 @@ and then it politely dies.
 */
 
 import (
-	"bufio"
-	"errors"
 	"fmt"
 	"github.com/NOAA-GSL/vxDataProcessor/pkg/director"
 	"github.com/couchbase/gocb/v2"
 	"github.com/joho/godotenv"
-	"log"
 	"os"
 	"strings"
 	"time"
 )
 
-
-
-var mysqlCredentials director.DbCredentials
-
-func loadEnvironmant(environmentFile string) error {
-	err := godotenv.Load(environmentFile)
+func loadEnvironmant(environmentFile string) (mysqlCredentials, cbCredentials director.DbCredentials, err error) {
+	err = godotenv.Load(environmentFile)
 	if err != nil {
-		return fmt.Errorf("Error loading .env file: %q", environmentFile)
-	}
-	var cbCredentials = director.DbCredentials{
-		scope: "_default",
-		collection: "SCORECARD",
-		host: os.Getenv("CB_HOST"),
+		return director.DbCredentials{}, director.DbCredentials{}, fmt.Errorf("Error loading .env file: %q", environmentFile)
 	}
 
-	if cbCredentials.host == "" {
-		return fmt.Errorf("Undefined CB_HOST in environment")
+	cbCredentials = director.DbCredentials{
+		Scope:      "_default",
+		Collection: "SCORECARD",
+		Host:       os.Getenv("CB_HOST"),
 	}
-	cbCredentials.user = os.Getenv("CB_USER")
-	if cbCredentials.user == "" {
-		return fmt.Errorf("Undefined CB_USER in environment")
+
+	if cbCredentials.Host == "" {
+		return director.DbCredentials{}, director.DbCredentials{}, fmt.Errorf("Undefined CB_HOST in environment")
 	}
-	cbCredentials.password = os.Getenv("CB_PASSWORD")
-	if cbCredentials.password == "" {
-		return fmt.Errorf("Undefined CB_PASSWORD in environment")
+	cbCredentials.User = os.Getenv("CB_USER")
+	if cbCredentials.User == "" {
+		return director.DbCredentials{}, director.DbCredentials{}, fmt.Errorf("Undefined CB_USER in environment")
 	}
-	cbCredentials.bucket = os.Getenv("CB_BUCKET")
-	if cbCredentials.bucket == "" {
-		return fmt.Errorf("Undefined CB_BUCKET in environment")
+	cbCredentials.Password = os.Getenv("CB_PASSWORD")
+	if cbCredentials.Password == "" {
+		return director.DbCredentials{}, director.DbCredentials{}, fmt.Errorf("Undefined CB_PASSWORD in environment")
+	}
+	cbCredentials.Bucket = os.Getenv("CB_BUCKET")
+	if cbCredentials.Bucket == "" {
+		return director.DbCredentials{}, director.DbCredentials{}, fmt.Errorf("Undefined CB_BUCKET in environment")
 	}
 
 	// refer to https://github.com/go-sql-driver/mysql/#dsn-data-source-name
-	mysqlCredentials.host = os.Getenv("MYSQL_HOST")
-	if mysqlCredentials.host == "" {
-		return fmt.Errorf("Undefined MYSQL_HOST in environment")
+	mysqlCredentials.Host = os.Getenv("MYSQL_HOST")
+	if mysqlCredentials.Host == "" {
+		return director.DbCredentials{}, director.DbCredentials{}, fmt.Errorf("Undefined MYSQL_HOST in environment")
 	}
-	mysqlCredentials.user = os.Getenv("MYSQL_USER")
-	if mysqlCredentials.user == "" {
-		return fmt.Errorf("Undefined MYSQL_USER in environment")
+	mysqlCredentials.User = os.Getenv("MYSQL_USER")
+	if mysqlCredentials.User == "" {
+		return director.DbCredentials{}, director.DbCredentials{}, fmt.Errorf("Undefined MYSQL_USER in environment")
 	}
-	mysqlCredentials.password = os.Getenv("MYSQL_PASSWORD")
-	if mysqlCredentials.password == "" {
-		return fmt.Errorf("Undefined MYSQL_PASSWORD in environment")
+	mysqlCredentials.Password = os.Getenv("MYSQL_PASSWORD")
+	if mysqlCredentials.Password == "" {
+		return director.DbCredentials{}, director.DbCredentials{}, fmt.Errorf("Undefined MYSQL_PASSWORD in environment")
 	}
+	return mysqlCredentials, cbCredentials, nil
 }
 
 // get the couchbase connection
 // mysql connections are maintained in the mysql_director
-func getConnection() (*cbConnection, error) {
-	var cbCredentials, err = loadEnvironmant()
-	if err != nil {
-		return nil, fmt.Errorf("manager loadEnvironmant error %q", err)
-	}
-
-	var cbConnection cbConnection
+func getConnection(cbCredentials director.DbCredentials) (cbConnection *cbConnection, err error) {
 	var options = gocb.ClusterOptions{
 		Authenticator: gocb.PasswordAuthenticator{
-			Username: cbCredentials.user,
-			Password: cbCredentials.password,
+			Username: cbCredentials.User,
+			Password: cbCredentials.Password,
 		},
 	}
 	if err = options.ApplyProfile(gocb.ClusterConfigProfileWanDevelopment); err != nil {
@@ -121,70 +110,99 @@ func getConnection() (*cbConnection, error) {
 	}
 	// Initialize the Connection
 	var cluster *gocb.Cluster
-	cluster, err = gocb.Connect("couchbase://"+cbCredentials.host, options)
+	cluster, err = gocb.Connect("couchbase://"+cbCredentials.Host, options)
 	if err != nil {
 		return nil, fmt.Errorf("manager gocb Connect error: %q", err)
 	}
-	cbConnection.cluster = cluster
-	cbConnection.bucket = cbConnection.cluster.Bucket(cbCredentials.bucket)
-	err = cbConnection.bucket.WaitUntilReady(50*time.Second, nil)
+	cbConnection.Cluster = cluster
+	cbConnection.Bucket = cbConnection.Cluster.Bucket(cbCredentials.Bucket)
+	err = cbConnection.Bucket.WaitUntilReady(50*time.Second, nil)
 	if err != nil {
 		return nil, fmt.Errorf("manager bucket.WaitUntilReady error: %q", err)
 	}
-	cbConnection.scope = cbConnection.bucket.Scope(cbCredentials.scope)
-	cbConnection.collection = cbConnection.bucket.Collection(cbCredentials.collection)
-	return &cbConnection, nil
+	cbConnection.Scope = cbConnection.Bucket.Scope(cbCredentials.Scope)
+	cbConnection.Collection = cbConnection.Bucket.Collection(cbCredentials.Collection)
+	return cbConnection, nil
 }
 
-
-func (mngr *Manager) Run(documentId string, environmentFile string) error {
+func  (mngr Manager)Run() error {
+	var err error
 	// load the environment
-	mngr.documentId = documentId
-	mngr.environmentFile = environmentFile
-	loadEnvironmant(mngr.environmentFile)
-	// get the connection
-	var cb *cbConnection
-	cb , err = getConnection()
+	var mysqlCredentials, cbCredentials director.DbCredentials
+	mysqlCredentials, cbCredentials, err = loadEnvironmant(mngr.environmentFile)
+	if err != nil {
+		return fmt.Errorf("manager loadEnvironmant error %q", err)
+	}
+	mngr.cb, err = getConnection(cbCredentials)
 	if err != nil {
 		return fmt.Errorf("manager Build GetConnection error: %q", err)
 	}
-
 	// get the scorecard document
 	var scorecardDataIn *gocb.GetResult
-	scorecardDataIn, err = cb.CB_collection.Get("documentId", nil)
+	scorecardDataIn, err = mngr.cb.Collection.Get(mngr.documentId, nil)
 	if err != nil {
-		fmt.Errorf("manager Build error getting scorecard: %q  error: %q", documentId, err)
+		return fmt.Errorf("manager Build error getting scorecard: %q  error: %q", mngr.documentId, err)
 	}
 	// get the unmarshalled document (the Content) from the result
-	var scorecardCB interface{}
-	err = scorecardDataIn.Content(&scorecardCB)
+	var scorecard director.ScorecardBlock
+	err = scorecardDataIn.Content(scorecard)
 	if err != nil {
-		fmt.Errorf("manager Build error getting scorecard Content: %q", err)
+		return fmt.Errorf("manager Build error getting scorecard Content: %q", err)
 	}
-	var appName string
+	mngr.ScorecardCB = scorecard
+	// get the scorecardAppUrl so that manager can use it to notify
+	// the scorecard app to refresh its mongo data after the upsert
+	//scorecardApUrl := block["blockApplication"]
 	// iterate the rows in the scorecard
-	var blocks = scorecardCB["SCORECARD"]["results"]["blocks"]
-	var queryBlocks = scorecardCB["SCORECARD"]["queryMap"]["blocks"]
-	for blockLabel := range Keys(blocks) { // what kind of app?
-		for _,c := range scorecardCB["SCORECARD"]["plotParams"]["curves"] {
-			//fmt.Println(i, s)
-			if c.label == blockLabel {
-				appName = c.application
+	results := scorecard["results"]
+	blocks := results.(map[string]interface{})["blocks"].(map[string]interface{})
+	queryMap := scorecard["queryMap"]
+	queryBlocks := queryMap.(map[string]interface{})["blocks"].(map[string]interface{})
+	blockKeys := director.Keys(blocks)
+	curves := scorecard["plotParams"].(map[string]interface{})["curves"].([]map[string]interface{})
+	for i := 0; i < len(blockKeys); i++ {
+		blockKey := blockKeys[i]
+		block := blocks[blockKey].(map[string]interface{})
+		var appName string
+		for _, curve := range curves {
+			if curve["label"] == blockKey {
+				appName = curve["appName"].(string)
 			}
 		}
-		var regionLabels = director.Keys(blocks["data"])
+		data := block["data"].(map[string]interface{})
+		queryData := queryBlocks[blockKey].(map[string]interface{})["data"].(map[string]interface{})
+		//var regionLabels = director.Keys(data)
 		// launch a director for each region
-		for _,regionLabel := range regionLabels {
+		for i := 0; i < len(director.Keys(data)); i++ {
+			regionName := director.Keys(data)[i]
+			regionMap := data[regionName].(map[string]interface{})
+			queryRegionMap := queryData[regionName].(map[string]interface{})
 			// launch a director for this region
 			if strings.ToUpper(appName) == "CB" {
 				// launch CB director - which we don't have yet
 			} else {
 				//launch mysql director
-				var director = director.GetDirector("MysqlDirector", mysqlCredentials)
-				director.run(blocks[BlockLabel]["data"][regionLabel], queryBlocks[BlockLabel]["data"][regionLabel])
+				var mysqlDirector *director.Director
+				mysqlDirector, err := director.GetDirector("mySqlDirector", mysqlCredentials)
+				if err != nil {
+					err = fmt.Errorf("manager Build error getting director: %q", err)
+					return err
+				}
+				mysqlDirector.Run(regionMap, queryRegionMap)
 			}
 		}
 		// upsert the document
 		return nil
 	}
+	return nil
+}
+
+var myScorecardManager = Manager{}
+
+func NewScorecardManager(environmentFile, documentId string) (*Manager, error) {
+	myScorecardManager.environmentFile = environmentFile
+	myScorecardManager.ScorecardCB = nil
+	myScorecardManager.cb = nil
+	myScorecardManager.documentId = documentId
+	return &myScorecardManager, nil
 }

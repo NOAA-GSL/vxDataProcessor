@@ -2,10 +2,10 @@ package builder
 
 import (
 	"fmt"
+	"github.com/stretchr/testify/assert"
 	"reflect"
 	"testing"
 	"time"
-	"github.com/stretchr/testify/assert"
 )
 
 func getDataSet(epoch int64, ctlValues []float64, expValues []float64) DataSet {
@@ -372,7 +372,7 @@ func Test_calculateStatCTC(t *testing.T) {
 				cn:        1695,
 				statistic: "PODy (POD of value < threshold)",
 			},
-			want:    	35.71,
+			want:    35.71,
 			wantErr: false,
 		},
 		{
@@ -398,7 +398,7 @@ func Test_calculateStatCTC(t *testing.T) {
 				cn:        1695,
 				statistic: "PODn (POD of value > threshold)",
 			},
-			want:    	97.36,
+			want:    97.36,
 			wantErr: false,
 		},
 		{
@@ -467,32 +467,32 @@ func Test_calculateStatCTC(t *testing.T) {
 			wantErr: false,
 		},
 		{
-		// TSS.sql - radar - Not A Number error
-		name: "Not a Number",
-		args: args{
-			hit:       0,
-			fa:        1876,
-			miss:      0,
-			cn:        56054,
-			statistic: "TSS (True Skill Score)",
-		},
-		want:    0.0,
-		wantErr: true,
+			// TSS.sql - radar - Not A Number error
+			name: "Not a Number",
+			args: args{
+				hit:       0,
+				fa:        1876,
+				miss:      0,
+				cn:        56054,
+				statistic: "TSS (True Skill Score)",
+			},
+			want:    0.0,
+			wantErr: true,
 		},
 		{
-		// TSS.sql - radar - infinity
-		// don't know how to cause this condition with valid params
-		name: "infinity",
-		args: args{
-			hit:       1,
-			fa:        1,
-			miss:      1,
-			cn:        1,
-			statistic: "TSS (True Skill Score)",
-		},
-		want:    0.0,
-		//wantErr: true,
-		wantErr: false,
+			// TSS.sql - radar - infinity
+			// don't know how to cause this condition with valid params
+			name: "infinity",
+			args: args{
+				hit:       1,
+				fa:        1,
+				miss:      1,
+				cn:        1,
+				statistic: "TSS (True Skill Score)",
+			},
+			want: 0.0,
+			//wantErr: true,
+			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
@@ -503,7 +503,7 @@ func Test_calculateStatCTC(t *testing.T) {
 				assert.Errorf(t, err, "calculateStatCTC() should have returned error but did not - got %v", got)
 			} else {
 				assert.NoErrorf(t, err, "calculateStatCTC() returned error %s", err)
-				assert.InDelta(t, tt.want, got, delta,fmt.Sprintf("calculateStatCTC() excessive difference"))
+				assert.InDelta(t, tt.want, got, delta, fmt.Sprintf("calculateStatCTC() excessive difference"))
 			}
 		})
 	}

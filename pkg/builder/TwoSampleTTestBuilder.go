@@ -33,10 +33,10 @@ will cause a return of 0.
 import (
 	"errors"
 	"fmt"
-	"strings"
 	"github.com/aclements/go-moremath/stats"
 	"github.com/go-playground/validator/v10"
 	"log"
+	"strings"
 )
 
 // use a single instance of Validate, it caches struct info
@@ -202,6 +202,9 @@ func (scc *ScorecardCell) DeriveInputData(qrPtr *QueryResult, statisticType stri
 		dataSet, err = derivePreCalcInputData(scc, qrPtr, statisticType)
 	default:
 		err = fmt.Errorf("TwoSampleTTestBuilder DeriveInputData unsupported data type: %q", dataType)
+	}
+	if err != nil {
+		return err
 	}
 	// match the unmatched DataSet
 	matchedDataSet, err = GetMatchedDataSet(dataSet)

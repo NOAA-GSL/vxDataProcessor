@@ -1,4 +1,5 @@
 package manager
+
 /*
 A Manager is the entry point for the data processing.
 A Manager holds a couchbase connection, a scorecard document id,
@@ -17,32 +18,33 @@ There may be many upserts before the documement is fully
 processed.
 */
 import (
-	"github.com/couchbase/gocb/v2"
-	"github.com/joho/godotenv"
+	"fmt"
 	"github.com/NOAA-GSL/vxDataProcessor/pkg/director"
+	"github.com/couchbase/gocb/v2"
 )
 
 type cbConnection struct {
-	cluster    *gocb.Cluster
-	bucket     *gocb.Bucket
-	scope      *gocb.Scope
-	collection *gocb.Collection
+	Cluster    *gocb.Cluster
+	Bucket     *gocb.Bucket
+	Scope      *gocb.Scope
+	Collection *gocb.Collection
 }
 
-type Manager = struct {
-	documentId string
+type Manager struct {
+	documentId      string
 	environmentFile string
-	cb cbConnection
-	ScorecardCB director.ScorecardBlock
+	cb              *cbConnection
+	ScorecardCB     director.ScorecardBlock
 }
 
-type ManagerInterface interface {
-	Run(documentId string, environmentFile string)
+type ManagerBuilder interface {
+	Run() error
 }
 
-func GetManager() *Manager {
-		var myManager Manager = Manager{}
-		return &myManager
+func GetManager(managerType, environmentFileName, documentId string) (*Manager, error) {
+	if managerType == "SC" {
+		return NewScorecardManager(environmentFileName, documentId)
+	} else {
+		return nil, fmt.Errorf("Manager GetManager unsupported managerType: %q", managerType)
+	}
 }
-
-

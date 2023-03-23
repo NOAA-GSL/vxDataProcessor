@@ -78,7 +78,7 @@ func getMySqlConnection(mysqlCredentials DbCredentials) (*sql.DB, error) {
 	// get the connection
 	var driver = "mysql"
 	//user:password@tcp(localhost:5555)
-	var dataSource = fmt.Sprintf("%s:%s@tcp(%s)", mysqlCredentials.user, mysqlCredentials.password, mysqlCredentials.host)
+	var dataSource = fmt.Sprintf("%s:%s@tcp(%s)", mysqlCredentials.User, mysqlCredentials.Password, mysqlCredentials.Host)
 	var db *sql.DB
 	db, err := sql.Open(driver, dataSource)
 	if err != nil {
@@ -230,8 +230,8 @@ func processSub(resultElem ScorecardBlock, queryElem ScorecardBlock, statistics 
 }
 
 // build a section of a scorecard - this is a region (think vertical slice on the scorecard)
-func Run(regionMap ScorecardBlock, queryMap ScorecardBlock) error {
-	// This is recursive. Recurse down to the cell level then traverse back up processing
+func (director *Director) Run(regionMap ScorecardBlock, queryMap ScorecardBlock) error {
+	// This is recursive. Recurse down to the cell levl then traverse back up processing
 	// all the cells on the way
 	// get all the statistic strings (they are the keys of the regionMap)
 	var statistics []string = make([]string, 0, len(regionMap))

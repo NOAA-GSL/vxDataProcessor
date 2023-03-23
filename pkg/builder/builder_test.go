@@ -136,7 +136,7 @@ func TestTwoSampleTTestBuilder_test_1(t *testing.T) {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_1 - SetInputData - error message : ", err))
 	}
 	var epoch = time.Now().Unix()
-	var normData = [10]int{86,74,79,94,73,92,66,77,74,78}
+	var normData = [10]int{86, 74, 79, 94, 73, 92, 66, 77, 74, 78}
 	var ctlData []interface{}
 	for i := 0; i < 10; i++ {
 		var rec = builder.PreCalcRecord{
@@ -149,7 +149,7 @@ func TestTwoSampleTTestBuilder_test_1(t *testing.T) {
 	var expData []interface{}
 	for i := 0; i < 10; i++ {
 		var rec = builder.PreCalcRecord{
-			Value: float64(normData[i] * (i%2)),
+			Value: float64(normData[i] * (i % 2)),
 			Time:  int64(i) + epoch,
 		}
 		expData = append(expData, rec)
@@ -191,7 +191,7 @@ func TestTwoSampleTTestBuilder_test_0(t *testing.T) {
 	}
 
 	var epoch = time.Now().Unix()
-	var normData = [10]int{86,74,79,94,73,92,66,77,74,78}
+	var normData = [10]int{86, 74, 79, 94, 73, 92, 66, 77, 74, 78}
 	var ctlData []interface{}
 	for i := 0; i < 10; i++ {
 		var rec = builder.PreCalcRecord{
@@ -200,8 +200,9 @@ func TestTwoSampleTTestBuilder_test_0(t *testing.T) {
 		}
 		ctlData = append(ctlData, rec)
 	}
+	// The first element is off by one
 	var expData []interface{}
-	normData = [10]int{87,74,79,94,73,92,66,77,74,78}
+	normData = [10]int{87, 74, 79, 94, 73, 92, 66, 77, 74, 78}
 	for i := 0; i < 10; i++ {
 		var rec = builder.PreCalcRecord{
 			Value: float64(normData[i]),
@@ -293,7 +294,7 @@ func TestTwoSampleTTestBuilder_test__match_ctl_short_1(t *testing.T) {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_1 - SetInputData - error message : ", err))
 	}
 	var epoch = time.Now().Unix()
-	var normData = [10]int{86,74,79,94,73,92,66,77,74,78}
+	var normData = [10]int{86, 74, 79, 94, 73, 92, 66, 77, 74, 78}
 	var ctlData []interface{}
 	for i := 0; i < 10; i++ {
 		// skip number 5
@@ -310,7 +311,7 @@ func TestTwoSampleTTestBuilder_test__match_ctl_short_1(t *testing.T) {
 	var expData []interface{}
 	for i := 0; i < 10; i++ {
 		var rec = builder.PreCalcRecord{
-			Value: float64(normData[i] * (i%2)),
+			Value: float64(normData[i] * (i % 2)),
 			Time:  int64(i) + epoch,
 		}
 		expData = append(expData, rec)
@@ -351,7 +352,7 @@ func TestTwoSampleTTestBuilder_test__match_exp_short_1(t *testing.T) {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_1 - SetInputData - error message : ", err))
 	}
 	var epoch = time.Now().Unix()
-	var normData = [10]int{86,74,79,94,73,92,66,77,74,78}
+	var normData = [10]int{86, 74, 79, 94, 73, 92, 66, 77, 74, 78}
 	var ctlData []interface{}
 	for i := 0; i < 10; i++ {
 		var rec = builder.PreCalcRecord{
@@ -368,7 +369,7 @@ func TestTwoSampleTTestBuilder_test__match_exp_short_1(t *testing.T) {
 			continue
 		}
 		var rec = builder.PreCalcRecord{
-			Value: float64(normData[i] * (i%2)),
+			Value: float64(normData[i] * (i % 2)),
 			Time:  int64(i) + epoch,
 		}
 		expData = append(expData, rec)

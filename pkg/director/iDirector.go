@@ -24,12 +24,12 @@ import (
 // but mysql probably only user, password, and
 // host (which is actually a connection string including host and port)
 type DbCredentials struct {
-	user       string
-	password   string
-	host       string
-	bucket     string
-	scope      string
-	collection string
+	User       string
+	Password   string
+	Host       string
+	Bucket     string
+	Scope      string
+	Collection string
 }
 
 // see https://bitfieldconsulting.com/golang/map-string-interface
@@ -44,14 +44,14 @@ type Director struct {
 	resultBlock      ScorecardBlock
 }
 
-type DirectorInterface interface {
+type DirectorBuilder interface {
 	// datasourceName like user:password@tcp(hostname:3306)/dbname
-	Run(scorecardCPtr ScorecardBlock)
+	Run(regionMap ScorecardBlock, queryMap ScorecardBlock)
 }
 
 func GetDirector(directorType string, mysqlCredentials DbCredentials) (*Director, error) {
 	if directorType == "MysqlDirector" {
-		return NewMysqlDirector(mysqlCredentials)
+		return  NewMysqlDirector(mysqlCredentials)
 	} else {
 		return nil, fmt.Errorf("Director GetDirector unsupported directorType: %q", directorType)
 	}

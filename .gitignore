@@ -15,3 +15,13 @@
 # vendor/
  # ignore history files
 .history
+
+# Project-specific files
+tmp/
+.env
+.idea
+.vscode
+processor
+
+# Mac cruft
+.DS_Store

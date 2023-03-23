@@ -1,0 +1,14 @@
+.github/
+.idea/
+.vscode/
+.git/
+.gitignore
+
+docs/
+.golangci.yml
+Dockerfile
+docker-compose.yml
+**/*.md
+LICENSE
+processor
+coverage.out

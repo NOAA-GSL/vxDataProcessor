@@ -8,24 +8,30 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Contains store of current jobs and handlers for routes
-
+// jobServer has access to a JobStore and defines the handlers for the API server
 type jobServer struct {
 	store *jobstore.JobStore
 }
 
-func NewJobServer() *jobServer {
-	store := jobstore.NewJobStore()
-	return &jobServer{store: store}
+// NewJobServer returns an initialized jobServer pointer.
+//
+// It can take a pointer to an existing JobStore to store Jobs in. If nil is
+// passed instead of a JobStore, it will initialize an empty JobStore for you.
+func NewJobServer(js *jobstore.JobStore) *jobServer {
+	if js == nil {
+		js = jobstore.NewJobStore()
+	}
+
+	return &jobServer{store: js}
 }
 
-// Handles requests to get all Jobs in the store
+// getAllJobsHandler handles requests to get all of the Jobs in the store
 func (js *jobServer) getAllJobsHandler(c *gin.Context) {
 	allJobs := js.store.GetAllJobs()
 	c.JSON(http.StatusOK, allJobs)
 }
 
-// Handles requests to create a new Job in the store
+// createJobHandler handles requests to create a new Job in the store
 func (js *jobServer) createJobHandler(c *gin.Context) {
 	type RequestJob struct {
 		DocID string `json:"docid" binding:"required"`
@@ -45,7 +51,7 @@ func (js *jobServer) createJobHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"id": id})
 }
 
-// Handles requests to get a specific Job in the store
+// getJobHandler handles requests to get a specific Job in the store
 func (js *jobServer) getJobHandler(c *gin.Context) {
 	id, err := strconv.Atoi(c.Params.ByName("id"))
 	if err != nil {

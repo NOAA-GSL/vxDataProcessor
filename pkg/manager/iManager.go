@@ -19,7 +19,6 @@ processed.
 */
 import (
 	"fmt"
-	"github.com/NOAA-GSL/vxDataProcessor/pkg/director"
 	"github.com/couchbase/gocb/v2"
 )
 
@@ -34,7 +33,7 @@ type Manager struct {
 	documentId      string
 	environmentFile string
 	cb              *cbConnection
-	ScorecardCB     director.ScorecardBlock
+	ScorecardCB     map[string]interface{}
 }
 
 type ManagerBuilder interface {

@@ -44,12 +44,13 @@ and then it politely dies.
 
 import (
 	"fmt"
+	"reflect"
+	"os"
+	"log"
+	"time"
 	"github.com/NOAA-GSL/vxDataProcessor/pkg/director"
 	"github.com/couchbase/gocb/v2"
 	"github.com/joho/godotenv"
-	"os"
-	"strings"
-	"time"
 )
 
 func loadEnvironmant(environmentFile string) (mysqlCredentials, cbCredentials director.DbCredentials, err error) {
@@ -61,6 +62,7 @@ func loadEnvironmant(environmentFile string) (mysqlCredentials, cbCredentials di
 	cbCredentials = director.DbCredentials{
 		Scope:      "_default",
 		Collection: "SCORECARD",
+		Bucket:		os.Getenv("CB_BUCKET"),
 		Host:       os.Getenv("CB_HOST"),
 	}
 
@@ -98,7 +100,7 @@ func loadEnvironmant(environmentFile string) (mysqlCredentials, cbCredentials di
 
 // get the couchbase connection
 // mysql connections are maintained in the mysql_director
-func getConnection(cbCredentials director.DbCredentials) (cbConnection *cbConnection, err error) {
+func getConnection(mngr *Manager,cbCredentials director.DbCredentials) (err error) {
 	var options = gocb.ClusterOptions{
 		Authenticator: gocb.PasswordAuthenticator{
 			Username: cbCredentials.User,
@@ -106,23 +108,94 @@ func getConnection(cbCredentials director.DbCredentials) (cbConnection *cbConnec
 		},
 	}
 	if err = options.ApplyProfile(gocb.ClusterConfigProfileWanDevelopment); err != nil {
-		return nil, fmt.Errorf("manager gocb ApplyProfile error: %q", err)
+		return fmt.Errorf("manager gocb ApplyProfile error: %q", err)
 	}
 	// Initialize the Connection
 	var cluster *gocb.Cluster
 	cluster, err = gocb.Connect("couchbase://"+cbCredentials.Host, options)
 	if err != nil {
-		return nil, fmt.Errorf("manager gocb Connect error: %q", err)
+		return fmt.Errorf("manager gocb Connect error: %q", err)
 	}
-	cbConnection.Cluster = cluster
-	cbConnection.Bucket = cbConnection.Cluster.Bucket(cbCredentials.Bucket)
-	err = cbConnection.Bucket.WaitUntilReady(50*time.Second, nil)
+ 	mngr.cb.Cluster = cluster
+	mngr.cb.Bucket = cluster.Bucket(cbCredentials.Bucket)
+	err = mngr.cb.Bucket.WaitUntilReady(50*time.Second, nil)
 	if err != nil {
-		return nil, fmt.Errorf("manager bucket.WaitUntilReady error: %q", err)
+		return fmt.Errorf("manager bucket.WaitUntilReady error: %q", err)
 	}
-	cbConnection.Scope = cbConnection.Bucket.Scope(cbCredentials.Scope)
-	cbConnection.Collection = cbConnection.Bucket.Collection(cbCredentials.Collection)
-	return cbConnection, nil
+	mngr.cb.Scope = mngr.cb.Bucket.Scope(cbCredentials.Scope)
+	mngr.cb.Collection = mngr.cb.Bucket.Collection(cbCredentials.Collection)
+	return nil
+}
+
+// return tags for the struct as a slice
+func fields(s *struct{}) []string {
+	var tags []string
+	val := reflect.ValueOf(s)
+    for i := 0; i < val.Type().NumField(); i++ {
+        tags = append(tags, fmt.Sprint(val.Type().Field(i).Name))
+    }
+	return tags
+}
+
+func getMapSubDocument(mngr Manager, path string) (map[string]interface{}, error){
+	ops := []gocb.LookupInSpec{
+		gocb.GetSpec(path, &gocb.GetSpecOptions{IsXattr:false,}),
+	}
+	getResult, err := mngr.cb.Collection.LookupIn(mngr.documentId, ops, &gocb.LookupInOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("manager getSubDocument LookupIn error %q", err)
+	}
+	var subDoc map[string]interface{}
+	err = getResult.ContentAt(0, &subDoc)
+	if err != nil {
+		return nil, fmt.Errorf("manager getSubDocument getResult error %q", err)
+	}
+	return subDoc, nil
+}
+
+func getSubDocument(mngr Manager, path string, subDocPtr interface{}) error {
+	ops := []gocb.LookupInSpec{
+		gocb.GetSpec(path, &gocb.GetSpecOptions{IsXattr:false,}),
+	}
+	getResult, err := mngr.cb.Collection.LookupIn(mngr.documentId, ops, &gocb.LookupInOptions{})
+	if err != nil {
+		return fmt.Errorf("manager getSubDocument LookupIn error %q", err)
+	}
+	err = getResult.ContentAt(0, subDocPtr)
+	if err != nil {
+		return fmt.Errorf("manager getSubDocument getResult error %q", err)
+	}
+	return nil
+}
+
+// retrieve the results.blocks section of the document by subdoc get
+func getResultBlocks(mngr Manager)(map[string]interface{}, error){
+	var blocks map[string]interface{}
+	err := getSubDocument(mngr, "SCORECARD.results.blocks", &blocks)
+	if err != nil {
+		return nil, fmt.Errorf("manager getResultBlocks error %q", err)
+	}
+	return blocks, err
+}
+
+// retrieve the queryMap.blocks section of the document by subdoc get
+func getQueryBlocks(mngr Manager)(map[string]interface{}, error){
+	var blocks map[string]interface{}
+	err := getSubDocument(mngr, "SCORECARD.queryMap.blocks", &blocks)
+	if err != nil {
+		return nil, fmt.Errorf("manager getQueryBlocks error %q", err)
+	}
+	return blocks, err
+}
+
+// retrieve the PlotParam.curves (this is an array) section of the document by subdoc get
+func getPlotParamCurves(mngr Manager)([]map[string]interface{}, error){
+	var curves []map[string]interface{}
+	err := getSubDocument(mngr, "SCORECARD.plotParams.curves", &curves)
+	if err != nil {
+		return nil, fmt.Errorf("manager getPlotParamCurves error %q", err)
+	}
+	return curves, err
 }
 
 func  (mngr Manager)Run() error {
@@ -133,76 +206,86 @@ func  (mngr Manager)Run() error {
 	if err != nil {
 		return fmt.Errorf("manager loadEnvironmant error %q", err)
 	}
-	mngr.cb, err = getConnection(cbCredentials)
+	log.Printf("credentials %v",mysqlCredentials)
+	err = getConnection(&mngr, cbCredentials)
 	if err != nil {
 		return fmt.Errorf("manager Build GetConnection error: %q", err)
 	}
 	// get the scorecard document
-	var scorecardDataIn *gocb.GetResult
-	scorecardDataIn, err = mngr.cb.Collection.Get(mngr.documentId, nil)
+	// var scorecardDataIn *gocb.GetResult
+	// scorecardDataIn, err = mngr.cb.Collection.Get(mngr.documentId, nil)
+	// if err != nil {
+	// 	return fmt.Errorf("manager Build error getting scorecard: %q  error: %q", mngr.documentId, err)
+	// }
+	// // get the unmarshalled document (the Content) from the result
+	// var scorecard map[string]interface{}
+	// err = scorecardDataIn.Content(scorecard)
+	// if err != nil {
+	// 	return fmt.Errorf("manager Build error getting scorecard Content: %q", err)
+	// }
+	// mngr.ScorecardCB = scorecard
+	// // get the scorecardAppUrl so that manager can use it to notify
+	// // the scorecard app to refresh its mongo data after the upsert
+	// //scorecardApUrl := block["blockApplication"]
+	// // iterate the rows in the scorecard
+	blocks, err := getResultBlocks(mngr)
 	if err != nil {
-		return fmt.Errorf("manager Build error getting scorecard: %q  error: %q", mngr.documentId, err)
+		err = fmt.Errorf("manager Build error getting resultBlocks: %q", err)
+		return err
 	}
-	// get the unmarshalled document (the Content) from the result
-	var scorecard director.ScorecardBlock
-	err = scorecardDataIn.Content(scorecard)
+	log.Printf("blocks: %v", blocks)
+	queryBlocks, err := getQueryBlocks(mngr)
 	if err != nil {
-		return fmt.Errorf("manager Build error getting scorecard Content: %q", err)
+		err = fmt.Errorf("manager Build error getting queryBlocks: %q", err)
+		return err
 	}
-	mngr.ScorecardCB = scorecard
-	// get the scorecardAppUrl so that manager can use it to notify
-	// the scorecard app to refresh its mongo data after the upsert
-	//scorecardApUrl := block["blockApplication"]
-	// iterate the rows in the scorecard
-	results := scorecard["results"]
-	blocks := results.(map[string]interface{})["blocks"].(map[string]interface{})
-	queryMap := scorecard["queryMap"]
-	queryBlocks := queryMap.(map[string]interface{})["blocks"].(map[string]interface{})
-	blockKeys := director.Keys(blocks)
-	curves := scorecard["plotParams"].(map[string]interface{})["curves"].([]map[string]interface{})
-	for i := 0; i < len(blockKeys); i++ {
-		blockKey := blockKeys[i]
-		block := blocks[blockKey].(map[string]interface{})
-		var appName string
-		for _, curve := range curves {
-			if curve["label"] == blockKey {
-				appName = curve["appName"].(string)
-			}
-		}
-		data := block["data"].(map[string]interface{})
-		queryData := queryBlocks[blockKey].(map[string]interface{})["data"].(map[string]interface{})
-		//var regionLabels = director.Keys(data)
-		// launch a director for each region
-		for i := 0; i < len(director.Keys(data)); i++ {
-			regionName := director.Keys(data)[i]
-			regionMap := data[regionName].(map[string]interface{})
-			queryRegionMap := queryData[regionName].(map[string]interface{})
-			// launch a director for this region
-			if strings.ToUpper(appName) == "CB" {
-				// launch CB director - which we don't have yet
-			} else {
-				//launch mysql director
-				var mysqlDirector *director.Director
-				mysqlDirector, err := director.GetDirector("mySqlDirector", mysqlCredentials)
-				if err != nil {
-					err = fmt.Errorf("manager Build error getting director: %q", err)
-					return err
-				}
-				mysqlDirector.Run(regionMap, queryRegionMap)
-			}
-		}
+	log.Printf("queryBlocks %v",queryBlocks)
+	curves, err := getPlotParamCurves(mngr)
+	if err != nil {
+		err = fmt.Errorf("manager Build error getting plotParamCurves: %q", err)
+		return err
+	}
+	log.Printf("curves%v",curves)
+
+	// numCurves := curves.NumField()
+    // for i := 0; i < numBlocks; i++ {
+	// 	block := blocks.Field(i)
+	// 	var appName string
+	// 	for i := 0; i < numCurves; i++ {
+	// 		curve := curves.Field(i)
+	// 		if curve.Tag.Get("Label") == block.Tag.Get("BlockTitle").Tag.Get("Label"){
+	// 			appName = curve.Application
+	// 		}
+	// 	}
+	// 	data := block.Tag.Get("Data")
+	// 	queryData := queryBlocks
+	// 	numRegions := queryData.NumField()
+	// 	for i := 0; i < numRegions; i++ {
+	// 		region := queryData.Field(i).(struct{})
+	// 		// launch a director for this region
+	// 		if strings.ToUpper(appName) == "CB" {
+	// 			// launch CB director - which we don't have yet
+	// 		} else {
+	// 			//launch mysql director
+	// 			var mysqlDirector *director.Director
+	// 			mysqlDirector, err := director.GetDirector("mySqlDirector", mysqlCredentials)
+	// 			if err != nil {
+	// 				err = fmt.Errorf("manager Build error getting director: %q", err)
+	// 				return err
+	// 			}
+	// 			mysqlDirector.Run(regionMap, queryRegionMap)
+	// 		}
+	// 	}
+	//}
 		// upsert the document
 		return nil
 	}
-	return nil
-}
 
 var myScorecardManager = Manager{}
-
 func NewScorecardManager(environmentFile, documentId string) (*Manager, error) {
 	myScorecardManager.environmentFile = environmentFile
 	myScorecardManager.ScorecardCB = nil
-	myScorecardManager.cb = nil
+	myScorecardManager.cb = &cbConnection{}
 	myScorecardManager.documentId = documentId
 	return &myScorecardManager, nil
 }

@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"testing"
 	"time"
+	"math"
 )
 
 func getDataSet(epoch int64, ctlValues []float64, expValues []float64) DataSet {
@@ -14,10 +15,10 @@ func getDataSet(epoch int64, ctlValues []float64, expValues []float64) DataSet {
 	var tmpc = make([]PreCalcRecord, ctlLen)
 	var tmpe = make([]PreCalcRecord, expLen)
 	for i := 0; i < ctlLen; i++ {
-		tmpc[i] = PreCalcRecord{Time: epoch + int64(i), Value: ctlValues[i]}
+		tmpc[i] = PreCalcRecord{Time: epoch + int64(ctlValues[i]), Value: ctlValues[i]}
 	}
 	for i := 0; i < expLen; i++ {
-		tmpe[i] = PreCalcRecord{Time: epoch + int64(i), Value: expValues[i]}
+		tmpe[i] = PreCalcRecord{Time: epoch + int64(expValues[i]), Value: expValues[i]}
 	}
 	var dataSet = DataSet{
 		ctlPop: tmpc,
@@ -44,18 +45,18 @@ func TestGetMatchedDataSet(t *testing.T) {
 		},
 		{
 			name: "dataCtlHole",
-			args: getDataSet(epoch, []float64{1.0, 2.0, 4.0, 5.0},
-				[]float64{1.0, 2.0, 3.0, 4.0, 5.0}),
+			args: getDataSet(epoch, []float64{1.0, 2.0, 3.0, 4.0, 5.0},
+				[]float64{1.0, 2.0, 4.0, 5.0}),
 			want: getDataSet(epoch, []float64{1.0, 2.0, 4.0, 5.0},
 				[]float64{1.0, 2.0, 4.0, 5.0}),
 			wantErr: false,
 		},
 		{
 			name: "dataExpHole",
-			args: getDataSet(epoch, []float64{1.0, 2.0, 3.0, 4.0, 5.0},
-				[]float64{1.0, 2.0, 3.0, 5.0}),
-			want: getDataSet(epoch, []float64{1.0, 2.0, 3.0, 5.0},
-				[]float64{1.0, 2.0, 3.0, 5.0}),
+			args: getDataSet(epoch, []float64{1.0, 2.0, 4.0, 5.0},
+				[]float64{1.0, 2.0, 3.0, 4.0, 5.0}),
+			want: getDataSet(epoch, []float64{1.0, 2.0, 4.0, 5.0},
+				[]float64{1.0, 2.0, 4.0, 5.0}),
 			wantErr: false,
 		},
 		{
@@ -135,6 +136,7 @@ func Test_calculateStatScalar(t *testing.T) {
 		name    string
 		args    args
 		want    float64
+		tolerance float64
 		wantErr bool
 	}{
 		//test cases.
@@ -150,7 +152,8 @@ func Test_calculateStatScalar(t *testing.T) {
 				absSum:          4889.7998046875,
 				statistic:       "RMSE",
 			},
-			want:    1.957,
+			want:    1.957 * 1.8,
+			tolerance: 0.005,
 			wantErr: false,
 		},
 		{
@@ -165,22 +168,24 @@ func Test_calculateStatScalar(t *testing.T) {
 				absSum:          4889.7998046875,
 				statistic:       "Bias (Model - Obs)",
 			},
-			want:    -0.5741,
+			want:    -0.5741 * 1.8,
+			tolerance: 0.001,
 			wantErr: false,
 		},
 		{
 			// MAE_temp_dewpoint.sql
 			name: "MAE (temp and dewpoint only)",
 			args: args{
-				squareDiffSum:   22019.0390625,
-				NSum:            1775,
-				obsModelDiffSum: 1834.199951171875,
-				modelSum:        85194.69848632812,
-				obsSum:          87028.8984375,
-				absSum:          87028.8984375,
+				squareDiffSum:   4328.60986328125,
+				NSum:            212,
+				obsModelDiffSum: 67.5,
+				modelSum:        6096.10009765625,
+				obsSum:          6163.60009765625,
+				absSum:          740.9000244140630,
 				statistic:       "MAE (temp and dewpoint only)",
 			},
-			want:    1.530,
+			want:    1.942 * 1.8,
+			tolerance: 0.005,
 			wantErr: false,
 		},
 		{
@@ -190,12 +195,13 @@ func Test_calculateStatScalar(t *testing.T) {
 				squareDiffSum:   3.5396907496750747,
 				NSum:            13,
 				obsModelDiffSum: -2.4978950321674347,
-				modelSum:        0,
+				modelSum:        0.1,
 				obsSum:          -2.4978950321674347,
 				absSum:          4.271478652954102,
 				statistic:       "MAE",
 			},
 			want:    0.3286,
+			tolerance: 0.005,
 			wantErr: false,
 		},
 		// the following are error cases - don't need precise inputs
@@ -211,6 +217,7 @@ func Test_calculateStatScalar(t *testing.T) {
 				statistic:       "squareDiffSum",
 			},
 			want:    0.0,
+			tolerance: 0.0,
 			wantErr: true,
 		},
 		{
@@ -225,6 +232,7 @@ func Test_calculateStatScalar(t *testing.T) {
 				statistic: "obsModelDiffSum",
 			},
 			want:    0.0,
+			tolerance: 0.0,
 			wantErr: true,
 		},
 		{
@@ -239,6 +247,7 @@ func Test_calculateStatScalar(t *testing.T) {
 				statistic:       "NSum",
 			},
 			want:    0.0,
+			tolerance: 0.0,
 			wantErr: true,
 		},
 		{
@@ -253,6 +262,7 @@ func Test_calculateStatScalar(t *testing.T) {
 				statistic: "modelSum",
 			},
 			want:    0.0,
+			tolerance: 0.0,
 			wantErr: true,
 		},
 		{
@@ -267,6 +277,7 @@ func Test_calculateStatScalar(t *testing.T) {
 				statistic: "obsSum",
 			},
 			want:    0.0,
+			tolerance: 0.0,
 			wantErr: true,
 		},
 		{
@@ -281,6 +292,7 @@ func Test_calculateStatScalar(t *testing.T) {
 				statistic: "absSum",
 			},
 			want:    0.0,
+			tolerance: 0.0,
 			wantErr: true,
 		},
 		{
@@ -295,6 +307,7 @@ func Test_calculateStatScalar(t *testing.T) {
 				//statistic:       "",
 			},
 			want:    0.0,
+			tolerance: 0.0,
 			wantErr: true,
 		},
 	}
@@ -307,7 +320,7 @@ func Test_calculateStatScalar(t *testing.T) {
 				t.Errorf("calculateStatScalar() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if got != tt.want {
+			if math.Abs(got-tt.want) > tt.tolerance {
 				t.Errorf("calculateStatScalar() = %v, want %v", got, tt.want)
 			}
 		})

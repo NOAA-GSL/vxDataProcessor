@@ -109,7 +109,7 @@ func CalculateStatCTC(hit float32, fa float32, miss float32, cn float32, statist
 func CalculateStatScalar(squareDiffSum, NSum, obsModelDiffSum, modelSum, obsSum, absSum float64, statistic string) (float64, error) {
 	var err error
 	var value float64
-	if err = validate.Var(squareDiffSum, "required"); err != nil {
+	if err = validate.Var(squareDiffSum, "required"); err != nil{
 		return 0, fmt.Errorf("builder_stats calculateStatCTC %q", err)
 	}
 	if err = validate.Var(NSum, "required"); err != nil {
@@ -138,6 +138,8 @@ func CalculateStatScalar(squareDiffSum, NSum, obsModelDiffSum, modelSum, obsSum,
 		value = (modelSum - obsSum) / NSum
 		break
 	case "MAE (temp and dewpoint only)": //surface
+		value = absSum / NSum
+		break
 	case "MAE": // landuse
 		value = absSum / NSum
 		break
@@ -160,10 +162,12 @@ func GetMatchedDataSet(dataSet DataSet) (DataSet, error) {
 	var err error = nil
 	defer func() {
 		if r := recover(); r != nil {
-			err = fmt.Errorf("builder_stat calculateStatCTC recovered panic - probably divide by 0")
+			err = fmt.Errorf("builder_stat calculateStatCTC recovered panic:%q", err)
 		}
 	}()
-
+	if lenCtl == 0 || lenExp == 0 {
+		return DataSet{ctlPop:[]PreCalcRecord{},expPop: []PreCalcRecord{}}, nil
+	}
 	for {
 		if dataSet.ctlPop[indexCtl].Time == dataSet.expPop[indexExp].Time {
 			// time matches and valid values so append to result

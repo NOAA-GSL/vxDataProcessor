@@ -1,9 +1,13 @@
+//go:build integration
+// +build integration
+
 package director
 
 import (
 	"database/sql"
 	"reflect"
 	"testing"
+
 	_ "github.com/go-sql-driver/mysql"
 )
 

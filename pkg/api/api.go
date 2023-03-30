@@ -16,6 +16,7 @@ import (
 func SetupRouter(js *jobstore.JobStore) *gin.Engine {
 	router := gin.Default()
 	server := NewJobServer(js)
+	router.Use(prometheusMiddleware()) // attach our Prometheus middleware
 
 	router.POST("/jobs/", server.createJobHandler)
 	router.GET("/jobs/", server.getAllJobsHandler)

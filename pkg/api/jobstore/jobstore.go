@@ -110,6 +110,10 @@ func (js *JobStore) CreateJob(docID string) (int, error) {
 
 	js.jobs[js.nextID] = job
 	js.nextID++
+
+	// Update Prometheus metrics
+	jobsCreated.Inc()
+	jobsToBeProcessed.Inc()
 	return job.ID, nil
 }
 
@@ -181,5 +185,19 @@ func (js *JobStore) UpdateJobStatus(id int, status JobStatus) error {
 	job.Status = status
 
 	js.jobs[id] = job
+
+	// Update Prometheus metrics
+	switch status {
+	case StatusProcessing:
+		jobsToBeProcessed.Dec()
+		jobsProcessing.Inc()
+	case StatusCompleted:
+		jobsProcessing.Dec()
+		jobsCompleted.Inc()
+	case StatusFailed:
+		jobsProcessing.Dec()
+		jobsFailed.Inc()
+
+	}
 	return nil
 }

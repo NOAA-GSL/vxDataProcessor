@@ -25,7 +25,7 @@ func TestClient_EmptyPOSTRequest(t *testing.T) {
 	}))
 	defer svr.Close()
 
-	err := UpdateMATS(svr.URL, expectedDocID)
+	err := NotifyScorecard(svr.URL, expectedDocID)
 	if err != nil {
 		t.Errorf("Unexpected error")
 	}
@@ -39,14 +39,14 @@ func TestClient_StatusNotFound(t *testing.T) {
 
 	URL := fmt.Sprintf("%s/refreshScorecard/foo", svr.URL)
 	want := fmt.Sprintf("client: got response code 404 from %s", URL)
-	err := UpdateMATS(svr.URL, "foo")
+	err := NotifyScorecard(svr.URL, "foo")
 	if err.Error() != want {
 		t.Errorf("Unexpected error %v", err)
 	}
 }
 
 func TestClient_WrongURL(t *testing.T) {
-	err := UpdateMATS("http://localhost:1000", "foo")
+	err := NotifyScorecard("http://localhost:1000", "foo")
 	if err == nil {
 		t.Errorf("Expected an Error to occur")
 	}

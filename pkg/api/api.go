@@ -8,6 +8,7 @@ import (
 
 	"github.com/NOAA-GSL/vxDataProcessor/pkg/api/jobstore"
 	"github.com/gin-gonic/gin"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 // SetupRouter defines the routes the API server will respond to along with
@@ -19,6 +20,7 @@ func SetupRouter(js *jobstore.JobStore) *gin.Engine {
 	router.POST("/jobs/", server.createJobHandler)
 	router.GET("/jobs/", server.getAllJobsHandler)
 	router.GET("/jobs/:id", server.getJobHandler)
+	router.GET(defaultMetricPath, gin.WrapH(promhttp.Handler())) // expose Prometheus metrics
 
 	// healthcheck
 	router.GET("/ping", func(context *gin.Context) {

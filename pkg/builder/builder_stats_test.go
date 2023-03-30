@@ -1,7 +1,6 @@
 package builder
 
 import (
-	"fmt"
 	"github.com/stretchr/testify/assert"
 	"reflect"
 	"testing"
@@ -15,10 +14,10 @@ func getDataSet(epoch int64, ctlValues []float64, expValues []float64) DataSet {
 	var tmpc = make([]PreCalcRecord, ctlLen)
 	var tmpe = make([]PreCalcRecord, expLen)
 	for i := 0; i < ctlLen; i++ {
-		tmpc[i] = PreCalcRecord{Time: epoch + int64(ctlValues[i]), Value: ctlValues[i]}
+		tmpc[i] = PreCalcRecord{avtime: epoch + int64(ctlValues[i]), stat: ctlValues[i]}
 	}
 	for i := 0; i < expLen; i++ {
-		tmpe[i] = PreCalcRecord{Time: epoch + int64(expValues[i]), Value: expValues[i]}
+		tmpe[i] = PreCalcRecord{avtime: epoch + int64(expValues[i]), stat: expValues[i]}
 	}
 	var dataSet = DataSet{
 		ctlPop: tmpc,
@@ -516,7 +515,7 @@ func Test_calculateStatCTC(t *testing.T) {
 				assert.Errorf(t, err, "calculateStatCTC() should have returned error but did not - got %v", got)
 			} else {
 				assert.NoErrorf(t, err, "calculateStatCTC() returned error %s", err)
-				assert.InDelta(t, tt.want, got, delta, fmt.Sprintf("calculateStatCTC() excessive difference"))
+				assert.InDelta(t, tt.want, got, delta, "calculateStatCTC() excessive difference")
 			}
 		})
 	}

@@ -212,22 +212,22 @@ func  (mngr Manager)Run() error {
 		return fmt.Errorf("manager Build GetConnection error: %q", err)
 	}
 	// get the scorecard document
-	// var scorecardDataIn *gocb.GetResult
-	// scorecardDataIn, err = mngr.cb.Collection.Get(mngr.documentId, nil)
-	// if err != nil {
-	// 	return fmt.Errorf("manager Build error getting scorecard: %q  error: %q", mngr.documentId, err)
-	// }
-	// // get the unmarshalled document (the Content) from the result
-	// var scorecard map[string]interface{}
-	// err = scorecardDataIn.Content(scorecard)
-	// if err != nil {
-	// 	return fmt.Errorf("manager Build error getting scorecard Content: %q", err)
-	// }
-	// mngr.ScorecardCB = scorecard
-	// // get the scorecardAppUrl so that manager can use it to notify
-	// // the scorecard app to refresh its mongo data after the upsert
-	// //scorecardApUrl := block["blockApplication"]
-	// // iterate the rows in the scorecard
+	var scorecardDataIn *gocb.GetResult
+	scorecardDataIn, err = mngr.cb.Collection.Get(mngr.documentId, nil)
+	if err != nil {
+		return fmt.Errorf("manager Build error getting scorecard: %q  error: %q", mngr.documentId, err)
+	}
+	// get the unmarshalled document (the Content) from the result
+	var scorecard map[string]interface{}
+	err = scorecardDataIn.Content(scorecard)
+	if err != nil {
+		return fmt.Errorf("manager Build error getting scorecard Content: %q", err)
+	}
+	mngr.ScorecardCB = scorecard
+	// get the scorecardAppUrl so that manager can use it to notify
+	// the scorecard app to refresh its mongo data after the upsert
+	scorecardApUrl := block["blockApplication"]
+	// iterate the rows in the scorecard
 	blocks, err := getResultBlocks(mngr)
 	if err != nil {
 		err = fmt.Errorf("manager Build error getting resultBlocks: %q", err)
@@ -247,36 +247,36 @@ func  (mngr Manager)Run() error {
 	}
 	log.Printf("curves%v",curves)
 
-	// numCurves := curves.NumField()
-    // for i := 0; i < numBlocks; i++ {
-	// 	block := blocks.Field(i)
-	// 	var appName string
-	// 	for i := 0; i < numCurves; i++ {
-	// 		curve := curves.Field(i)
-	// 		if curve.Tag.Get("Label") == block.Tag.Get("BlockTitle").Tag.Get("Label"){
-	// 			appName = curve.Application
-	// 		}
-	// 	}
-	// 	data := block.Tag.Get("Data")
-	// 	queryData := queryBlocks
-	// 	numRegions := queryData.NumField()
-	// 	for i := 0; i < numRegions; i++ {
-	// 		region := queryData.Field(i).(struct{})
-	// 		// launch a director for this region
-	// 		if strings.ToUpper(appName) == "CB" {
-	// 			// launch CB director - which we don't have yet
-	// 		} else {
-	// 			//launch mysql director
-	// 			var mysqlDirector *director.Director
-	// 			mysqlDirector, err := director.GetDirector("mySqlDirector", mysqlCredentials)
-	// 			if err != nil {
-	// 				err = fmt.Errorf("manager Build error getting director: %q", err)
-	// 				return err
-	// 			}
-	// 			mysqlDirector.Run(regionMap, queryRegionMap)
-	// 		}
-	// 	}
-	//}
+	numCurves := curves.NumField()
+    for i := 0; i < numBlocks; i++ {
+		block := blocks.Field(i)
+		var appName string
+		for i := 0; i < numCurves; i++ {
+			curve := curves.Field(i)
+			if curve.Tag.Get("Label") == block.Tag.Get("BlockTitle").Tag.Get("Label"){
+				appName = curve.Application
+			}
+		}
+		data := block.Tag.Get("Data")
+		queryData := queryBlocks
+		numRegions := queryData.NumField()
+		for i := 0; i < numRegions; i++ {
+			region := queryData.Field(i).(struct{})
+			// launch a director for this region
+			if strings.ToUpper(appName) == "CB" {
+				// launch CB director - which we don't have yet
+			} else {
+				//launch mysql director
+				var mysqlDirector *director.Director
+				mysqlDirector, err := director.GetDirector("mySqlDirector", mysqlCredentials)
+				if err != nil {
+					err = fmt.Errorf("manager Build error getting director: %q", err)
+					return err
+				}
+				mysqlDirector.Run(regionMap, queryRegionMap)
+			}
+		}
+	}
 		// upsert the document
 		return nil
 	}

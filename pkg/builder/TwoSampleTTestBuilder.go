@@ -33,10 +33,11 @@ will cause a return of 0.
 import (
 	"errors"
 	"fmt"
-	"github.com/aclements/go-moremath/stats"
-	"github.com/go-playground/validator/v10"
+	"reflect"
 	"log"
 	"strings"
+	"github.com/aclements/go-moremath/stats"
+	"github.com/go-playground/validator/v10"
 )
 
 // use a single instance of Validate, it caches struct info
@@ -108,31 +109,27 @@ func deriveValue(scc *ScorecardCell, difference float64, pval float64) (int, err
 
 // using the experimental Query Result and the control QueryResult and the statistic
 // perform statistic calculation for each, perform matching and store the resultant  dataSet
-func deriveCTCInputData(scc *ScorecardCell, QR *QueryResult, statisticType string) (dataSet DataSet, err error) {
+func deriveCTCInputData(scc *ScorecardCell, queryResult BuilderCTCResult, statisticType string) (dataSet DataSet, err error) {
 	// derive CTC statistical values for ctl and exp
 	var stat float32
-	var ctlData []PreCalcRecord
-	var expData []PreCalcRecord
-	ctlQR := *(QR.CtlData)
-	expQR := *(QR.ExpData)
+	var ctlData PreCalcRecords
+	var expData PreCalcRecords
 	var record CTCRecord
 
-	for i := 0; i < len(ctlQR); i++ {
-		record = (ctlQR)[i].(CTCRecord)
-		stat, err = CalculateStatCTC(record.Hit, record.Fa, record.Miss, record.Cn, statisticType)
+	for i := 0; i < len(queryResult.CtlData); i++ {
+		record = queryResult.CtlData[i]
+		stat, err = CalculateStatCTC(record.hit, record.fa, record.miss, record.cn, statisticType)
 		if err == nil {
 			//include this one
-			ctlData = append(ctlData, PreCalcRecord{Value: float64(stat), Time: record.Time})
-		} else { /*don't include it*/
+			ctlData = append(ctlData, PreCalcRecord{stat:float64(stat), avtime: record.avtime})
 		}
 	}
-	for i := 0; i < len(expQR); i++ {
-		record = (expQR)[i].(CTCRecord)
-		stat, err = CalculateStatCTC(record.Hit, record.Fa, record.Miss, record.Cn, statisticType)
+	for i := 0; i < len(queryResult.ExpData); i++ {
+		record = queryResult.ExpData[i]
+		stat, err = CalculateStatCTC(record.hit, record.fa, record.miss, record.cn, statisticType)
 		if err == nil {
 			//include this one
-			expData = append(expData, PreCalcRecord{Value: float64(stat), Time: record.Time})
-		} else { /*don't include it*/
+			expData = append(expData, PreCalcRecord{stat:float64(stat), avtime: record.avtime})
 		}
 	}
 	// define the dataSet - this is the data struct the holds the two arrays of time and stat value
@@ -141,31 +138,27 @@ func deriveCTCInputData(scc *ScorecardCell, QR *QueryResult, statisticType strin
 	return dataSet, err
 }
 
-func deriveScalarInputData(scc *ScorecardCell, qPtr *QueryResult, statisticType string) (dataSet DataSet, err error) {
+func deriveScalarInputData(scc *ScorecardCell, queryResult BuilderScalarResult, statisticType string) (dataSet DataSet, err error) {
 	// derive Scalar statistical values for ctl and exp
 	var stat float64
-	var record ScalarRecord
 	var ctlData []PreCalcRecord
 	var expData []PreCalcRecord
-	//var matchedData DataSet
-	ctlQR := *(qPtr.CtlData)
-	expQR := *(qPtr.ExpData)
+	var record ScalarRecord
 
-	for i := 0; i < len(ctlQR); i++ {
-		record = (ctlQR)[i].(ScalarRecord)
-		stat, err = CalculateStatScalar(record.SquareDiffSum, record.NSum, record.ObsModelDiffSum, record.ModelSum, record.ObsSum, record.AbsSum, statisticType)
+	for i := 0; i < len(queryResult.CtlData); i++ {
+		record = queryResult.CtlData[i]
+		stat, err = CalculateStatScalar(record.squareDiffSum, record.NSum, record.obsModelDiffSum, record.modelSum, record.obsSum, record.absSum, statisticType)
 		if err == nil {
 			//include this one
-			ctlData = append(ctlData, PreCalcRecord{Value: float64(stat), Time: record.Time})
-		} else { /*don't include it*/
+			ctlData = append(ctlData, PreCalcRecord{stat: float64(stat), avtime: record.avtime})
 		}
 	}
-	for i := 0; i < len(expQR); i++ {
-		record = (expQR)[i].(ScalarRecord)
-		stat, err = CalculateStatScalar(record.SquareDiffSum, record.NSum, record.ObsModelDiffSum, record.ModelSum, record.ObsSum, record.AbsSum, statisticType)
+	for i := 0; i < len(queryResult.CtlData); i++ {
+		record = queryResult.CtlData[i]
+		stat, err = CalculateStatScalar(record.squareDiffSum, record.NSum, record.obsModelDiffSum, record.modelSum, record.obsSum, record.absSum, statisticType)
 		if err == nil {
 			//include this one
-			expData = append(expData, PreCalcRecord{Value: float64(stat), Time: record.Time})
+			expData = append(expData, PreCalcRecord{stat: float64(stat), avtime: record.avtime})
 		}
 	}
 	// return the unmatched Scalar dataSet
@@ -173,33 +166,34 @@ func deriveScalarInputData(scc *ScorecardCell, qPtr *QueryResult, statisticType 
 	return dataSet, err
 }
 
-func derivePreCalcInputData(scc *ScorecardCell, qPtr *QueryResult, statisticType string) (dataSet DataSet, err error) {
+func derivePreCalcInputData(scc *ScorecardCell, queryResult BuilderPreCalcResult, statisticType string) (dataSet DataSet, err error) {
 	// data is precalculated - don't need to derive stats
 	// have to use just the values to create the data set (type DataSet)
 	var ctlData PreCalcRecords
 	var expData PreCalcRecords
 
-	for i := 0; i < len(*(qPtr.CtlData)); i++ {
-		ctlData = append(ctlData, (*(qPtr.CtlData))[i].(PreCalcRecord))
+	for i := 0; i < len(queryResult.CtlData); i++ {
+		ctlData = append(ctlData, queryResult.CtlData[i])
 	}
-	for i := 0; i < len(*(qPtr.ExpData)); i++ {
-		expData = append(expData, (*(qPtr.ExpData))[i].(PreCalcRecord))
+	for i := 0; i < len(queryResult.ExpData); i++ {
+		expData = append(expData, queryResult.ExpData[i])
 	}
 	// return the unmatched PreCalculated dataSet
 	dataSet = DataSet{ctlPop: ctlData, expPop: expData}
 	return dataSet, err
 }
 
-func (scc *ScorecardCell) DeriveInputData(qrPtr *QueryResult, statisticType string, dataType string) (err error) {
+func (scc *ScorecardCell) DeriveInputData(qrPtr interface{}, statisticType string) (err error) {
 	var dataSet DataSet
 	var matchedDataSet DataSet
+	dataType := reflect.TypeOf(qrPtr).Name()
 	switch dataType {
-	case "CTCRecord":
-		dataSet, err = deriveCTCInputData(scc, qrPtr, statisticType)
-	case "ScalarRecord":
-		dataSet, err = deriveScalarInputData(scc, qrPtr, statisticType)
-	case "PreCalcRecord":
-		dataSet, err = derivePreCalcInputData(scc, qrPtr, statisticType)
+	case "BuilderCTCResult":
+		dataSet, err = deriveCTCInputData(scc, qrPtr.(BuilderCTCResult), statisticType)
+	case "BuilderScalarResult":
+		dataSet, err = deriveScalarInputData(scc, qrPtr.(BuilderScalarResult), statisticType)
+	case "BuilderPreCalcResult":
+		dataSet, err = derivePreCalcInputData(scc, qrPtr.(BuilderPreCalcResult), statisticType)
 	default:
 		err = fmt.Errorf("TwoSampleTTestBuilder DeriveInputData unsupported data type: %q", dataType)
 	}
@@ -211,8 +205,8 @@ func (scc *ScorecardCell) DeriveInputData(qrPtr *QueryResult, statisticType stri
 	// convert matched DataSet to DerivedDataElement
 	var de DerivedDataElement
 	for i := 0; i < len(matchedDataSet.ctlPop); i++ {
-		de.CtlPop = append(de.CtlPop, matchedDataSet.ctlPop[i].Value)
-		de.ExpPop = append(de.ExpPop, matchedDataSet.expPop[i].Value)
+		de.CtlPop = append(de.CtlPop, matchedDataSet.ctlPop[i].stat)
+		de.ExpPop = append(de.ExpPop, matchedDataSet.expPop[i].stat)
 	}
 	scc.Data = de
 	return err
@@ -221,7 +215,7 @@ func (scc *ScorecardCell) DeriveInputData(qrPtr *QueryResult, statisticType stri
 func (scc *ScorecardCell) ComputeSignificance() error {
 	// scc should hvae already been populated
 	if scc.Data.CtlPop == nil || scc.Data.ExpPop == nil {
-		return errors.New(fmt.Sprint("TwoSampleTTestBuilder ComputeSignificance - no data"))
+		return errors.New("TwoSampleTTestBuilder ComputeSignificance - no data")
 	}
 	// alternate hypothesis is locationDiffers - i.e. null hypothesis is equality.
 	var derivedData DerivedDataElement = scc.Data
@@ -289,18 +283,8 @@ func NewTwoSampleTTestBuilder() *ScorecardCell {
 	validate = validator.New()
 	return &ScorecardCell{}
 }
-func (scc *ScorecardCell) SetValuePtr(valuePtr int) error {
-	if errs := validate.Var(valuePtr, "required"); errs != nil {
-		log.Print(errs)
-		var errorVal int = -9999
-		scc.ValuePtr = &errorVal
-		return errors.New(fmt.Sprint("TwoSampleTTestBuilder ComputeSignificance", errs))
-	}
-	scc.ValuePtr = &valuePtr
-	return nil
-}
 
-func (scc *ScorecardCell) Build(qrPtr *QueryResult, statisticType string, dataType string) error {
+func (scc *ScorecardCell) Build(qrPtr BuilderGenericResult, statisticType string) error {
 	//DerivePreCalcInputData(ctlQR PreCalcRecords, expQR PreCalcRecords, statisticType string)
 	// build the input data elements and
 	// for all the input elements fire off a thread to do the compute
@@ -317,7 +301,7 @@ func (scc *ScorecardCell) Build(qrPtr *QueryResult, statisticType string, dataTy
 	if err != nil {
 		return errors.New(fmt.Sprint("mysql_director - build - SetmajorThreshold - error message : ", err))
 	}
-	err = scc.DeriveInputData(qrPtr, statisticType, dataType)
+	err = scc.DeriveInputData(qrPtr, statisticType)
 	if err != nil {
 		return errors.New(fmt.Sprint("mysql_director - build - SetInputData - error message : ", err))
 	}

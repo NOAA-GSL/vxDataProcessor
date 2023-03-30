@@ -41,7 +41,6 @@ A ScorecardCellBuilder is an interface that provides several functions:
 	significance values for an array of input data elements.
 */
 
-type statFunc func(StatType)
 type StatType string
 
 type DerivedDataElement struct {
@@ -60,21 +59,59 @@ type ScorecardCell struct {
 	Pvalue           float64
 	ValuePtr         *int
 }
+// these are floats because of the division in the CalculateStatCTC func
+type CTCRecord struct {
+	avtime int64
+	hit  float32
+	miss float32
+	fa   float32
+	cn   float32
+}
+type CTCRecords = []CTCRecord
 
-type QueryResult struct {
-	CtlData *([]interface{})
-	ExpData *([]interface{})
+type ScalarRecord struct {
+	avtime            int64
+	squareDiffSum   float64
+	NSum            float64
+	obsModelDiffSum float64
+	modelSum        float64
+	obsSum          float64
+	absSum          float64
+}
+type ScalarRecords []ScalarRecord
+
+type PreCalcRecord struct {
+	avtime  int64
+	stat float64
+}
+type PreCalcRecords []PreCalcRecord
+
+
+type BuilderScalarResult struct {
+	CtlData ScalarRecords
+	ExpData ScalarRecords
+}
+type BuilderCTCResult struct {
+	CtlData CTCRecords
+	ExpData CTCRecords
+}
+type BuilderPreCalcResult struct {
+	CtlData PreCalcRecords
+	ExpData PreCalcRecords
+}
+type BuilderGenericResult struct {
+	CtlData interface{}
+	ExpData interface{}
 }
 
 type ScorecardCellBuilder interface {
 	SetGoodnessPolarity(GoodnessPolarity)
 	SetMajorThreshold(Threshold)
 	SetMinorThreshold(Threshold)
-	DeriveCTCInputData(QueryResult QueryResult, statisticType string, dataType string)
+	DeriveInputData(QueryResult interface{}, statisticType string)
 	ComputeSignificance(scc *ScorecardCell)
-	SetValuePtr(valuePtr *int)
 	GetValue()
-	Build(qr QueryResult, statisticType string, dataType string)
+	Build(qr interface{}, statisticType string, dataType string)
 }
 
 func GetBuilder(builderType string) *ScorecardCell {

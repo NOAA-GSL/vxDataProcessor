@@ -6,32 +6,6 @@ import (
 	"math"
 )
 
-// these are floats because of the division in the CalculateStatCTC func
-type CTCRecord struct {
-	Hit  float32
-	Miss float32
-	Fa   float32
-	Cn   float32
-	Time int64
-}
-type CTCRecords = []CTCRecord
-
-type ScalarRecord struct {
-	SquareDiffSum   float64
-	NSum            float64
-	ObsModelDiffSum float64
-	ModelSum        float64
-	ObsSum          float64
-	AbsSum          float64
-	Time            int64
-}
-type ScalarRecords []ScalarRecord
-
-type PreCalcRecord struct {
-	Value float64
-	Time  int64
-}
-type PreCalcRecords []PreCalcRecord
 
 type DataSet struct {
 	ctlPop []PreCalcRecord
@@ -133,16 +107,12 @@ func CalculateStatScalar(squareDiffSum, NSum, obsModelDiffSum, modelSum, obsSum,
 	switch statistic {
 	case "RMSE": //surface
 		value = math.Sqrt(squareDiffSum / NSum)
-		break
 	case "Bias (Model - Obs)": //surface
 		value = (modelSum - obsSum) / NSum
-		break
 	case "MAE (temp and dewpoint only)": //surface
 		value = absSum / NSum
-		break
 	case "MAE": // landuse
 		value = absSum / NSum
-		break
 	}
 	return value, err
 
@@ -169,7 +139,7 @@ func GetMatchedDataSet(dataSet DataSet) (DataSet, error) {
 		return DataSet{ctlPop:[]PreCalcRecord{},expPop: []PreCalcRecord{}}, nil
 	}
 	for {
-		if dataSet.ctlPop[indexCtl].Time == dataSet.expPop[indexExp].Time {
+		if dataSet.ctlPop[indexCtl].avtime == dataSet.expPop[indexExp].avtime {
 			// time matches and valid values so append to result
 			result.ctlPop = append(result.ctlPop, dataSet.ctlPop[indexCtl])
 			result.expPop = append(result.expPop, dataSet.expPop[indexExp])
@@ -177,7 +147,7 @@ func GetMatchedDataSet(dataSet DataSet) (DataSet, error) {
 			indexExp++
 		} else {
 			// times did not match - increment the earliest one
-			if dataSet.ctlPop[indexCtl].Time < dataSet.expPop[indexExp].Time {
+			if dataSet.ctlPop[indexCtl].avtime < dataSet.expPop[indexExp].avtime {
 				// increment the ctlPop index
 				indexCtl++
 			} else {

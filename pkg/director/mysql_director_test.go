@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
+	"github.com/NOAA-GSL/vxDataProcessor/pkg/builder"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/joho/godotenv"
 )
@@ -61,16 +63,6 @@ func Test_getMySqlConnection(t *testing.T) {
 	}
 }
 
-type stringScalar struct {
-	avtime			int64
-	squareDiffSum   float64
-	NSum            int64
-	obsModelDiffSum float64
-	modelSum        float64
-	obsSum          float64
-	absSum          float64
-}
-
 //record.squareDiffSum record.NSum record.obsModelDiffSum record.modelSum record.obsSum record.absSum record.time
 func Test_mySqlQuery(t *testing.T) {
 
@@ -102,12 +94,28 @@ func Test_mySqlQuery(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    string
+		recordType	 string
 		want    int
 		wantErr bool
 	}{
 		{
-			name: "test_query",
-			args: "testdata/stmnt.sql",
+			name: "test_query_scalar",
+			args: "testdata/scalar_stmnt.sql",
+			recordType: "scalar",
+			want: 667,
+			wantErr: false,
+		},
+		{
+			name: "test_query_ctc",
+			args: "testdata/ctc_stmnt.sql",
+			recordType: "ctc",
+			want: 667,
+			wantErr: false,
+		},
+		{
+			name: "test_query_precalc",
+			args: "testdata/precalc_stmnt.sql",
+			recordType: "precalc",
 			want: 667,
 			wantErr: false,
 		},
@@ -119,27 +127,48 @@ func Test_mySqlQuery(t *testing.T) {
 			t.Fatalf("Test_mySqlQuery() error reading test statement= %v", err)
 			return
 		}
+
 		stmnt := string(buf)
 		fromEpoch := "1675281600" // Tue, 1 Feb 2023 20:00:00 GMT
 		toEpoch := "1677700800"  // Tue, 1 Mar 2023 20:00:00 GMT
 		stmnt = strings.ReplaceAll(stmnt, "{ { fromSecs } }", fromEpoch)
 		stmnt = strings.ReplaceAll(stmnt, "{ { toSecs } }", toEpoch)
 		t.Run(tt.name, func(t *testing.T) {
-			var record stringScalar
-			//square_diff_sum, &N_sum, &obs_model_diff_sum, &model_sum, &obs_sum, &abs_sum
-			var records []stringScalar
+			start := time.Now()
 			rows, err := mysqlDB.Query(stmnt)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("getMySqlConnection() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
+			var records []interface{}
 			defer rows.Close()
 			for rows.Next() {
-				if err := rows.Scan(&record.avtime,&record.squareDiffSum, &record.NSum, &record.obsModelDiffSum, &record.modelSum, &record.obsSum, &record.absSum); err != nil {
-					t.Errorf("could not scan row: %v", err)
+				switch tt.recordType {
+					case "scalar":
+						var record ScalarRecord
+						if err := rows.Scan(record.avtime,record.squareDiffSum, record.NSum, record.obsModelDiffSum, record.modelSum, record.obsSum, record.absSum); err != nil {
+							t.Errorf("could not scan row: %v", err)
+						} else {
+							records = append(records, record)
+						}
+					case "ctc":
+						var record CTCRecord
+						if err := rows.Scan(record.Time, record.Hit, record.Miss, record.Fa, record.Cn); err != nil {
+							t.Errorf("could not scan row: %v", err)
+						}
+						records = append(records, record)
+					case "precalc":
+						var record PreCalcRecord
+						if err := rows.Scan(record.Time, record.Value); err != nil {
+							t.Errorf("could not scan row: %v", err)
+						}
+						records = append(records, record)
+					default:
+						t.Fatalf("Test_mySqlQuery unrecognized record type %q", tt.recordType)
 				}
-				records = append(records, record)
 			}
+			elapsed := time.Since(start)
+			fmt.Printf("The query and scan took combined %s", elapsed)
 			if tt.want != len(records){
 				t.Errorf("Test_mySqlQuery() data length is wrong = %v", len(records))
 			}

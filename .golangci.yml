@@ -1,4 +1,16 @@
+run:
+  tests: true
+  build-tags:
+    - integration
+
+output:
+  uniq-by-line: false
+  sort-results: true
+  print-linter-name: true
+
 issues:
   # Show all issues in the project
   max-issues-per-linter: 0
   max-same-issues: 0
+  new: false
+

@@ -50,6 +50,7 @@ import (
 	"os"
 	"reflect"
 	"sort"
+	"log"
 	"strconv"
 	"strings"
 	"time"
@@ -288,7 +289,7 @@ func processRegion(
 	majorThreshold float64,
 ) error {
 	if strings.ToUpper(appName) == "CB" {
-		// launch CB director - which we don't have yet
+		log.Print("launch CB director - which we don't have yet")
 	} else {
 		//launch mysql director
 		mysqlDirector, err := director.GetDirector("MysqlDirector", mysqlCredentials, dateRange, minorThreshold, majorThreshold)

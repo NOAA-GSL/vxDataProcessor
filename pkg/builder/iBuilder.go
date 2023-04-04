@@ -42,6 +42,7 @@ A ScorecardCellBuilder is an interface that provides several functions:
 */
 
 type StatType string
+const ErrorValue = -9999
 
 type DerivedDataElement struct {
 	CtlPop []float64

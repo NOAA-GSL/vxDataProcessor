@@ -25,9 +25,9 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"log"
 	"github.com/NOAA-GSL/vxDataProcessor/pkg/builder"
 	_ "github.com/go-sql-driver/mysql"
+	"log"
 	"strings"
 	"time"
 )
@@ -230,7 +230,7 @@ func processSub(region interface{}, queryElem interface{}) (interface{}, error) 
 		} else {
 			// unknown data type
 			log.Printf("mysql_director queryDataPreCalc error %v", err)
-			return -9999, fmt.Errorf("mysql_director queryDataPreCalc error %q", err)
+			return builder.ErrorValue, fmt.Errorf("mysql_director queryDataPreCalc error %q", err)
 		}
 
 		// for all the input elements
@@ -240,12 +240,12 @@ func processSub(region interface{}, queryElem interface{}) (interface{}, error) 
 		//Build(qr QueryResult, statisticType string, dataType string
 		if queryError {
 			log.Printf("mysql_director query error %v", err)
-			return -9999, err
+			return builder.ErrorValue, err
 		} else {
 			scc := builder.NewTwoSampleTTestBuilder()
 			value, err := (scc.Build(queryResult, statisticType, mysqlDirector.minorThreshold, mysqlDirector.majorThreshold))
 			if err != nil {
-				return -9999, fmt.Errorf("mysql_director processSub error from builder %q", err)
+				return builder.ErrorValue, fmt.Errorf("mysql_director processSub error from builder %q", err)
 			} else {
 				return int(value), nil
 			}
@@ -261,7 +261,7 @@ func processSub(region interface{}, queryElem interface{}) (interface{}, error) 
 			var queryElem = queryElem.(map[string]interface{})[elemKey]
 			region.(map[string]interface{})[elemKey], err = processSub(region.(map[string]interface{})[elemKey], queryElem)
 			if err != nil {
-				return -9999, err
+				return builder.ErrorValue, err
 			}
 		}
 	}

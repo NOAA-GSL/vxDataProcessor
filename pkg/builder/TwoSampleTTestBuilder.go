@@ -32,12 +32,11 @@ will cause a return of 0.
 */
 import (
 	"fmt"
-	"reflect"
-	"log"
-	"strings"
-	"errors"
 	"github.com/aclements/go-moremath/stats"
 	"github.com/go-playground/validator/v10"
+	"log"
+	"reflect"
+	"strings"
 )
 
 // use a single instance of Validate, it caches struct info
@@ -84,14 +83,14 @@ func (scc *ScorecardCell) SetMinorThreshold(threshold Threshold) error {
 }
 
 // get the return value based on the major and minor thresholds compared to the p-value
-func deriveValue(scc *ScorecardCell, difference float64, pval float64) (int, error) {
+func (scc *ScorecardCell) deriveValue(difference float64, pval float64) (int, error) {
 	if errs := validate.Var(difference, "required"); errs != nil {
 		log.Print(errs)
 		return 0, fmt.Errorf("TwoSampleTTestBuilder deriveValue %q", errs)
 	}
 	if errs := validate.Var(pval, "required"); errs != nil {
 		fmt.Println(errs)
-		return -9999, fmt.Errorf("TwoSampleTTestBuilder deriveValue %q", errs)
+		return ErrorValue, fmt.Errorf("TwoSampleTTestBuilder deriveValue %q", errs)
 	}
 	if pval <= float64(scc.majorThreshold) {
 		return 2 * int(scc.goodnessPolarity), nil
@@ -104,7 +103,7 @@ func deriveValue(scc *ScorecardCell, difference float64, pval float64) (int, err
 
 // using the experimental Query Result and the control QueryResult and the statistic
 // perform statistic calculation for each, perform matching and store the resultant  dataSet
-func deriveCTCInputData(scc *ScorecardCell, queryResult BuilderCTCResult, statisticType string) (dataSet DataSet, err error) {
+func (scc *ScorecardCell) deriveCTCInputData(queryResult BuilderCTCResult, statisticType string) (dataSet DataSet, err error) {
 	// derive CTC statistical values for ctl and exp
 	var stat float32
 	var ctlData PreCalcRecords
@@ -116,7 +115,7 @@ func deriveCTCInputData(scc *ScorecardCell, queryResult BuilderCTCResult, statis
 		stat, err = CalculateStatCTC(record.Hit, record.Fa, record.Miss, record.Cn, statisticType)
 		if err == nil {
 			//include this one
-			ctlData = append(ctlData, PreCalcRecord{Stat:float64(stat), Avtime: record.Avtime})
+			ctlData = append(ctlData, PreCalcRecord{Stat: float64(stat), Avtime: record.Avtime})
 		}
 	}
 	for i := 0; i < len(queryResult.ExpData); i++ {
@@ -124,7 +123,7 @@ func deriveCTCInputData(scc *ScorecardCell, queryResult BuilderCTCResult, statis
 		stat, err = CalculateStatCTC(record.Hit, record.Fa, record.Miss, record.Cn, statisticType)
 		if err == nil {
 			//include this one
-			expData = append(expData, PreCalcRecord{Stat:float64(stat), Avtime: record.Avtime})
+			expData = append(expData, PreCalcRecord{Stat: float64(stat), Avtime: record.Avtime})
 		}
 	}
 	// define the dataSet - this is the data struct the holds the two arrays of time and stat value
@@ -133,7 +132,7 @@ func deriveCTCInputData(scc *ScorecardCell, queryResult BuilderCTCResult, statis
 	return dataSet, err
 }
 
-func deriveScalarInputData(scc *ScorecardCell, queryResult BuilderScalarResult, statisticType string) (dataSet DataSet, err error) {
+func (scc *ScorecardCell) deriveScalarInputData(queryResult BuilderScalarResult, statisticType string) (dataSet DataSet, err error) {
 	// derive Scalar statistical values for ctl and exp
 	var stat float64
 	var ctlData []PreCalcRecord
@@ -159,7 +158,7 @@ func deriveScalarInputData(scc *ScorecardCell, queryResult BuilderScalarResult, 
 	return dataSet, err
 }
 
-func derivePreCalcInputData(scc *ScorecardCell, queryResult BuilderPreCalcResult, statisticType string) (dataSet DataSet, err error) {
+func (scc *ScorecardCell) derivePreCalcInputData(queryResult BuilderPreCalcResult, statisticType string) (dataSet DataSet, err error) {
 	// data is precalculated - don't need to derive stats
 	// have to use just the values to create the data set (type DataSet)
 	var ctlData PreCalcRecords
@@ -178,11 +177,11 @@ func (scc *ScorecardCell) DeriveInputData(qrPtr interface{}, statisticType strin
 	dataType := reflect.TypeOf(qrPtr).Name()
 	switch dataType {
 	case "BuilderCTCResult":
-		dataSet, err = deriveCTCInputData(scc, qrPtr.(BuilderCTCResult), statisticType)
+		dataSet, err = scc.deriveCTCInputData(qrPtr.(BuilderCTCResult), statisticType)
 	case "BuilderScalarResult":
-		dataSet, err = deriveScalarInputData(scc, qrPtr.(BuilderScalarResult), statisticType)
+		dataSet, err = scc.deriveScalarInputData(qrPtr.(BuilderScalarResult), statisticType)
 	case "BuilderPreCalcResult":
-		dataSet, err = derivePreCalcInputData(scc, qrPtr.(BuilderPreCalcResult), statisticType)
+		dataSet, err = scc.derivePreCalcInputData(qrPtr.(BuilderPreCalcResult), statisticType)
 	default:
 		err = fmt.Errorf("TwoSampleTTestBuilder DeriveInputData unsupported data type: %q", dataType)
 	}
@@ -204,7 +203,7 @@ func (scc *ScorecardCell) DeriveInputData(qrPtr interface{}, statisticType strin
 func (scc *ScorecardCell) ComputeSignificance() error {
 	// scc should hvae already been populated
 	if scc.Data.CtlPop == nil || scc.Data.ExpPop == nil {
-		return errors.New("TwoSampleTTestBuilder ComputeSignificance - no data")
+		return fmt.Errorf("TwoSampleTTestBuilder ComputeSignificance - no data")
 	}
 	// alternate hypothesis is locationDiffers - i.e. null hypothesis is equality.
 	var derivedData DerivedDataElement = scc.Data
@@ -214,13 +213,13 @@ func (scc *ScorecardCell) ComputeSignificance() error {
 	μ0 := 0.0
 	if errs := validate.Var(derivedData.CtlPop, "required"); errs != nil {
 		log.Print(errs)
-		var v int = -9999
+		var v int = ErrorValue
 		scc.ValuePtr = &v
 		return fmt.Errorf("TwoSampleTTestBuilder ComputeSignificance %q", errs)
 	}
 	if errs := validate.Var(derivedData.ExpPop, "required"); errs != nil {
 		log.Print(errs)
-		var v int = -9999
+		var v int = ErrorValue
 		scc.ValuePtr = &v
 		return fmt.Errorf("TwoSampleTTestBuilder ComputeSignificance %q", errs)
 	}
@@ -237,8 +236,8 @@ func (scc *ScorecardCell) ComputeSignificance() error {
 			return nil
 		} else {
 			log.Print(err)
-			scc.Pvalue = -9999
-			var v int = -9999
+			scc.Pvalue = ErrorValue
+			var v int = ErrorValue
 			scc.ValuePtr = &v
 			return fmt.Errorf("TwoSampleTTestBuilder ComputeSignificance %q", err)
 		}
@@ -250,7 +249,7 @@ func (scc *ScorecardCell) ComputeSignificance() error {
 		scc.Pvalue = ret.P
 		// have to dereference valuePtr - just because
 		var v int
-		v, err = deriveValue(scc, difference, ret.P)
+		v, err = scc.deriveValue(difference, ret.P)
 		if err != nil {
 			log.Print(err)
 			//scc.Value = &v
@@ -273,24 +272,22 @@ func NewTwoSampleTTestBuilder() *ScorecardCell {
 	return &ScorecardCell{}
 }
 
-
-
-func getGoodnessPolarity (statisticType string) (polarity GoodnessPolarity, err error) {
+func getGoodnessPolarity(statisticType string) (polarity GoodnessPolarity, err error) {
 	/*
-	"RMSE": "Want control to exceed experimental" 1
-	"Bias (Model - Obs)": "Want control to exceed experimental" 1
-	"MAE (temp and dewpoint only)": "Want control to exceed experimental" 1
-	"MAE": "Want control to exceed experimental" 1
-	"TSS (True Skill Score)": "Want experimental to exceed control" -1
-	"PODy (POD of value < threshold)": "Want experimental to exceed control" -1
-	"PODy (POD of value > threshold)": "Want experimental to exceed control" -1
-	"PODn (POD of value > threshold)": "Want experimental to exceed control" -1
-	"PODn (POD of value < threshold)": "Want experimental to exceed control" -1
-	"FAR (False Alarm Ratio)": "Want control to exceed experimental" 1
-	"CSI (Critical Success Index)": "Want experimental to exceed control" -1
-	"HSS (Heidke Skill Score)": "Want experimental to exceed control" -1
-	"ETS (Equitable Threat Score)": "Want experimental to exceed control" -1
-	"ACC": "Want experimental to exceed control" -1
+		"RMSE": "Want control to exceed experimental" 1
+		"Bias (Model - Obs)": "Want control to exceed experimental" 1
+		"MAE (temp and dewpoint only)": "Want control to exceed experimental" 1
+		"MAE": "Want control to exceed experimental" 1
+		"TSS (True Skill Score)": "Want experimental to exceed control" -1
+		"PODy (POD of value < threshold)": "Want experimental to exceed control" -1
+		"PODy (POD of value > threshold)": "Want experimental to exceed control" -1
+		"PODn (POD of value > threshold)": "Want experimental to exceed control" -1
+		"PODn (POD of value < threshold)": "Want experimental to exceed control" -1
+		"FAR (False Alarm Ratio)": "Want control to exceed experimental" 1
+		"CSI (Critical Success Index)": "Want experimental to exceed control" -1
+		"HSS (Heidke Skill Score)": "Want experimental to exceed control" -1
+		"ETS (Equitable Threat Score)": "Want experimental to exceed control" -1
+		"ACC": "Want experimental to exceed control" -1
 	*/
 
 	switch statisticType {
@@ -300,7 +297,7 @@ func getGoodnessPolarity (statisticType string) (polarity GoodnessPolarity, err 
 		return 1, nil
 	case "MAE":
 		return 1, nil
-	case"MAE (temp and dewpoint only)":
+	case "MAE (temp and dewpoint only)":
 		return 1, nil
 	case "TSS (True Skill Score)":
 		return -1, nil
@@ -332,20 +329,20 @@ func (scc *ScorecardCell) Build(qrPtr interface{}, statisticType string, minorTh
 
 	goodnessPolarity, err := getGoodnessPolarity(statisticType)
 	if err != nil {
-		return -9999, fmt.Errorf("mysql_director Build SetGoodnessPolarity error  %q", err)
+		return ErrorValue, fmt.Errorf("mysql_director Build SetGoodnessPolarity error  %q", err)
 	}
 	err = scc.SetGoodnessPolarity(goodnessPolarity)
 	if err != nil {
-		return -9999, fmt.Errorf("mysql_director Build SetGoodnessPolarity error  %q", err)
+		return ErrorValue, fmt.Errorf("mysql_director Build SetGoodnessPolarity error  %q", err)
 	}
 	err = scc.DeriveInputData(qrPtr, statisticType)
 	if err != nil {
-		return -9999, fmt.Errorf("mysql_director - build - SetInputData - error message :  %q", err)
+		return ErrorValue, fmt.Errorf("mysql_director - build - SetInputData - error message :  %q", err)
 	}
 	// computes the significance for the data derived in DeriveInputData and stored in cellPtr.data
 	err = scc.ComputeSignificance()
 	if err != nil {
-		return -9999, fmt.Errorf("mysql_director - build - ComputeSignificance - error message :  %q", err)
+		return ErrorValue, fmt.Errorf("mysql_director - build - ComputeSignificance - error message :  %q", err)
 	}
 	// insert the elements into the result
 	return scc.GetValue(), nil

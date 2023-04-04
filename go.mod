@@ -8,7 +8,6 @@ require (
 	github.com/go-sql-driver/mysql v1.7.0
 	github.com/joho/godotenv v1.5.1
 	github.com/stretchr/testify v1.8.2
-	rsc.io/quote v1.5.2
 )
 
 require (
@@ -44,5 +43,4 @@ require (
 	github.com/aclements/go-moremath v0.0.0-20210112150236-f10218a38794
 	github.com/go-playground/validator/v10 v10.11.2
 	golang.org/x/text v0.7.0 // indirect
-	rsc.io/sampler v1.3.0 // indirect
 )

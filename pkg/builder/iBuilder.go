@@ -61,28 +61,28 @@ type ScorecardCell struct {
 }
 // these are floats because of the division in the CalculateStatCTC func
 type CTCRecord struct {
-	avtime int64
-	hit  float32
-	miss float32
-	fa   float32
-	cn   float32
+	Avtime int64
+	Hit  float32
+	Miss float32
+	Fa   float32
+	Cn   float32
 }
 type CTCRecords = []CTCRecord
 
 type ScalarRecord struct {
-	avtime            int64
-	squareDiffSum   float64
+	Avtime            int64
+	SquareDiffSum   float64
 	NSum            float64
-	obsModelDiffSum float64
-	modelSum        float64
-	obsSum          float64
-	absSum          float64
+	ObsModelDiffSum float64
+	ModelSum        float64
+	ObsSum          float64
+	AbsSum          float64
 }
 type ScalarRecords []ScalarRecord
 
 type PreCalcRecord struct {
-	avtime  int64
-	stat float64
+	Avtime  int64
+	Stat float64
 }
 type PreCalcRecords []PreCalcRecord
 
@@ -99,10 +99,6 @@ type BuilderPreCalcResult struct {
 	CtlData PreCalcRecords
 	ExpData PreCalcRecords
 }
-type BuilderGenericResult struct {
-	CtlData interface{}
-	ExpData interface{}
-}
 
 type ScorecardCellBuilder interface {
 	SetGoodnessPolarity(GoodnessPolarity)
@@ -111,7 +107,7 @@ type ScorecardCellBuilder interface {
 	DeriveInputData(QueryResult interface{}, statisticType string)
 	ComputeSignificance(scc *ScorecardCell)
 	GetValue()
-	Build(qr interface{}, statisticType string, dataType string)
+	Build(res interface{}, qr interface{}, statisticType string)
 }
 
 func GetBuilder(builderType string) *ScorecardCell {

@@ -31,11 +31,11 @@ A P-value <= 0.01 (for a 99% major threshold) results in a 2. For 0.01 < P-value
 will cause a return of 0.
 */
 import (
-	"errors"
 	"fmt"
 	"reflect"
 	"log"
 	"strings"
+	"errors"
 	"github.com/aclements/go-moremath/stats"
 	"github.com/go-playground/validator/v10"
 )
@@ -118,18 +118,18 @@ func deriveCTCInputData(scc *ScorecardCell, queryResult BuilderCTCResult, statis
 
 	for i := 0; i < len(queryResult.CtlData); i++ {
 		record = queryResult.CtlData[i]
-		stat, err = CalculateStatCTC(record.hit, record.fa, record.miss, record.cn, statisticType)
+		stat, err = CalculateStatCTC(record.Hit, record.Fa, record.Miss, record.Cn, statisticType)
 		if err == nil {
 			//include this one
-			ctlData = append(ctlData, PreCalcRecord{stat:float64(stat), avtime: record.avtime})
+			ctlData = append(ctlData, PreCalcRecord{Stat:float64(stat), Avtime: record.Avtime})
 		}
 	}
 	for i := 0; i < len(queryResult.ExpData); i++ {
 		record = queryResult.ExpData[i]
-		stat, err = CalculateStatCTC(record.hit, record.fa, record.miss, record.cn, statisticType)
+		stat, err = CalculateStatCTC(record.Hit, record.Fa, record.Miss, record.Cn, statisticType)
 		if err == nil {
 			//include this one
-			expData = append(expData, PreCalcRecord{stat:float64(stat), avtime: record.avtime})
+			expData = append(expData, PreCalcRecord{Stat:float64(stat), Avtime: record.Avtime})
 		}
 	}
 	// define the dataSet - this is the data struct the holds the two arrays of time and stat value
@@ -147,18 +147,18 @@ func deriveScalarInputData(scc *ScorecardCell, queryResult BuilderScalarResult, 
 
 	for i := 0; i < len(queryResult.CtlData); i++ {
 		record = queryResult.CtlData[i]
-		stat, err = CalculateStatScalar(record.squareDiffSum, record.NSum, record.obsModelDiffSum, record.modelSum, record.obsSum, record.absSum, statisticType)
+		stat, err = CalculateStatScalar(record.SquareDiffSum, record.NSum, record.ObsModelDiffSum, record.ModelSum, record.ObsSum, record.AbsSum, statisticType)
 		if err == nil {
 			//include this one
-			ctlData = append(ctlData, PreCalcRecord{stat: float64(stat), avtime: record.avtime})
+			ctlData = append(ctlData, PreCalcRecord{Stat: float64(stat), Avtime: record.Avtime})
 		}
 	}
 	for i := 0; i < len(queryResult.CtlData); i++ {
 		record = queryResult.CtlData[i]
-		stat, err = CalculateStatScalar(record.squareDiffSum, record.NSum, record.obsModelDiffSum, record.modelSum, record.obsSum, record.absSum, statisticType)
+		stat, err = CalculateStatScalar(record.SquareDiffSum, record.NSum, record.ObsModelDiffSum, record.ModelSum, record.ObsSum, record.AbsSum, statisticType)
 		if err == nil {
 			//include this one
-			expData = append(expData, PreCalcRecord{stat: float64(stat), avtime: record.avtime})
+			expData = append(expData, PreCalcRecord{Stat: float64(stat), Avtime: record.Avtime})
 		}
 	}
 	// return the unmatched Scalar dataSet
@@ -205,8 +205,8 @@ func (scc *ScorecardCell) DeriveInputData(qrPtr interface{}, statisticType strin
 	// convert matched DataSet to DerivedDataElement
 	var de DerivedDataElement
 	for i := 0; i < len(matchedDataSet.ctlPop); i++ {
-		de.CtlPop = append(de.CtlPop, matchedDataSet.ctlPop[i].stat)
-		de.ExpPop = append(de.ExpPop, matchedDataSet.expPop[i].stat)
+		de.CtlPop = append(de.CtlPop, matchedDataSet.ctlPop[i].Stat)
+		de.ExpPop = append(de.ExpPop, matchedDataSet.expPop[i].Stat)
 	}
 	scc.Data = de
 	return err
@@ -284,33 +284,81 @@ func NewTwoSampleTTestBuilder() *ScorecardCell {
 	return &ScorecardCell{}
 }
 
-func (scc *ScorecardCell) Build(qrPtr BuilderGenericResult, statisticType string) error {
+
+
+func getGoodnessPolarity (statisticType string) (polarity GoodnessPolarity, err error) {
+	/*
+	"RMSE": "Want control to exceed experimental" 1
+	"Bias (Model - Obs)": "Want control to exceed experimental" 1
+	"MAE (temp and dewpoint only)": "Want control to exceed experimental" 1
+	"MAE": "Want control to exceed experimental" 1
+	"TSS (True Skill Score)": "Want experimental to exceed control" -1
+	"PODy (POD of value < threshold)": "Want experimental to exceed control" -1
+	"PODy (POD of value > threshold)": "Want experimental to exceed control" -1
+	"PODn (POD of value > threshold)": "Want experimental to exceed control" -1
+	"PODn (POD of value < threshold)": "Want experimental to exceed control" -1
+	"FAR (False Alarm Ratio)": "Want control to exceed experimental" 1
+	"CSI (Critical Success Index)": "Want experimental to exceed control" -1
+	"HSS (Heidke Skill Score)": "Want experimental to exceed control" -1
+	"ETS (Equitable Threat Score)": "Want experimental to exceed control" -1
+	"ACC": "Want experimental to exceed control" -1
+	*/
+
+	switch statisticType {
+	case "RMSE":
+		return 1, nil
+	case "Bias (Model - Obs)":
+		return 1, nil
+	case "MAE":
+		return 1, nil
+	case"MAE (temp and dewpoint only)":
+		return 1, nil
+	case "TSS (True Skill Score)":
+		return -1, nil
+	case "PODy (POD of value < threshold)":
+		return -1, nil
+	case "PODy (POD of value > threshold)":
+		return -1, nil
+	case "PODn (POD of value > threshold)":
+		return -1, nil
+	case "PODn (POD of value < threshold)":
+		return -1, nil
+	case "FAR (False Alarm Ratio)":
+		return 1, nil
+	case "CSI (Critical Success Index)":
+		return -1, nil
+	case "HSS (Heidke Skill Score)":
+		return -1, nil
+	case "ETS (Equitable Threat Score)":
+		return -1, nil
+	default:
+		return -1, fmt.Errorf("TwoSampleTTestBuilder getGoodnessPolarity unknown statistic %q", statisticType)
+	}
+}
+
+func (scc *ScorecardCell) Build(qrPtr interface{}, statisticType string, minorThreshold float64, majorThreshold float64) (value int, err error) {
 	//DerivePreCalcInputData(ctlQR PreCalcRecords, expQR PreCalcRecords, statisticType string)
 	// build the input data elements and
 	// for all the input elements fire off a thread to do the compute
-	var err error
-	err = scc.SetGoodnessPolarity(scc.goodnessPolarity)
+
+	goodnessPolarity, err := getGoodnessPolarity(statisticType)
 	if err != nil {
-		return errors.New(fmt.Sprint("mysql_director Build SetGoodnessPolarity error ", err))
+		return -9999, errors.New(fmt.Sprint("mysql_director Build SetGoodnessPolarity error ", err))
 	}
-	err = scc.SetMinorThreshold(scc.minorThreshold)
+	err = scc.SetGoodnessPolarity(goodnessPolarity)
 	if err != nil {
-		return errors.New(fmt.Sprint("mysql_director - build - SetminorThreshold - error message : ", err))
-	}
-	err = scc.SetMajorThreshold(scc.majorThreshold)
-	if err != nil {
-		return errors.New(fmt.Sprint("mysql_director - build - SetmajorThreshold - error message : ", err))
+		return -9999, errors.New(fmt.Sprint("mysql_director Build SetGoodnessPolarity error ", err))
 	}
 	err = scc.DeriveInputData(qrPtr, statisticType)
 	if err != nil {
-		return errors.New(fmt.Sprint("mysql_director - build - SetInputData - error message : ", err))
+		return -9999, errors.New(fmt.Sprint("mysql_director - build - SetInputData - error message : ", err))
 	}
 	// computes the significance for the data derived in DeriveInputData and stored in cellPtr.data
 	err = scc.ComputeSignificance()
 	if err != nil {
-		return errors.New(fmt.Sprint("mysql_director - build - ComputeSignificance - error message : ", err))
+		return -9999, errors.New(fmt.Sprint("mysql_director - build - ComputeSignificance - error message : ", err))
 	}
-	// insert the elements into the in-memory document
-	// upsert the document
-	return nil
+	// insert the elements into the result
+	return scc.GetValue(), nil
+	// manager will upsert the document
 }

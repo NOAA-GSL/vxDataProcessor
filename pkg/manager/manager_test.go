@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"testing"
 	"sort"
+	"time"
 	"github.com/NOAA-GSL/vxDataProcessor/pkg/director"
 	"github.com/couchbase/gocb/v2"
 )
@@ -79,7 +80,7 @@ func TestDirector_test_connection(t *testing.T) {
 		t.Fatal(fmt.Sprint("mysql_test_director error getting test scorecard from couchbase", err))
 	}
 	if scorecardCB == nil {
-		t.Fatal(fmt.Sprint("mysql_test_director error getting test scorecard from couchbase - scorecard is nil"))
+		t.Fatal("mysql_test_director error getting test scorecard from couchbase - scorecard is nil")
 	}
 }
 
@@ -154,7 +155,9 @@ func Test_loadEnvironmant(t *testing.T) {
 	}
 }
 
-func Test_getMapResultBlocks(t *testing.T) {
+
+func Test_getQueryBlocks(t *testing.T) {
+	// setup a test document
 	var documentId string = "SCTEST:test_scorecard"
 	var mngr *Manager
 	var err error
@@ -186,12 +189,6 @@ func Test_getMapResultBlocks(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "results",
-			args: mngr,
-			want: []string{"Block0", "Block1"},
-			wantErr: false,
-		},
-		{
 			name: "queryMaps",
 			args: mngr,
 			want: []string{"Block0", "Block1"},
@@ -203,29 +200,25 @@ func Test_getMapResultBlocks(t *testing.T) {
 		var retData map[string]interface{}
 		var err error
 		t.Run(tt.name, func(t *testing.T) {
-			switch tt.name {
-			case "results":
-				retData, err = getResultBlocks(*tt.args)
-			case "queryMaps":
-				retData, err = getQueryBlocks(*tt.args)
-			}
+			retData, err = getQueryBlocks(*tt.args)
 			if retData == nil {
 				t.Errorf("%v error = %v", tt.name, err)
 			}
 			got := director.Keys(retData)
 			sort.Strings(got)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("getResultBlocks() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("getQueryBlocks() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("getResultBlocks() = %v, want %v", got, tt.want)
+				t.Errorf("getQueryBlocks() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
 func Test_getSliceResultBlocks(t *testing.T) {
+	// setup a test document
 	var documentId string = "SCTEST:test_scorecard"
 	var mngr *Manager
 	var err error
@@ -275,12 +268,53 @@ func Test_getSliceResultBlocks(t *testing.T) {
 			got := director.Keys(retData[0])
 			sort.Strings(got)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("getResultBlocks() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("getPlotParamCurves() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("getResultBlocks() = %v, want %v", got, tt.want)
+				t.Errorf("getPlotParamCurves() = %v, want %v", got, tt.want)
 			}
 		})
 	}
+}
+
+func Test_runManager(t *testing.T) {
+	// setup a test document
+	var documentId string = "SCTEST:test_scorecard"
+	var mngr *Manager
+	var err error
+	var environmentFile = fmt.Sprint(os.Getenv("HOME"), "/vxDataProcessor.env")
+	start := time.Now()
+
+	mngr, err = GetManager("SC", environmentFile, documentId)
+	if err != nil {
+		t.Fatal (fmt.Errorf("manager loadEnvironmant error GetManager %q", err))
+	}
+	var cbCredentials director.DbCredentials
+	_, cbCredentials, err = loadEnvironmant(mngr.environmentFile)
+	if err != nil {
+		t.Fatal (fmt.Errorf("manager loadEnvironmant error loadEnvironmant %q", err))
+	}
+	err = getConnection(mngr, cbCredentials)
+	if err != nil {
+		t.Fatal (fmt.Errorf("manager loadEnvironmant error getConnection %q", err))
+	}
+	err = upsertTestDoc(mngr)
+	if err != nil {
+		t.Fatal(fmt.Sprint("manager upsertTestDoc error upserting test scorecard", err))
+	}
+	// get a manager
+	manager, err := NewScorecardManager(environmentFile, documentId)
+	if err != nil {
+		t.Fatal(fmt.Sprint("manager test NewScorecardManager error getting a manager", err))
+	}
+	scorecardAppUrl, err := manager.Run()
+	if err != nil {
+		t.Fatal(fmt.Sprint("manager test run error ", err))
+	}
+	if scorecardAppUrl != "https://mats-docker-dev.gsd.esrl.noaa.gov/scorecard" {
+		t.Fatalf("manager test run error - did return proper scorecardAppUrl - got %q error is %q", scorecardAppUrl, err)
+	}
+	elapsed := time.Since(start)
+	fmt.Printf("The test took combined %s", elapsed)
 }

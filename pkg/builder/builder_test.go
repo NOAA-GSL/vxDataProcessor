@@ -33,16 +33,16 @@ func TestTwoSampleTTestBuilder_test_identical(t *testing.T) {
 	var ctlData PreCalcRecords
 	for i := 0; i < 10; i++ {
 		var rec = PreCalcRecord{
-			stat: float64(i) * 1.1,
-			avtime:  int64(i) + epoch,
+			Stat: float64(i) * 1.1,
+			Avtime:  int64(i) + epoch,
 		}
 		ctlData = append(ctlData, rec)
 	}
 	var expData PreCalcRecords
 	for i := 0; i < 10; i++ {
 		var rec = PreCalcRecord{
-			stat: float64(i) * 1.1,
-			avtime:  int64(i) + epoch,
+			Stat: float64(i) * 1.1,
+			Avtime:  int64(i) + epoch,
 		}
 		expData = append(expData, rec)
 	}
@@ -84,16 +84,16 @@ func TestTwoSampleTTestBuilder_test_2(t *testing.T) {
 	var ctlData PreCalcRecords
 	for i := 0; i < 10; i++ {
 		var rec = PreCalcRecord{
-			stat: float64(i) * 1.01,
-			avtime:  int64(i) + epoch,
+			Stat: float64(i) * 1.01,
+			Avtime:  int64(i) + epoch,
 		}
 		ctlData = append(ctlData, rec)
 	}
 	var expData PreCalcRecords
 	for i := 0; i < 10; i++ {
 		var rec = PreCalcRecord{
-			stat: float64(i) * 1.2,
-			avtime:  int64(i) + epoch,
+			Stat: float64(i) * 1.2,
+			Avtime:  int64(i) + epoch,
 		}
 		expData = append(expData, rec)
 	}
@@ -137,8 +137,8 @@ func TestTwoSampleTTestBuilder_test_1(t *testing.T) {
 	var ctlData PreCalcRecords
 	for i := 0; i < 10; i++ {
 		var rec = PreCalcRecord{
-			stat: float64(normData[i]),
-			avtime:  int64(i) + epoch,
+			Stat: float64(normData[i]),
+			Avtime:  int64(i) + epoch,
 		}
 		ctlData = append(ctlData, rec)
 	}
@@ -146,8 +146,8 @@ func TestTwoSampleTTestBuilder_test_1(t *testing.T) {
 	var expData PreCalcRecords
 	for i := 0; i < 10; i++ {
 		var rec = PreCalcRecord{
-			stat: float64(normData[i] * (i % 2)),
-			avtime:  int64(i) + epoch,
+			Stat: float64(normData[i] * (i % 2)),
+			Avtime:  int64(i) + epoch,
 		}
 		expData = append(expData, rec)
 	}
@@ -192,8 +192,8 @@ func TestTwoSampleTTestBuilder_test_0(t *testing.T) {
 	var ctlData PreCalcRecords
 	for i := 0; i < 10; i++ {
 		var rec = PreCalcRecord{
-			stat: float64(normData[i]),
-			avtime:  int64(i) + epoch,
+			Stat: float64(normData[i]),
+			Avtime:  int64(i) + epoch,
 		}
 		ctlData = append(ctlData, rec)
 	}
@@ -202,8 +202,8 @@ func TestTwoSampleTTestBuilder_test_0(t *testing.T) {
 	normData = [10]int{87, 74, 79, 94, 73, 92, 66, 77, 74, 78}
 	for i := 0; i < 10; i++ {
 		var rec = PreCalcRecord{
-			stat: float64(normData[i]),
-			avtime:  int64(i) + epoch,
+			Stat: float64(normData[i]),
+			Avtime:  int64(i) + epoch,
 		}
 		expData = append(expData, rec)
 	}
@@ -246,16 +246,16 @@ func TestTwoSampleTTestBuilder_different_lengths(t *testing.T) {
 	var ctlData PreCalcRecords
 	for i := 0; i < 10; i++ {
 		var rec = PreCalcRecord{
-			stat: float64(i) * 1.01,
-			avtime:  int64(i) + epoch,
+			Stat: float64(i) * 1.01,
+			Avtime:  int64(i) + epoch,
 		}
 		ctlData = append(ctlData, rec)
 	}
 	var expData PreCalcRecords
 	for i := 0; i < 9; i++ {
 		var rec = PreCalcRecord{
-			stat: float64(i) * 1.2,
-			avtime:  int64(i) + epoch,
+			Stat: float64(i) * 1.2,
+			Avtime:  int64(i) + epoch,
 		}
 		expData = append(expData, rec)
 	}
@@ -299,8 +299,8 @@ func TestTwoSampleTTestBuilder_test__match_ctl_short_1(t *testing.T) {
 			continue
 		}
 		var rec = PreCalcRecord{
-			stat: float64(normData[i]),
-			avtime:  int64(i) + epoch,
+			Stat: float64(normData[i]),
+			Avtime:  int64(i) + epoch,
 		}
 		ctlData = append(ctlData, rec)
 	}
@@ -308,8 +308,8 @@ func TestTwoSampleTTestBuilder_test__match_ctl_short_1(t *testing.T) {
 	var expData PreCalcRecords
 	for i := 0; i < 10; i++ {
 		var rec = PreCalcRecord{
-			stat: float64(normData[i] * (i % 2)),
-			avtime:  int64(i) + epoch,
+			Stat: float64(normData[i] * (i % 2)),
+			Avtime:  int64(i) + epoch,
 		}
 		expData = append(expData, rec)
 	}
@@ -353,8 +353,8 @@ func TestTwoSampleTTestBuilder_test__match_exp_short_1(t *testing.T) {
 	var ctlData PreCalcRecords
 	for i := 0; i < 10; i++ {
 		var rec = PreCalcRecord{
-			stat: float64(normData[i]),
-			avtime:  int64(i) + epoch,
+			Stat: float64(normData[i]),
+			Avtime:  int64(i) + epoch,
 		}
 		ctlData = append(ctlData, rec)
 	}
@@ -366,8 +366,8 @@ func TestTwoSampleTTestBuilder_test__match_exp_short_1(t *testing.T) {
 			continue
 		}
 		var rec = PreCalcRecord{
-			stat: float64(normData[i] * (i % 2)),
-			avtime:  int64(i) + epoch,
+			Stat: float64(normData[i] * (i % 2)),
+			Avtime:  int64(i) + epoch,
 		}
 		expData = append(expData, rec)
 	}

@@ -83,27 +83,6 @@ func CalculateStatCTC(hit float32, fa float32, miss float32, cn float32, statist
 func CalculateStatScalar(squareDiffSum, NSum, obsModelDiffSum, modelSum, obsSum, absSum float64, statistic string) (float64, error) {
 	var err error
 	var value float64
-	if err = validate.Var(squareDiffSum, "required"); err != nil{
-		return 0, fmt.Errorf("builder_stats calculateStatCTC %q", err)
-	}
-	if err = validate.Var(NSum, "required"); err != nil {
-		return 0, fmt.Errorf("builder_stats calculateStatCTC %q", err)
-	}
-	if err = validate.Var(obsModelDiffSum, "required"); err != nil {
-		return 0, fmt.Errorf("builder_stats calculateStatCTC %q", err)
-	}
-	if err = validate.Var(modelSum, "required"); err != nil {
-		return 0, fmt.Errorf("builder_stats calculateStatCTC %q", err)
-	}
-	if err = validate.Var(obsSum, "required"); err != nil {
-		return 0, fmt.Errorf("builder_stats calculateStatCTC %q", err)
-	}
-	if err = validate.Var(absSum, "required"); err != nil {
-		return 0, fmt.Errorf("builder_stats calculateStatCTC %q", err)
-	}
-	if err = validate.Var(statistic, "required"); err != nil {
-		return 0, fmt.Errorf("builder_stats calculateStatCTC %q", err)
-	}
 	switch statistic {
 	case "RMSE": //surface
 		value = math.Sqrt(squareDiffSum / NSum)
@@ -115,7 +94,6 @@ func CalculateStatScalar(squareDiffSum, NSum, obsModelDiffSum, modelSum, obsSum,
 		value = absSum / NSum
 	}
 	return value, err
-
 }
 
 // function for removing unmatched data from a dataset containing two curves
@@ -139,7 +117,7 @@ func GetMatchedDataSet(dataSet DataSet) (DataSet, error) {
 		return DataSet{ctlPop:[]PreCalcRecord{},expPop: []PreCalcRecord{}}, nil
 	}
 	for {
-		if dataSet.ctlPop[indexCtl].avtime == dataSet.expPop[indexExp].avtime {
+		if dataSet.ctlPop[indexCtl].Avtime == dataSet.expPop[indexExp].Avtime {
 			// time matches and valid values so append to result
 			result.ctlPop = append(result.ctlPop, dataSet.ctlPop[indexCtl])
 			result.expPop = append(result.expPop, dataSet.expPop[indexExp])
@@ -147,7 +125,7 @@ func GetMatchedDataSet(dataSet DataSet) (DataSet, error) {
 			indexExp++
 		} else {
 			// times did not match - increment the earliest one
-			if dataSet.ctlPop[indexCtl].avtime < dataSet.expPop[indexExp].avtime {
+			if dataSet.ctlPop[indexCtl].Avtime < dataSet.expPop[indexExp].Avtime {
 				// increment the ctlPop index
 				indexCtl++
 			} else {

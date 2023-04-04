@@ -25,46 +25,14 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"reflect"
+	"log"
+	"github.com/NOAA-GSL/vxDataProcessor/pkg/builder"
+	_ "github.com/go-sql-driver/mysql"
 	"strings"
 	"time"
-	_ "github.com/go-sql-driver/mysql"
-	"github.com/NOAA-GSL/vxDataProcessor/pkg/builder"
 )
 
-// the special sql types i.e. sql.NullInt64 sql.NullFloat64 are for handling null values
-// see http://go-database-sql.org/nulls.html
-// type CTCQueryRecord struct {
-// 	avtime sql.NullInt32
-// 	hit  sql.NullInt32
-// 	miss sql.NullInt32
-// 	fa   sql.NullInt32
-// 	cn   sql.NullInt32
-// }
-// type CTCQueryRecords = []CTCQueryRecord
-
-// type ScalarQueryRecord struct {
-// 	avtime          sql.NullInt64
-// 	squareDiffSum   sql.NullFloat64
-// 	NSum            sql.NullInt32
-// 	obsModelDiffSum sql.NullFloat64
-// 	modelSum        sql.NullFloat64
-// 	obsSum          sql.NullFloat64
-// 	absSum          sql.NullFloat64
-// }
-// type ScalarQueryRecords = []ScalarQueryRecord
-// type PreCalcQueryRecord struct {
-// 	avtime  sql.NullInt64
-// 	stat sql.NullFloat64
-// }
-// type PreCalcQueryRecords = []PreCalcQueryRecord
-
-//type record *struct{}
-//type records []record
-
-var gp GoodnessPolarity
-var minorThreshold Threshold
-var majorThreshold Threshold
+var dateRange DateRange
 
 func Keys[K comparable, V any](m map[K]V) []K {
 	keys := make([]K, 0, len(m))
@@ -94,197 +62,224 @@ func getMySqlConnection(mysqlCredentials DbCredentials) (*sql.DB, error) {
 
 var mysqlDirector = Director{}
 
-func NewMysqlDirector(mysqlCredentials DbCredentials) (*Director, error) {
+func NewMysqlDirector(mysqlCredentials DbCredentials, dateRange DateRange, minorThreshold float64, majorThreshold float64) (*Director, error) {
 	var db, err = getMySqlConnection(mysqlCredentials)
 	if err != nil {
 		return nil, fmt.Errorf("mysql_director NewMysqlDirector error: %q", err)
 	} else {
 		mysqlDirector.db = db
+		mysqlDirector.mysqlCredentials = mysqlCredentials
+		mysqlDirector.queryBlock = ScorecardBlock{}
+		mysqlDirector.resultBlock = ScorecardBlock{}
+		mysqlDirector.dateRange = dateRange
+		mysqlDirector.minorThreshold = minorThreshold
+		mysqlDirector.majorThreshold = majorThreshold
 	}
 	return &mysqlDirector, nil
 }
 
-func queryDataPreCalc(stmnt string, queryResult PreCalcRecords) (err error) {
+func queryDataPreCalc(stmnt string) (queryResult builder.PreCalcRecords, err error) {
 	var rows *sql.Rows
 	rows, err = mysqlDirector.db.Query(stmnt)
 	if err != nil {
-		err = fmt.Errorf("mysql_director queryData Query failed: %q", stmnt)
-		return err
+		err = fmt.Errorf("mysql_director queryData Query failed: %q", err)
+		return queryResult, err
 	}
 	defer rows.Close()
+	var record builder.PreCalcRecord
 	for rows.Next() {
-		var avtime int64
-		var stat float64
-		err = rows.Scan(&avtime, &stat)
-		if err == nil {
-			record := PreCalcRecord{avtime:avtime,stat:stat}
-			queryResult = append(queryResult, record)
-		} else {
+		err = rows.Scan(&record.Avtime, &record.Stat)
+		if err != nil {
 			err = fmt.Errorf("mysqlDirector.Query error reading PreCalcRecord row %q", err)
-			return err
-		}
-	}
-	return nil
-}
-
-func queryDataCTC(stmnt string, queryResult CTCRecords) (err error) {
-	var rows *sql.Rows
-	rows, err = mysqlDirector.db.Query(stmnt)
-	if err != nil {
-		err = fmt.Errorf("mysql_director queryData Query failed: %q", stmnt)
-		return err
-	}
-	defer rows.Close()
-	var record CTCRecord
-	for rows.Next() {
-		err = rows.Scan(record.avtime, record.hit, record.miss, record.fa, record.cn)
-		if err != nil {
-				queryResult = append(queryResult, record)
+			return queryResult, err
 		} else {
-			err = fmt.Errorf("mysqlDirector.Query error reading CTCRecord row %q", err)
-			return err
-		}
-	}
-	return nil
-}
-
-func queryDataScalar(stmnt string, queryResult ScalarRecords) (err error) {
-	var rows *sql.Rows
-	rows, err = mysqlDirector.db.Query(stmnt)
-	if err != nil {
-		err = fmt.Errorf("mysql_director queryData Query failed: %q", stmnt)
-		return err
-	}
-	defer rows.Close()
-	var record ScalarRecord
-	for rows.Next() {
-		err = rows.Scan(record.avtime, record.squareDiffSum, record.NSum, record.obsModelDiffSum, record.modelSum, record.obsSum, record.absSum)
-		if err != nil {
 			queryResult = append(queryResult, record)
-		} else {
-			err = fmt.Errorf("mysqlDirector.Query error reading ScalarRecord row %q", err)
-			return err
 		}
 	}
-	return nil
+	return queryResult, nil
 }
 
-func contains(s []string, str string) bool {
-	for _, v := range s {
-		if v == str {
+func queryDataCTC(stmnt string) (queryResult builder.CTCRecords, err error) {
+	var rows *sql.Rows
+	rows, err = mysqlDirector.db.Query(stmnt)
+	if err != nil {
+		err = fmt.Errorf("mysql_director queryData Query failed: %q", err)
+		return queryResult, err
+	}
+	defer rows.Close()
+	var record builder.CTCRecord
+	for rows.Next() {
+		err = rows.Scan(&record.Avtime, &record.Hit, &record.Miss, &record.Fa, &record.Cn)
+		if err != nil {
+			err = fmt.Errorf("mysqlDirector.Query error reading CTCRecord row %q", err)
+			return queryResult, err
+		} else {
+			queryResult = append(queryResult, record)
+		}
+	}
+	return queryResult, nil
+}
+
+// func queryDataScalar(stmnt string, queryResult builder.ScalarRecords) (err error) {
+func queryDataScalar(stmnt string) (queryResult builder.ScalarRecords, err error) {
+	var rows *sql.Rows
+	rows, err = mysqlDirector.db.Query(stmnt)
+	if err != nil {
+		err = fmt.Errorf("mysql_director queryData Query failed: %q", err)
+		return queryResult, err
+	}
+	defer rows.Close()
+	var record builder.ScalarRecord
+	for rows.Next() {
+		err = rows.Scan(&record.Avtime, &record.SquareDiffSum, &record.NSum, &record.ObsModelDiffSum, &record.ModelSum, &record.ObsSum, &record.AbsSum)
+		if err != nil {
+			err = fmt.Errorf("mysqlDirector.Query error reading ScalarRecord row %q", err)
+			return queryResult, err
+		} else {
+			queryResult = append(queryResult, record)
+		}
+	}
+	return queryResult, nil
+}
+
+// utility to test if an []string contains a specific string
+func contains(s []string, e string) bool {
+	for _, a := range s {
+		if a == e {
 			return true
 		}
 	}
 	return false
 }
 
-func processSub(resultElem ScorecardBlock, queryElem ScorecardBlock, statistics []string) error {
-	var statisticType string
-	var elemName = reflect.TypeOf(resultElem).Name()
-	if contains(statistics, elemName) {
-		statisticType = elemName
+var statistics []string
+var statisticType string
+var thisIsALeaf bool
+
+// Recursively process a region/Block until all the leaves (which are cells) have been traversed and processed
+func processSub(region interface{}, queryElem interface{}) (interface{}, error) {
+	thisIsALeaf = false
+	var err error
+	keys := Keys(queryElem.(map[string]interface{}))
+	if contains(keys, "controlQueryTemplate") {
+		thisIsALeaf = true
 	}
-	if reflect.TypeOf(resultElem).String() == "struct" {
-		// elem is a cell
+	if thisIsALeaf { // now we have a struct
+		// if I already had a leaf on this branch trim it
 		// get the queries
-		var ctlQueryStatement string = queryElem["controlQueryTemplate"].(string)
-		var expQueryStatement string = queryElem["experimentalQueryTemplate"].(string)
-		var ctlDataType string
-		var expDataType string
+		var ctlQueryStatement string = queryElem.(map[string]interface{})["controlQueryTemplate"].(string)
+		var expQueryStatement string = queryElem.(map[string]interface{})["experimentalQueryTemplate"].(string)
+		// substitute the {{fromSecs}} and {{toSecs}}
+		ctlQueryStatement = strings.Replace(ctlQueryStatement, "{{fromSecs}}", fmt.Sprint(dateRange.FromSecs), -1)
+		ctlQueryStatement = strings.Replace(ctlQueryStatement, "{{toSecs}}", fmt.Sprint(dateRange.ToSecs), -1)
+		expQueryStatement = strings.Replace(expQueryStatement, "{{fromSecs}}", fmt.Sprint(dateRange.FromSecs), -1)
+		expQueryStatement = strings.Replace(expQueryStatement, "{{toSecs}}", fmt.Sprint(dateRange.ToSecs), -1)
 		var err error
-		var ctlQueryResult interface{}
-		var expQueryResult interface{}
+		var queryResult interface{}
+		queryError := false
+
 		// what kind of data?
 		if strings.Contains(ctlQueryStatement, "hits") {
-			ctlQueryResult = new(CTCRecords)
-			expQueryResult = new(CTCRecords)
 			// get the data
-			err = queryDataCTC(ctlQueryStatement, ctlQueryResult.(CTCRecords))
+			ctlQueryResult, err := queryDataCTC(ctlQueryStatement)
 			// handle error
 			if err != nil {
-				err = fmt.Errorf("mysql_director processSub error querying for ctlData - statement %q", ctlQueryStatement)
-				return err
-			}
-			err = queryDataCTC(expQueryStatement, expQueryResult.(CTCRecords))
-			if err != nil {
-				err = fmt.Errorf("mysql_director processSub error querying for expData - statement %q", expQueryStatement)
-				return err
+				queryError = true
+				log.Printf("mysql_director queryDataCTC ctlQueryStatement error %q", err)
+			} else {
+				expQueryResult, err := queryDataCTC(expQueryStatement)
+				if err != nil {
+					queryError = true
+					log.Printf("mysql_director queryDataCTC expQueryStatement error %q", err)
+				} else {
+					queryResult = builder.BuilderCTCResult{CtlData: ctlQueryResult, ExpData: expQueryResult}
+				}
 			}
 		} else if strings.Contains(ctlQueryStatement, "square_diff_sum") {
-			ctlQueryResult = new(ScalarRecords)
-			expQueryResult = new(ScalarRecords)
 			// get the data
-			err = queryDataScalar(ctlQueryStatement, ctlQueryResult.(ScalarRecords))
+			ctlQueryResult, err := queryDataScalar(ctlQueryStatement)
 			// handle error
 			if err != nil {
-				err = fmt.Errorf("mysql_director processSub error querying for ctlData - statement %q", ctlQueryStatement)
-				return err
-			}
-			err = queryDataScalar(expQueryStatement, expQueryResult.(ScalarRecords))
-			if err != nil {
-				err = fmt.Errorf("mysql_director processSub error querying for expData - statement %q", expQueryStatement)
-				return err
+				queryError = true
+				log.Printf("mysql_director queryDataScalar ctlQueryStatement error %q", err)
+			} else {
+				expQueryResult, err := queryDataScalar(expQueryStatement)
+				if err != nil {
+					queryError = true
+					log.Printf("mysql_director queryDataScalar expQueryStatementerror %q", err)
+				} else {
+					queryResult = builder.BuilderScalarResult{CtlData: ctlQueryResult, ExpData: expQueryResult}
+				}
 			}
 		} else if strings.Contains(ctlQueryStatement, "stat") {
-			ctlQueryResult = new(PreCalcRecords)
-			expQueryResult = new(PreCalcRecords)
 			// get the data
-			err = queryDataPreCalc(ctlQueryStatement, ctlQueryResult.(PreCalcRecords))
+			ctlQueryResult, err := queryDataPreCalc(ctlQueryStatement)
 			// handle error
 			if err != nil {
-				err = fmt.Errorf("mysql_director processSub error querying for ctlData - statement %q", ctlQueryStatement)
-				return err
-			}
-			err = queryDataPreCalc(expQueryStatement, expQueryResult.(PreCalcRecords))
-			if err != nil {
-				err = fmt.Errorf("mysql_director processSub error querying for expData - statement %q", expQueryStatement)
-				return err
+				queryError = true
+				log.Printf("mysql_director queryDataPreCalc ctlQueryStatement error %q", err)
+			} else {
+				expQueryResult, err := queryDataPreCalc(expQueryStatement)
+				if err != nil {
+					queryError = true
+					log.Printf("mysql_director queryDataPreCalc expQueryStatement error %q", err)
+				} else {
+					queryResult = builder.BuilderPreCalcResult{CtlData: ctlQueryResult, ExpData: expQueryResult}
+				}
 			}
 		} else {
-			return fmt.Errorf("mysql_director processSub unknown dataType for query %q", ctlQueryStatement)
+			// unknown data type
+			log.Printf("mysql_director queryDataPreCalc error %v", err)
+			return -9999, fmt.Errorf("mysql_director queryDataPreCalc error %q", err)
 		}
-		// handle error
-		if expDataType != ctlDataType {
-			err = fmt.Errorf("mysql_director processSub ctlDataType %q does not equal expDataType %q", ctlQueryStatement, expQueryStatement)
-			return err
-		}
+
 		// for all the input elements
 		// build the input data elements - derive the statistic and summary value
 		// for this element i.e. this cell in the scorecard
 		// The build will fill in the value (write into the result)
 		//Build(qr QueryResult, statisticType string, dataType string
-		scc := NewTwoSampleTTestBuilder()
-		var queryResult BuilderGenericResult = BuilderGenericResult{CtlData: ctlQueryResult, ExpData:expQueryResult}
-		err = scc.Build(queryResult, statisticType)
-		if err != nil {
-			return fmt.Errorf("mysql_director error in ProcessSub %q", err)
+		if queryError {
+			log.Printf("mysql_director query error %v", err)
+			return -9999, err
+		} else {
+			scc := builder.NewTwoSampleTTestBuilder()
+			value, err := (scc.Build(queryResult, statisticType, mysqlDirector.minorThreshold, mysqlDirector.majorThreshold))
+			if err != nil {
+				return -9999, fmt.Errorf("mysql_director processSub error from builder %q", err)
+			} else {
+				return int(value), nil
+			}
 		}
 	} else {
-		var keys []string = Keys(resultElem)
+		// this is a branch (not a leaf) so we keep traversing
+		// check to see if this is a statistic elem, so we can set the statisticType
+		var keys []string = Keys((region).(map[string]interface{}))
 		for _, elemKey := range keys {
-			var queryElem = queryElem[elemKey]
-			var resultElem = resultElem[elemKey]
-			return processSub(resultElem.(ScorecardBlock), queryElem.(ScorecardBlock), statistics)
+			if contains(statistics, elemKey) {
+				statisticType = elemKey
+			}
+			var queryElem = queryElem.(map[string]interface{})[elemKey]
+			region.(map[string]interface{})[elemKey], err = processSub(region.(map[string]interface{})[elemKey], queryElem)
+			if err != nil {
+				return -9999, err
+			}
 		}
 	}
-	return nil
+	return region, nil
 }
 
-// build a section of a scorecard - this is a region (think vertical slice on the scorecard)
-func (director *Director) Run(regionMap ScorecardBlock, queryMap ScorecardBlock) error {
+// build a section of a scorecard - this is a region of a block (think vertical slice on the scorecard)
+func (director *Director) Run(region interface{}, queryMap map[string]interface{}) (interface{}, error) {
 	// This is recursive. Recurse down to the cell levl then traverse back up processing
 	// all the cells on the way
 	// get all the statistic strings (they are the keys of the regionMap)
-	var statistics []string = make([]string, 0, len(regionMap))
-	for k := range regionMap {
-		statistics = append(statistics, k)
-	}
+	statistics = Keys((region).(map[string]interface{})) // declared at the top
+	dateRange = director.dateRange
 	// process the regionMap (all the values will be filled in)
-	err := processSub(regionMap, queryMap, statistics)
+	region, err := processSub(region, queryMap)
 	if err != nil {
-		return fmt.Errorf("mysql_director error in Run %q", err)
+		return region, fmt.Errorf("mysql_director error in Run %q", err)
 	}
-
 	// manager will upsert the document
-	return nil
+	return region, nil
 }

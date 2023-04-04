@@ -94,6 +94,8 @@ func Test_mySqlQuery(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    string
+		fromEpoch string
+		toEpoch string
 		recordType	 string
 		want    int
 		wantErr bool
@@ -102,6 +104,8 @@ func Test_mySqlQuery(t *testing.T) {
 			name: "test_query_scalar",
 			args: "testdata/scalar_stmnt.sql",
 			recordType: "scalar",
+			fromEpoch: "1675281600",// Tue, 1 Feb 2023 20:00:00 GMT
+			toEpoch: "1677700800",// Tue, 1 Mar 2023 20:00:00 GMT
 			want: 667,
 			wantErr: false,
 		},
@@ -109,14 +113,18 @@ func Test_mySqlQuery(t *testing.T) {
 			name: "test_query_ctc",
 			args: "testdata/ctc_stmnt.sql",
 			recordType: "ctc",
-			want: 667,
+			fromEpoch: "1675281600",// Tue, 1 Feb 2023 20:00:00 GMT
+			toEpoch: "1677700800",// Tue, 1 Mar 2023 20:00:00 GMT
+			want: 613,
 			wantErr: false,
 		},
 		{
 			name: "test_query_precalc",
 			args: "testdata/precalc_stmnt.sql",
 			recordType: "precalc",
-			want: 667,
+			fromEpoch: "1587513600", // Wednesday, April 22, 2020 12:00:00 AM
+			toEpoch: "1631620800", // Tuesday, September 14, 2021 12:00:00 PM
+			want: 1000,
 			wantErr: false,
 		},
 	}
@@ -129,8 +137,8 @@ func Test_mySqlQuery(t *testing.T) {
 		}
 
 		stmnt := string(buf)
-		fromEpoch := "1675281600" // Tue, 1 Feb 2023 20:00:00 GMT
-		toEpoch := "1677700800"  // Tue, 1 Mar 2023 20:00:00 GMT
+		fromEpoch := tt.fromEpoch // Tue, 1 Feb 2023 20:00:00 GMT
+		toEpoch := tt.toEpoch  // Tue, 1 Mar 2023 20:00:00 GMT
 		stmnt = strings.ReplaceAll(stmnt, "{ { fromSecs } }", fromEpoch)
 		stmnt = strings.ReplaceAll(stmnt, "{ { toSecs } }", toEpoch)
 		t.Run(tt.name, func(t *testing.T) {
@@ -145,21 +153,21 @@ func Test_mySqlQuery(t *testing.T) {
 			for rows.Next() {
 				switch tt.recordType {
 					case "scalar":
-						var record ScalarRecord
-						if err := rows.Scan(record.avtime,record.squareDiffSum, record.NSum, record.obsModelDiffSum, record.modelSum, record.obsSum, record.absSum); err != nil {
+						var record builder.ScalarRecord
+						if err := rows.Scan(&record.Avtime,&record.SquareDiffSum, &record.NSum, &record.ObsModelDiffSum, &record.ModelSum, &record.ObsSum, &record.AbsSum); err != nil {
 							t.Errorf("could not scan row: %v", err)
 						} else {
 							records = append(records, record)
 						}
 					case "ctc":
-						var record CTCRecord
-						if err := rows.Scan(record.Time, record.Hit, record.Miss, record.Fa, record.Cn); err != nil {
+						var record builder.CTCRecord
+						if err := rows.Scan(&record.Avtime, &record.Hit, &record.Miss, &record.Fa, &record.Cn); err != nil {
 							t.Errorf("could not scan row: %v", err)
 						}
 						records = append(records, record)
 					case "precalc":
-						var record PreCalcRecord
-						if err := rows.Scan(record.Time, record.Value); err != nil {
+						var record builder.PreCalcRecord
+						if err := rows.Scan(&record.Avtime, &record.Stat); err != nil {
 							t.Errorf("could not scan row: %v", err)
 						}
 						records = append(records, record)

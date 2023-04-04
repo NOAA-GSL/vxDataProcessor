@@ -42,6 +42,9 @@ type Director struct {
 	db               *sql.DB
 	queryBlock       ScorecardBlock
 	resultBlock      ScorecardBlock
+	dateRange 		DateRange
+	minorThreshold  float64
+	majorThreshold  float64
 }
 
 type DirectorBuilder interface {
@@ -49,9 +52,14 @@ type DirectorBuilder interface {
 	Run(regionMap ScorecardBlock, queryMap ScorecardBlock)
 }
 
-func GetDirector(directorType string, mysqlCredentials DbCredentials) (*Director, error) {
+type DateRange struct {
+	FromSecs int64
+	ToSecs int64
+}
+
+func GetDirector(directorType string, mysqlCredentials DbCredentials, dateRange DateRange, minorThreshold float64, majorThreshold float64) (*Director, error) {
 	if directorType == "MysqlDirector" {
-		return  NewMysqlDirector(mysqlCredentials)
+		return  NewMysqlDirector(mysqlCredentials, dateRange, minorThreshold, majorThreshold)
 	} else {
 		return nil, fmt.Errorf("Director GetDirector unsupported directorType: %q", directorType)
 	}

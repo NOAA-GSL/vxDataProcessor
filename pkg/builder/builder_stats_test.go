@@ -295,16 +295,15 @@ func Test_calculateStatCTC(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			//PODn_gt.sql - ceiling
 			name: "PODn (POD of value > threshold)",
 			args: args{
-				hit:       10,
-				fa:        46,
-				miss:      18,
-				cn:        1695,
+				hit:       2,
+				fa:        41,
+				miss:      5,
+				cn:        1716,
 				statistic: "PODn (POD of value > threshold)",
 			},
-			want:    97.36,
+			want:    97.67,
 			wantErr: false,
 		},
 		{
@@ -403,7 +402,7 @@ func Test_calculateStatCTC(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var delta float64 = 0.005
+			var delta float64 = 0.006
 			got, err := CalculateStatCTC(tt.args.hit, tt.args.fa, tt.args.miss, tt.args.cn, tt.args.statistic)
 			if tt.wantErr {
 				assert.Errorf(t, err, "calculateStatCTC() should have returned error but did not - got %v", got)

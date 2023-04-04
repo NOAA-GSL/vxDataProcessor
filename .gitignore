@@ -22,6 +22,8 @@ tmp/
 .idea
 .vscode
 processor
-
+_*
+*.csv
+*.sql
 # Mac cruft
 .DS_Store

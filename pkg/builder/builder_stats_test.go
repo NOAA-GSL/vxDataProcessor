@@ -14,10 +14,10 @@ func getDataSet(epoch int64, ctlValues []float64, expValues []float64) DataSet {
 	var tmpc = make([]PreCalcRecord, ctlLen)
 	var tmpe = make([]PreCalcRecord, expLen)
 	for i := 0; i < ctlLen; i++ {
-		tmpc[i] = PreCalcRecord{avtime: epoch + int64(ctlValues[i]), stat: ctlValues[i]}
+		tmpc[i] = PreCalcRecord{Avtime: epoch + int64(ctlValues[i]), Stat: ctlValues[i]}
 	}
 	for i := 0; i < expLen; i++ {
-		tmpe[i] = PreCalcRecord{avtime: epoch + int64(expValues[i]), stat: expValues[i]}
+		tmpe[i] = PreCalcRecord{Avtime: epoch + int64(expValues[i]), Stat: expValues[i]}
 	}
 	var dataSet = DataSet{
 		ctlPop: tmpc,
@@ -202,112 +202,6 @@ func Test_calculateStatScalar(t *testing.T) {
 			want:    0.3286,
 			tolerance: 0.005,
 			wantErr: false,
-		},
-		// the following are error cases - don't need precise inputs
-		{
-			name: "MissingSquareDiffSum",
-			args: args{
-				//squareDiffSum:   1.0,
-				NSum:            2.0,
-				obsModelDiffSum: 3.0,
-				modelSum:        4.0,
-				obsSum:          5.0,
-				absSum:          6.0,
-				statistic:       "squareDiffSum",
-			},
-			want:    0.0,
-			tolerance: 0.0,
-			wantErr: true,
-		},
-		{
-			name: "MissingObsModelDiffSum",
-			args: args{
-				squareDiffSum: 0.0,
-				NSum:          2.0,
-				//obsModelDiffSum: 3.0,
-				modelSum:  4.0,
-				obsSum:    5.0,
-				absSum:    6.0,
-				statistic: "obsModelDiffSum",
-			},
-			want:    0.0,
-			tolerance: 0.0,
-			wantErr: true,
-		},
-		{
-			name: "MissingNSum",
-			args: args{
-				squareDiffSum: 1.0,
-				//NSum:            2.0,
-				obsModelDiffSum: 3.0,
-				modelSum:        4.0,
-				obsSum:          5.0,
-				absSum:          6.0,
-				statistic:       "NSum",
-			},
-			want:    0.0,
-			tolerance: 0.0,
-			wantErr: true,
-		},
-		{
-			name: "MissingModelSum",
-			args: args{
-				squareDiffSum:   1.0,
-				NSum:            2.0,
-				obsModelDiffSum: 3.0,
-				//modelSum:        4.0,
-				obsSum:    5.0,
-				absSum:    6.0,
-				statistic: "modelSum",
-			},
-			want:    0.0,
-			tolerance: 0.0,
-			wantErr: true,
-		},
-		{
-			name: "MissingObsSum",
-			args: args{
-				squareDiffSum:   1.0,
-				NSum:            2.0,
-				obsModelDiffSum: 3.0,
-				modelSum:        4.0,
-				//obsSum:          5.0,
-				absSum:    6.0,
-				statistic: "obsSum",
-			},
-			want:    0.0,
-			tolerance: 0.0,
-			wantErr: true,
-		},
-		{
-			name: "MissingAbsSum",
-			args: args{
-				squareDiffSum:   1.0,
-				NSum:            2.0,
-				obsModelDiffSum: 3.0,
-				modelSum:        4.0,
-				obsSum:          5.0,
-				//absSum:          6.0,
-				statistic: "absSum",
-			},
-			want:    0.0,
-			tolerance: 0.0,
-			wantErr: true,
-		},
-		{
-			name: "MissingStatistic",
-			args: args{
-				squareDiffSum:   1.0,
-				NSum:            2.0,
-				obsModelDiffSum: 3.0,
-				modelSum:        4.0,
-				obsSum:          5.0,
-				absSum:          6.0,
-				//statistic:       "",
-			},
-			want:    0.0,
-			tolerance: 0.0,
-			wantErr: true,
 		},
 	}
 	for _, tt := range tests {

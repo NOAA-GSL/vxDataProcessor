@@ -4,12 +4,13 @@ import (
 	"bytes"
 	"fmt"
 	"net/http"
+	"net/url"
 )
 
 // NotifyScorecard creates an empty POST request to <baseURL>/refreshScorecard/<docID>
 // in order to inform the MATS scorecard app that a scorecard document has been updated.
 func NotifyScorecard(baseURL string, docID string) error {
-	url := fmt.Sprintf("%v/refreshScorecard/%v", baseURL, docID)
+	url := fmt.Sprintf("%v/refreshScorecard/%v", baseURL, url.PathEscape(docID))
 	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(([]byte{})))
 	if err != nil {
 		return fmt.Errorf("client: could not create request: %s\n", err)

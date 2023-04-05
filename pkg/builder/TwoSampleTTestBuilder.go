@@ -12,7 +12,7 @@ two-tailed test.
 For reference about Hypothesis testing with P-value look here...
 https://refactoring.guru/design-patterns/builder/go/example
 
-For these analysis we asume for the null hypothesis that the statistic
+For these analysis we assume for the null hypothesis that the statistic
 that is generated from the "validation data source", which might be thought of as the
 control source population, is the same as the "data source", which might be thought
 of as the experimental source population.
@@ -202,7 +202,7 @@ func (scc *ScorecardCell) DeriveInputData(qrPtr interface{}, statisticType strin
 }
 
 func (scc *ScorecardCell) ComputeSignificance() error {
-	// scc should hvae already been populated
+	// scc should have already been populated
 	if scc.Data.CtlPop == nil || scc.Data.ExpPop == nil {
 		return fmt.Errorf("TwoSampleTTestBuilder ComputeSignificance - no data")
 	}
@@ -229,7 +229,7 @@ func (scc *ScorecardCell) ComputeSignificance() error {
 	ret, err := stats.PairedTTest(derivedData.CtlPop, derivedData.ExpPop, μ0, alt)
 	if err != nil {
 		if strings.Contains(fmt.Sprint(err), "zero variance") {
-			// we are not considering indentical sets to be errors
+			// we are not considering identical sets to be errors
 			// set pval to 1 and value to 0
 			scc.Pvalue = 1
 			var v int = 0

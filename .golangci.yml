@@ -81,7 +81,7 @@ linters:
 
     # Check for misspellings
     # TODO - enable
-    # - misspell
+    - misspell
 
     # Finds naked/bare returns
     - nakedret

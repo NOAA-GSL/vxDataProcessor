@@ -145,8 +145,7 @@ linters:
     - tparallel
 
     # Remove unnecessary type conversions, make code cleaner
-    # TODO - enable
-    # - unconvert
+    - unconvert
 
     # Might be noisy but better to know what is unused
     # TODO - enable

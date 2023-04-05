@@ -250,7 +250,7 @@ func processSub(region interface{}, queryElem interface{}) (interface{}, error) 
 			if err != nil {
 				return builder.ErrorValue, fmt.Errorf("mysql_director processSub error from builder %q", err)
 			} else {
-				return int(value), nil
+				return value, nil
 			}
 		}
 	} else {

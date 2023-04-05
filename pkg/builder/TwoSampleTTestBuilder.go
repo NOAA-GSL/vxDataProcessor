@@ -144,14 +144,14 @@ func (scc *ScorecardCell) deriveScalarInputData(queryResult BuilderScalarResult,
 		stat, err = CalculateStatScalar(record.SquareDiffSum, record.NSum, record.ObsModelDiffSum, record.ModelSum, record.ObsSum, record.AbsSum, statisticType)
 		if err == nil {
 			// include this one
-			ctlData = append(ctlData, PreCalcRecord{Stat: float64(stat), Avtime: record.Avtime})
+			ctlData = append(ctlData, PreCalcRecord{Stat: stat, Avtime: record.Avtime})
 		}
 	}
 	for _, record = range queryResult.CtlData {
 		stat, err = CalculateStatScalar(record.SquareDiffSum, record.NSum, record.ObsModelDiffSum, record.ModelSum, record.ObsSum, record.AbsSum, statisticType)
 		if err == nil {
 			// include this one
-			expData = append(expData, PreCalcRecord{Stat: float64(stat), Avtime: record.Avtime})
+			expData = append(expData, PreCalcRecord{Stat: stat, Avtime: record.Avtime})
 		}
 	}
 	// return the unmatched Scalar dataSet

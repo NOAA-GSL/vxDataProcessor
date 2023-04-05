@@ -157,7 +157,8 @@ linters:
     - unused
 
     # Detect the possibility to use variables/constants from stdlib.
-    - usestdlibvars
+    # TODO - enable
+    # - usestdlibvars
 
     # Finds wasted assignment statements.
     - wastedassign

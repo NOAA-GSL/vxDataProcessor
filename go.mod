@@ -1,10 +1,12 @@
 module github.com/NOAA-GSL/vxDataProcessor
 
-go 1.19
+go 1.20
 
 require (
+	github.com/aclements/go-moremath v0.0.0-20210112150236-f10218a38794
 	github.com/couchbase/gocb/v2 v2.6.1
 	github.com/gin-gonic/gin v1.9.0
+	github.com/go-playground/validator/v10 v10.11.2
 	github.com/go-sql-driver/mysql v1.7.0
 	github.com/joho/godotenv v1.5.1
 	github.com/stretchr/testify v1.8.2
@@ -35,12 +37,7 @@ require (
 	golang.org/x/crypto v0.5.0 // indirect
 	golang.org/x/net v0.7.0 // indirect
 	golang.org/x/sys v0.5.0 // indirect
+	golang.org/x/text v0.7.0 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-)
-
-require (
-	github.com/aclements/go-moremath v0.0.0-20210112150236-f10218a38794
-	github.com/go-playground/validator/v10 v10.11.2
-	golang.org/x/text v0.7.0 // indirect
 )

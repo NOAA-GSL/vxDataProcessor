@@ -14,7 +14,7 @@ func TestPingEndpoint(t *testing.T) {
 	router := SetupRouter(nil)
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/ping", nil)
+	req, _ := http.NewRequest(http.MethodGet, "/ping", nil)
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
@@ -30,7 +30,7 @@ func TestJobsEndpoint(t *testing.T) {
 		var jsonStr = []byte(`{"docid": "myid1"}`)
 
 		// Test
-		req, _ := http.NewRequest("POST", "/jobs/", bytes.NewBuffer(jsonStr))
+		req, _ := http.NewRequest(http.MethodPost, "/jobs/", bytes.NewBuffer(jsonStr))
 		router.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusOK, w.Code)
@@ -44,13 +44,13 @@ func TestJobsEndpoint(t *testing.T) {
 		// TODO - is there a better way to insert state?
 		w := httptest.NewRecorder()
 		var jsonStr = []byte(`{"docid": "myid1"}`)
-		req, _ := http.NewRequest("POST", "/jobs/", bytes.NewBuffer(jsonStr))
+		req, _ := http.NewRequest(http.MethodPost, "/jobs/", bytes.NewBuffer(jsonStr))
 		router.ServeHTTP(w, req)
 		assert.Equal(t, http.StatusOK, w.Code)
 
 		// Test
 		w = httptest.NewRecorder()
-		req, _ = http.NewRequest("GET", "/jobs/", nil)
+		req, _ = http.NewRequest(http.MethodGet, "/jobs/", nil)
 		router.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusOK, w.Code)

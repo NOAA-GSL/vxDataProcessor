@@ -56,7 +56,7 @@ func TestClient_WrongURL(t *testing.T) {
 	}
 }
 
-func TestClient_QueryEscaped(t *testing.T) {
+func TestClient_PathEscaped(t *testing.T) {
 	DocID := "SC:anonymous--submitted:20230322220711--2block:0:02/19/2023_20_00_-_03/21/2023_20_00"
 	escapedDocID := url.PathEscape(DocID)
 	expectedURL := fmt.Sprintf("/refreshScorecard/%v", escapedDocID)

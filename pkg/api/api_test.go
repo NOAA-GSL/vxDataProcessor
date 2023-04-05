@@ -27,7 +27,7 @@ func TestJobsEndpoint(t *testing.T) {
 
 		// Setup
 		w := httptest.NewRecorder()
-		var jsonStr = []byte(`{"docid": "myid1"}`)
+		jsonStr := []byte(`{"docid": "myid1"}`)
 
 		// Test
 		req, _ := http.NewRequest(http.MethodPost, "/jobs/", bytes.NewBuffer(jsonStr))
@@ -43,7 +43,7 @@ func TestJobsEndpoint(t *testing.T) {
 		// Setup
 		// TODO - is there a better way to insert state?
 		w := httptest.NewRecorder()
-		var jsonStr = []byte(`{"docid": "myid1"}`)
+		jsonStr := []byte(`{"docid": "myid1"}`)
 		req, _ := http.NewRequest(http.MethodPost, "/jobs/", bytes.NewBuffer(jsonStr))
 		router.ServeHTTP(w, req)
 		assert.Equal(t, http.StatusOK, w.Code)
@@ -63,14 +63,14 @@ func TestJobsIDEndpoint(t *testing.T) {
 
 	// Setup
 	w := httptest.NewRecorder()
-	var jsonStr = []byte(`{"docid": "myid1"}`)
-	req, _ := http.NewRequest("POST", "/jobs/", bytes.NewBuffer(jsonStr))
+	jsonStr := []byte(`{"docid": "myid1"}`)
+	req, _ := http.NewRequest(http.MethodPost, "/jobs/", bytes.NewBuffer(jsonStr))
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
 
 	// Test
 	w = httptest.NewRecorder()
-	req, _ = http.NewRequest("GET", "/jobs/0", nil)
+	req, _ = http.NewRequest(http.MethodGet, "/jobs/0", nil)
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)

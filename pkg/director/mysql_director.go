@@ -25,11 +25,12 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"github.com/NOAA-GSL/vxDataProcessor/pkg/builder"
-	_ "github.com/go-sql-driver/mysql"
 	"log"
 	"strings"
 	"time"
+
+	"github.com/NOAA-GSL/vxDataProcessor/pkg/builder"
+	_ "github.com/go-sql-driver/mysql"
 )
 
 var dateRange DateRange
@@ -44,15 +45,15 @@ func Keys[K comparable, V any](m map[K]V) []K {
 
 func getMySqlConnection(mysqlCredentials DbCredentials) (*sql.DB, error) {
 	// get the connection
-	var driver = "mysql"
+	driver := "mysql"
 	//user:password@tcp(localhost:5555)
-	var dataSource = fmt.Sprintf("%s:%s@tcp(%s)/", mysqlCredentials.User, mysqlCredentials.Password, mysqlCredentials.Host)
+	dataSource := fmt.Sprintf("%s:%s@tcp(%s)/", mysqlCredentials.User, mysqlCredentials.Password, mysqlCredentials.Host)
 	var db *sql.DB
 	db, err := sql.Open(driver, dataSource)
 	if err != nil {
 		return nil, fmt.Errorf("mysql_director getMySqlConnection sql open error %q", err)
 	}
-	var ctx, cancelfunc = context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancelfunc := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancelfunc()
 	if err := db.PingContext(ctx); err != nil {
 		return nil, fmt.Errorf("mysql_director Build sql open/ping error: %q", err)
@@ -63,7 +64,7 @@ func getMySqlConnection(mysqlCredentials DbCredentials) (*sql.DB, error) {
 var mysqlDirector = Director{}
 
 func NewMysqlDirector(mysqlCredentials DbCredentials, dateRange DateRange, minorThreshold float64, majorThreshold float64) (*Director, error) {
-	var db, err = getMySqlConnection(mysqlCredentials)
+	db, err := getMySqlConnection(mysqlCredentials)
 	if err != nil {
 		return nil, fmt.Errorf("mysql_director NewMysqlDirector error: %q", err)
 	} else {
@@ -152,9 +153,11 @@ func contains(s []string, e string) bool {
 	return false
 }
 
-var statistics []string
-var statisticType string
-var thisIsALeaf bool
+var (
+	statistics    []string
+	statisticType string
+	thisIsALeaf   bool
+)
 
 // Recursively process a region/Block until all the leaves (which are cells) have been traversed and processed
 func processSub(region interface{}, queryElem interface{}) (interface{}, error) {
@@ -237,7 +240,7 @@ func processSub(region interface{}, queryElem interface{}) (interface{}, error) 
 		// build the input data elements - derive the statistic and summary value
 		// for this element i.e. this cell in the scorecard
 		// The build will fill in the value (write into the result)
-		//Build(qr QueryResult, statisticType string, dataType string
+		// Build(qr QueryResult, statisticType string, dataType string
 		if queryError {
 			log.Printf("mysql_director query error %v", err)
 			return builder.ErrorValue, err
@@ -258,7 +261,7 @@ func processSub(region interface{}, queryElem interface{}) (interface{}, error) 
 			if contains(statistics, elemKey) {
 				statisticType = elemKey
 			}
-			var queryElem = queryElem.(map[string]interface{})[elemKey]
+			queryElem := queryElem.(map[string]interface{})[elemKey]
 			region.(map[string]interface{})[elemKey], err = processSub(region.(map[string]interface{})[elemKey], queryElem)
 			if err != nil {
 				return builder.ErrorValue, err

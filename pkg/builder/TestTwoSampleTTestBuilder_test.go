@@ -6,10 +6,12 @@ import (
 	"time"
 )
 
-var gp = GoodnessPolarity(1)
-var minorThreshold = Threshold(0.05)
-var majorThreshold = Threshold(0.01)
-var cellPtr = GetBuilder("TwoSampleTTest")
+var (
+	gp             = GoodnessPolarity(1)
+	minorThreshold = Threshold(0.05)
+	majorThreshold = Threshold(0.01)
+	cellPtr        = GetBuilder("TwoSampleTTest")
+)
 
 // test for zero variance
 func TestTwoSampleTTestBuilder_test_identical(t *testing.T) {
@@ -29,20 +31,20 @@ func TestTwoSampleTTestBuilder_test_identical(t *testing.T) {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_identical - SetInputData - error message : ", err))
 	}
 
-	var epoch = time.Now().Unix()
+	epoch := time.Now().Unix()
 	var ctlData PreCalcRecords
 	for i := 0; i < 10; i++ {
-		var rec = PreCalcRecord{
-			Stat: float64(i) * 1.1,
-			Avtime:  int64(i) + epoch,
+		rec := PreCalcRecord{
+			Stat:   float64(i) * 1.1,
+			Avtime: int64(i) + epoch,
 		}
 		ctlData = append(ctlData, rec)
 	}
 	var expData PreCalcRecords
 	for i := 0; i < 10; i++ {
-		var rec = PreCalcRecord{
-			Stat: float64(i) * 1.1,
-			Avtime:  int64(i) + epoch,
+		rec := PreCalcRecord{
+			Stat:   float64(i) * 1.1,
+			Avtime: int64(i) + epoch,
 		}
 		expData = append(expData, rec)
 	}
@@ -64,7 +66,7 @@ func TestTwoSampleTTestBuilder_test_identical(t *testing.T) {
 
 // this test has inputs that should return a value of 2
 func TestTwoSampleTTestBuilder_test_2(t *testing.T) {
-	var cellPtr = NewTwoSampleTTestBuilder()
+	cellPtr := NewTwoSampleTTestBuilder()
 	err := (*cellPtr).SetGoodnessPolarity(gp)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_2 - SetGoodnessPolarity - error message : ", err))
@@ -80,20 +82,20 @@ func TestTwoSampleTTestBuilder_test_2(t *testing.T) {
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_2 - SetInputData - error message : ", err))
 	}
-	var epoch = time.Now().Unix()
+	epoch := time.Now().Unix()
 	var ctlData PreCalcRecords
 	for i := 0; i < 10; i++ {
-		var rec = PreCalcRecord{
-			Stat: float64(i) * 1.01,
-			Avtime:  int64(i) + epoch,
+		rec := PreCalcRecord{
+			Stat:   float64(i) * 1.01,
+			Avtime: int64(i) + epoch,
 		}
 		ctlData = append(ctlData, rec)
 	}
 	var expData PreCalcRecords
 	for i := 0; i < 10; i++ {
-		var rec = PreCalcRecord{
-			Stat: float64(i) * 1.2,
-			Avtime:  int64(i) + epoch,
+		rec := PreCalcRecord{
+			Stat:   float64(i) * 1.2,
+			Avtime: int64(i) + epoch,
 		}
 		expData = append(expData, rec)
 	}
@@ -132,22 +134,22 @@ func TestTwoSampleTTestBuilder_test_1(t *testing.T) {
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_1 - SetInputData - error message : ", err))
 	}
-	var epoch = time.Now().Unix()
-	var normData = [10]int{86, 74, 79, 94, 73, 92, 66, 77, 74, 78}
+	epoch := time.Now().Unix()
+	normData := [10]int{86, 74, 79, 94, 73, 92, 66, 77, 74, 78}
 	var ctlData PreCalcRecords
 	for i := 0; i < 10; i++ {
-		var rec = PreCalcRecord{
-			Stat: float64(normData[i]),
-			Avtime:  int64(i) + epoch,
+		rec := PreCalcRecord{
+			Stat:   float64(normData[i]),
+			Avtime: int64(i) + epoch,
 		}
 		ctlData = append(ctlData, rec)
 	}
 	// I don't claim to know why but this modification gives a number set that generates a pvalue 0.015523870374046123 which results in value 1
 	var expData PreCalcRecords
 	for i := 0; i < 10; i++ {
-		var rec = PreCalcRecord{
-			Stat: float64(normData[i] * (i % 2)),
-			Avtime:  int64(i) + epoch,
+		rec := PreCalcRecord{
+			Stat:   float64(normData[i] * (i % 2)),
+			Avtime: int64(i) + epoch,
 		}
 		expData = append(expData, rec)
 	}
@@ -187,13 +189,13 @@ func TestTwoSampleTTestBuilder_test_0(t *testing.T) {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_0 - SetInputData - error message : ", err))
 	}
 
-	var epoch = time.Now().Unix()
-	var normData = [10]int{86, 74, 79, 94, 73, 92, 66, 77, 74, 78}
+	epoch := time.Now().Unix()
+	normData := [10]int{86, 74, 79, 94, 73, 92, 66, 77, 74, 78}
 	var ctlData PreCalcRecords
 	for i := 0; i < 10; i++ {
-		var rec = PreCalcRecord{
-			Stat: float64(normData[i]),
-			Avtime:  int64(i) + epoch,
+		rec := PreCalcRecord{
+			Stat:   float64(normData[i]),
+			Avtime: int64(i) + epoch,
 		}
 		ctlData = append(ctlData, rec)
 	}
@@ -201,9 +203,9 @@ func TestTwoSampleTTestBuilder_test_0(t *testing.T) {
 	var expData PreCalcRecords
 	normData = [10]int{87, 74, 79, 94, 73, 92, 66, 77, 74, 78}
 	for i := 0; i < 10; i++ {
-		var rec = PreCalcRecord{
-			Stat: float64(normData[i]),
-			Avtime:  int64(i) + epoch,
+		rec := PreCalcRecord{
+			Stat:   float64(normData[i]),
+			Avtime: int64(i) + epoch,
 		}
 		expData = append(expData, rec)
 	}
@@ -242,20 +244,20 @@ func TestTwoSampleTTestBuilder_different_lengths(t *testing.T) {
 		t.Fatal(fmt.Sprint("SampleTTestBuilder_diff - SetInputData - error message : ", err))
 	}
 
-	var epoch = time.Now().Unix()
+	epoch := time.Now().Unix()
 	var ctlData PreCalcRecords
 	for i := 0; i < 10; i++ {
-		var rec = PreCalcRecord{
-			Stat: float64(i) * 1.01,
-			Avtime:  int64(i) + epoch,
+		rec := PreCalcRecord{
+			Stat:   float64(i) * 1.01,
+			Avtime: int64(i) + epoch,
 		}
 		ctlData = append(ctlData, rec)
 	}
 	var expData PreCalcRecords
 	for i := 0; i < 9; i++ {
-		var rec = PreCalcRecord{
-			Stat: float64(i) * 1.2,
-			Avtime:  int64(i) + epoch,
+		rec := PreCalcRecord{
+			Stat:   float64(i) * 1.2,
+			Avtime: int64(i) + epoch,
 		}
 		expData = append(expData, rec)
 	}
@@ -290,26 +292,26 @@ func TestTwoSampleTTestBuilder_test__match_ctl_short_1(t *testing.T) {
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_1 - SetInputData - error message : ", err))
 	}
-	var epoch = time.Now().Unix()
-	var normData = [10]int{86, 74, 79, 94, 73, 92, 66, 77, 74, 78}
+	epoch := time.Now().Unix()
+	normData := [10]int{86, 74, 79, 94, 73, 92, 66, 77, 74, 78}
 	var ctlData PreCalcRecords
 	for i := 0; i < 10; i++ {
 		// skip number 5
 		if i == 5 {
 			continue
 		}
-		var rec = PreCalcRecord{
-			Stat: float64(normData[i]),
-			Avtime:  int64(i) + epoch,
+		rec := PreCalcRecord{
+			Stat:   float64(normData[i]),
+			Avtime: int64(i) + epoch,
 		}
 		ctlData = append(ctlData, rec)
 	}
 	// I don't claim to know why but this modification gives a number set that generates a pvalue 0.015523870374046123 which results in value 1
 	var expData PreCalcRecords
 	for i := 0; i < 10; i++ {
-		var rec = PreCalcRecord{
-			Stat: float64(normData[i] * (i % 2)),
-			Avtime:  int64(i) + epoch,
+		rec := PreCalcRecord{
+			Stat:   float64(normData[i] * (i % 2)),
+			Avtime: int64(i) + epoch,
 		}
 		expData = append(expData, rec)
 	}
@@ -348,13 +350,13 @@ func TestTwoSampleTTestBuilder_test__match_exp_short_1(t *testing.T) {
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_1 - SetInputData - error message : ", err))
 	}
-	var epoch = time.Now().Unix()
-	var normData = [10]int{86, 74, 79, 94, 73, 92, 66, 77, 74, 78}
+	epoch := time.Now().Unix()
+	normData := [10]int{86, 74, 79, 94, 73, 92, 66, 77, 74, 78}
 	var ctlData PreCalcRecords
 	for i := 0; i < 10; i++ {
-		var rec = PreCalcRecord{
-			Stat: float64(normData[i]),
-			Avtime:  int64(i) + epoch,
+		rec := PreCalcRecord{
+			Stat:   float64(normData[i]),
+			Avtime: int64(i) + epoch,
 		}
 		ctlData = append(ctlData, rec)
 	}
@@ -365,9 +367,9 @@ func TestTwoSampleTTestBuilder_test__match_exp_short_1(t *testing.T) {
 		if i == 5 {
 			continue
 		}
-		var rec = PreCalcRecord{
-			Stat: float64(normData[i] * (i % 2)),
-			Avtime:  int64(i) + epoch,
+		rec := PreCalcRecord{
+			Stat:   float64(normData[i] * (i % 2)),
+			Avtime: int64(i) + epoch,
 		}
 		expData = append(expData, rec)
 	}

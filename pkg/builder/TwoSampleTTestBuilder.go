@@ -32,11 +32,12 @@ will cause a return of 0.
 */
 import (
 	"fmt"
-	"github.com/aclements/go-moremath/stats"
-	"github.com/go-playground/validator/v10"
 	"log"
 	"reflect"
 	"strings"
+
+	"github.com/aclements/go-moremath/stats"
+	"github.com/go-playground/validator/v10"
 )
 
 // use a single instance of Validate, it caches struct info
@@ -114,7 +115,7 @@ func (scc *ScorecardCell) deriveCTCInputData(queryResult BuilderCTCResult, stati
 		record = queryResult.CtlData[i]
 		stat, err = CalculateStatCTC(record.Hit, record.Fa, record.Miss, record.Cn, statisticType)
 		if err == nil {
-			//include this one
+			// include this one
 			ctlData = append(ctlData, PreCalcRecord{Stat: float64(stat), Avtime: record.Avtime})
 		}
 	}
@@ -122,7 +123,7 @@ func (scc *ScorecardCell) deriveCTCInputData(queryResult BuilderCTCResult, stati
 		record = queryResult.ExpData[i]
 		stat, err = CalculateStatCTC(record.Hit, record.Fa, record.Miss, record.Cn, statisticType)
 		if err == nil {
-			//include this one
+			// include this one
 			expData = append(expData, PreCalcRecord{Stat: float64(stat), Avtime: record.Avtime})
 		}
 	}
@@ -142,14 +143,14 @@ func (scc *ScorecardCell) deriveScalarInputData(queryResult BuilderScalarResult,
 	for _, record = range queryResult.CtlData {
 		stat, err = CalculateStatScalar(record.SquareDiffSum, record.NSum, record.ObsModelDiffSum, record.ModelSum, record.ObsSum, record.AbsSum, statisticType)
 		if err == nil {
-			//include this one
+			// include this one
 			ctlData = append(ctlData, PreCalcRecord{Stat: float64(stat), Avtime: record.Avtime})
 		}
 	}
 	for _, record = range queryResult.CtlData {
 		stat, err = CalculateStatScalar(record.SquareDiffSum, record.NSum, record.ObsModelDiffSum, record.ModelSum, record.ObsSum, record.AbsSum, statisticType)
 		if err == nil {
-			//include this one
+			// include this one
 			expData = append(expData, PreCalcRecord{Stat: float64(stat), Avtime: record.Avtime})
 		}
 	}
@@ -252,7 +253,7 @@ func (scc *ScorecardCell) ComputeSignificance() error {
 		v, err = scc.deriveValue(difference, ret.P)
 		if err != nil {
 			log.Print(err)
-			//scc.Value = &v
+			// scc.Value = &v
 			return fmt.Errorf("TwoSampleTTestBuilder ComputeSignificance - deriveValue error:  %q", err)
 		}
 		scc.ValuePtr = &v
@@ -323,7 +324,7 @@ func getGoodnessPolarity(statisticType string) (polarity GoodnessPolarity, err e
 }
 
 func (scc *ScorecardCell) Build(qrPtr interface{}, statisticType string, minorThreshold float64, majorThreshold float64) (value int, err error) {
-	//DerivePreCalcInputData(ctlQR PreCalcRecords, expQR PreCalcRecords, statisticType string)
+	// DerivePreCalcInputData(ctlQR PreCalcRecords, expQR PreCalcRecords, statisticType string)
 	// build the input data elements and
 	// for all the input elements fire off a thread to do the compute
 

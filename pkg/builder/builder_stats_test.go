@@ -1,32 +1,34 @@
 package builder
 
 import (
-	"github.com/stretchr/testify/assert"
+	"math"
 	"reflect"
 	"testing"
 	"time"
-	"math"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func getDataSet(epoch int64, ctlValues []float64, expValues []float64) DataSet {
-	var ctlLen = len(ctlValues)
-	var expLen = len(expValues)
-	var tmpc = make([]PreCalcRecord, ctlLen)
-	var tmpe = make([]PreCalcRecord, expLen)
+	ctlLen := len(ctlValues)
+	expLen := len(expValues)
+	tmpc := make([]PreCalcRecord, ctlLen)
+	tmpe := make([]PreCalcRecord, expLen)
 	for i := 0; i < ctlLen; i++ {
 		tmpc[i] = PreCalcRecord{Avtime: epoch + int64(ctlValues[i]), Stat: ctlValues[i]}
 	}
 	for i := 0; i < expLen; i++ {
 		tmpe[i] = PreCalcRecord{Avtime: epoch + int64(expValues[i]), Stat: expValues[i]}
 	}
-	var dataSet = DataSet{
+	dataSet := DataSet{
 		ctlPop: tmpc,
 		expPop: tmpe,
 	}
 	return dataSet
 }
+
 func TestGetMatchedDataSet(t *testing.T) {
-	var epoch = time.Now().Unix()
+	epoch := time.Now().Unix()
 	tests := []struct {
 		name    string
 		args    DataSet
@@ -106,7 +108,6 @@ func TestGetMatchedDataSet(t *testing.T) {
 }
 
 func Test_calculateStatScalar(t *testing.T) {
-
 	/*
 	   Statistics for scalar
 	   "RMSE" - surface
@@ -132,15 +133,15 @@ func Test_calculateStatScalar(t *testing.T) {
 		statistic       string
 	}
 	tests := []struct {
-		name    string
-		args    args
-		want    float64
+		name      string
+		args      args
+		want      float64
 		tolerance float64
-		wantErr bool
+		wantErr   bool
 	}{
-		//test cases.
+		// test cases.
 		{
-			//RMSE.sql
+			// RMSE.sql
 			name: "RMSE",
 			args: args{
 				squareDiffSum:   22019.0390625,
@@ -151,12 +152,12 @@ func Test_calculateStatScalar(t *testing.T) {
 				absSum:          4889.7998046875,
 				statistic:       "RMSE",
 			},
-			want:    1.957 * 1.8,
+			want:      1.957 * 1.8,
 			tolerance: 0.005,
-			wantErr: false,
+			wantErr:   false,
 		},
 		{
-			//BIAS_MODEL_OBS.sql
+			// BIAS_MODEL_OBS.sql
 			name: "Bias (Model - Obs)",
 			args: args{
 				squareDiffSum:   22019.0390625,
@@ -167,9 +168,9 @@ func Test_calculateStatScalar(t *testing.T) {
 				absSum:          4889.7998046875,
 				statistic:       "Bias (Model - Obs)",
 			},
-			want:    -0.5741 * 1.8,
+			want:      -0.5741 * 1.8,
 			tolerance: 0.001,
-			wantErr: false,
+			wantErr:   false,
 		},
 		{
 			// MAE_temp_dewpoint.sql
@@ -183,9 +184,9 @@ func Test_calculateStatScalar(t *testing.T) {
 				absSum:          740.9000244140630,
 				statistic:       "MAE (temp and dewpoint only)",
 			},
-			want:    1.942 * 1.8,
+			want:      1.942 * 1.8,
 			tolerance: 0.005,
-			wantErr: false,
+			wantErr:   false,
 		},
 		{
 			// MAE.sql
@@ -199,9 +200,9 @@ func Test_calculateStatScalar(t *testing.T) {
 				absSum:          4.271478652954102,
 				statistic:       "MAE",
 			},
-			want:    0.3286,
+			want:      0.3286,
 			tolerance: 0.005,
-			wantErr: false,
+			wantErr:   false,
 		},
 	}
 	for _, tt := range tests {
@@ -254,7 +255,7 @@ func Test_calculateStatCTC(t *testing.T) {
 		want    float32
 		wantErr bool
 	}{
-		//test cases.
+		// test cases.
 		{
 			// TSS.sql - radar
 			name: "TSS (True Skill Score)",
@@ -269,7 +270,7 @@ func Test_calculateStatCTC(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			//PODy_lt.sql - ceiling
+			// PODy_lt.sql - ceiling
 			name: "PODy (POD of value < threshold)",
 			args: args{
 				hit:       10,
@@ -282,7 +283,7 @@ func Test_calculateStatCTC(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			//PODy_gt.sql - radar
+			// PODy_gt.sql - radar
 			name: "PODy (POD of value > threshold)",
 			args: args{
 				hit:       1583,
@@ -307,7 +308,7 @@ func Test_calculateStatCTC(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			//PODn_lt.sql - radar
+			// PODn_lt.sql - radar
 			name: "PODn (POD of value < threshold)",
 			args: args{
 				hit:       1583,
@@ -320,7 +321,7 @@ func Test_calculateStatCTC(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			//FAR.sql - radar
+			// FAR.sql - radar
 			name: "FAR (False Alarm Ratio)",
 			args: args{
 				hit:       1583,
@@ -333,7 +334,7 @@ func Test_calculateStatCTC(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			//CSI.sql - radar
+			// CSI.sql - radar
 			name: "CSI (Critical Success Index)",
 			args: args{
 				hit:       1583,
@@ -346,7 +347,7 @@ func Test_calculateStatCTC(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			//HSS.sql - radar
+			// HSS.sql - radar
 			name: "HSS (Heidke Skill Score)",
 			args: args{
 				hit:       1583,
@@ -359,7 +360,7 @@ func Test_calculateStatCTC(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			//ETS.sql - radar
+			// ETS.sql - radar
 			name: "ETS (Equitable Threat Score)",
 			args: args{
 				hit:       1583,
@@ -396,7 +397,7 @@ func Test_calculateStatCTC(t *testing.T) {
 				statistic: "TSS (True Skill Score)",
 			},
 			want: 0.0,
-			//wantErr: true,
+			// wantErr: true,
 			wantErr: false,
 		},
 	}

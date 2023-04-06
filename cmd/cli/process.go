@@ -1,19 +1,22 @@
 package main
+
 /*
 process a scorecard document
 */
 import (
 	"fmt"
-	"os"
 	"log"
+	"os"
 	"time"
+
 	"github.com/NOAA-GSL/vxDataProcessor/pkg/manager"
 )
+
 func main() {
 	os.Exit(process())
 }
 
-func process() (int){
+func process() int {
 	defer fmt.Println("Finished")
 	if len(os.Args) != 3 {
 		fmt.Println("Usage:", os.Args[0], "environment_file document_id")

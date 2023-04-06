@@ -14,7 +14,7 @@ import (
 // their handlers
 func SetupRouter(js *jobstore.JobStore) *gin.Engine {
 	router := gin.Default()
-	server := NewJobServer(js)
+	server := newJobServer(js)
 
 	router.POST("/jobs/", server.createJobHandler)
 	router.GET("/jobs/", server.getAllJobsHandler)

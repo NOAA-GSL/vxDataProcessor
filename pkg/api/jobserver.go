@@ -17,7 +17,7 @@ type jobServer struct {
 //
 // It can take a pointer to an existing JobStore to store Jobs in. If nil is
 // passed instead of a JobStore, it will initialize an empty JobStore for you.
-func NewJobServer(js *jobstore.JobStore) *jobServer {
+func newJobServer(js *jobstore.JobStore) *jobServer {
 	if js == nil {
 		js = jobstore.NewJobStore()
 	}

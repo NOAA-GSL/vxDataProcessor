@@ -44,16 +44,17 @@ and then it politely dies.
 
 import (
 	"fmt"
-	"github.com/NOAA-GSL/vxDataProcessor/pkg/director"
-	"github.com/couchbase/gocb/v2"
-	"github.com/joho/godotenv"
+	"log"
 	"os"
 	"reflect"
 	"sort"
-	"log"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/NOAA-GSL/vxDataProcessor/pkg/director"
+	"github.com/couchbase/gocb/v2"
+	"github.com/joho/godotenv"
 )
 
 func loadEnvironmant(environmentFile string) (mysqlCredentials, cbCredentials director.DbCredentials, err error) {
@@ -104,7 +105,7 @@ func loadEnvironmant(environmentFile string) (mysqlCredentials, cbCredentials di
 // get the couchbase connection
 // mysql connections are maintained in the mysql_director
 func getConnection(mngr *Manager, cbCredentials director.DbCredentials) (err error) {
-	var options = gocb.ClusterOptions{
+	options := gocb.ClusterOptions{
 		Authenticator: gocb.PasswordAuthenticator{
 			Username: cbCredentials.User,
 			Password: cbCredentials.Password,
@@ -291,7 +292,7 @@ func processRegion(
 	if strings.ToUpper(appName) == "CB" {
 		log.Print("launch CB director - which we don't have yet")
 	} else {
-		//launch mysql director
+		// launch mysql director
 		mysqlDirector, err := director.GetDirector("MysqlDirector", mysqlCredentials, dateRange, minorThreshold, majorThreshold)
 		if err != nil {
 			err = fmt.Errorf("manager Run error getting director: %q", err)
@@ -307,7 +308,7 @@ func processRegion(
 	if err != nil {
 		return fmt.Errorf("manager Run error upserting resultRegion: %q error: %q", blockRegionName, err)
 	}
-	//notify server to update with scorecardApUrl
+	// notify server to update with scorecardApUrl
 	return nil
 }
 

@@ -59,10 +59,9 @@ linters:
     # - godot
 
     # Make sure everything's auto-formatted
-    # TODO - enable
-    # - gofmt
-    # - gofumpt
-    # - goimports
+    - gofmt
+    - gofumpt
+    - goimports
 
     # Handle replace, retract, exclude directives in go.mod 
     - gomoddirectives
@@ -82,7 +81,7 @@ linters:
 
     # Check for misspellings
     # TODO - enable
-    # - misspell
+    - misspell
 
     # Finds naked/bare returns
     - nakedret
@@ -146,8 +145,7 @@ linters:
     - tparallel
 
     # Remove unnecessary type conversions, make code cleaner
-    # TODO - enable
-    # - unconvert
+    - unconvert
 
     # Might be noisy but better to know what is unused
     # TODO - enable
@@ -158,7 +156,7 @@ linters:
 
     # Detect the possibility to use variables/constants from stdlib.
     # TODO - enable
-    # - usestdlibvars
+    - usestdlibvars
 
     # Finds wasted assignment statements.
     - wastedassign

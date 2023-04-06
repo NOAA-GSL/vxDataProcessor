@@ -10,7 +10,7 @@ The manager reads the scorecard document and uses
 Directors in go routines to process the region / blocks of the scorecard.
 Each Region within a scorecard Block is passed to a
 Director. Since maps are always passed by reference
-the manager avoids duplicating data. As the Directors and thier
+the manager avoids duplicating data. As the Directors and their
 spawned Builders build the scorecard results the scorecard
 in-memory document will get filled in with results.
 When a director finishes the manager will upsert the document.
@@ -19,6 +19,7 @@ processed.
 */
 import (
 	"fmt"
+
 	"github.com/couchbase/gocb/v2"
 )
 

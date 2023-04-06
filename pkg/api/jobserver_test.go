@@ -42,7 +42,7 @@ func TestNewJobServer(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := NewJobServer(tt.args.js); !reflect.DeepEqual(got, tt.want) {
+			if got := newJobServer(tt.args.js); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("NewJobServer() = %v, want %v", got, tt.want)
 			}
 		})
@@ -53,7 +53,7 @@ func Test_jobServer_getAllJobsHandler(t *testing.T) {
 	t.Run("Test getting an empty jobstore", func(t *testing.T) {
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
-		NewJobServer(nil).getAllJobsHandler(c)
+		newJobServer(nil).getAllJobsHandler(c)
 
 		assert.Equal(t, http.StatusOK, w.Code)
 		assert.Equal(t, `[]`, w.Body.String())
@@ -66,7 +66,7 @@ func Test_jobServer_getAllJobsHandler(t *testing.T) {
 		}
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
-		js := NewJobServer(nil)
+		js := newJobServer(nil)
 
 		_, _ = js.store.CreateJob("foo")
 		_, _ = js.store.CreateJob("bar")
@@ -90,10 +90,26 @@ func Test_jobServer_createJobHandler(t *testing.T) {
 		jsonStr := []byte(`{"random": "json"}`)
 		c.Request, _ = http.NewRequest(http.MethodPost, "/jobs/", bytes.NewBuffer(jsonStr))
 
-		js := NewJobServer(nil)
+		js := newJobServer(nil)
 
 		js.createJobHandler(c)
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("Test a duplicate job submission", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		jsonStr := []byte(`{"docid": "json"}`)
+		c.Request, _ = http.NewRequest(http.MethodPost, "/jobs/", bytes.NewBuffer(jsonStr))
+
+		store := jobstore.NewJobStore()
+		_, _ = store.CreateJob("json")
+		js := newJobServer(store)
+
+		js.createJobHandler(c)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Equal(t, "docID already exists", w.Body.String())
 	})
 }

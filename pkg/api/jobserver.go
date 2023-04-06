@@ -17,7 +17,7 @@ type jobServer struct {
 //
 // It can take a pointer to an existing JobStore to store Jobs in. If nil is
 // passed instead of a JobStore, it will initialize an empty JobStore for you.
-func NewJobServer(js *jobstore.JobStore) *jobServer {
+func newJobServer(js *jobstore.JobStore) *jobServer {
 	if js == nil {
 		js = jobstore.NewJobStore()
 	}
@@ -45,6 +45,10 @@ func (js *jobServer) createJobHandler(c *gin.Context) {
 
 	id, err := js.store.CreateJob(rj.DocID)
 	if err != nil {
+		if err.Error() == "docID already exists" {
+			c.String(http.StatusBadRequest, err.Error())
+			return
+		}
 		c.String(http.StatusInternalServerError, err.Error()) // TODO: Better error message
 		return
 	}

@@ -14,7 +14,7 @@ func TestPingEndpoint(t *testing.T) {
 	router := SetupRouter(nil)
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest(http.MethodGet, "/ping", nil)
+	req, _ := http.NewRequest(http.MethodGet, "/ping", http.NoBody)
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
@@ -50,7 +50,7 @@ func TestJobsEndpoint(t *testing.T) {
 
 		// Test
 		w = httptest.NewRecorder()
-		req, _ = http.NewRequest(http.MethodGet, "/jobs/", nil)
+		req, _ = http.NewRequest(http.MethodGet, "/jobs/", http.NoBody)
 		router.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusOK, w.Code)
@@ -70,7 +70,7 @@ func TestJobsIDEndpoint(t *testing.T) {
 
 	// Test
 	w = httptest.NewRecorder()
-	req, _ = http.NewRequest(http.MethodGet, "/jobs/0", nil)
+	req, _ = http.NewRequest(http.MethodGet, "/jobs/0", http.NoBody)
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
@@ -99,11 +99,11 @@ func TestWorker(t *testing.T) {
 			case got1 := <-status:
 				got2 := <-status // ignore the processing status
 				proc.lock.Lock()
-				defer proc.lock.Unlock()
 				assert.Equal(t, want[0], got1)
 				assert.Equal(t, "foo", proc.DocID)
 				assert.Equal(t, true, proc.Processed)
 				assert.Equal(t, want[1], got2)
+				proc.lock.Unlock()
 				return
 			default:
 				continue

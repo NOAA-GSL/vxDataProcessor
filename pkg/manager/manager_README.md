@@ -73,8 +73,8 @@ The result set is a part of the scorecard structure ...
 
 It can be reached like
 
-```SCORECARD.results```
+```results```
 
 and subsets of data may be reached like
 
-```SCORECARD.results.`rows`.Row0.data.`All HRRR domain```
+```results.`rows`.Row0.data.`All HRRR domain```

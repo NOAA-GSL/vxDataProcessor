@@ -165,7 +165,7 @@ func getSubDocument(mngr Manager, path string, subDocPtr *interface{}) error {
 // retrieve the queryMap.blocks section of the document by subdoc get
 func getQueryBlocks(mngr Manager) (map[string]interface{}, error) {
 	var blocks interface{}
-	err := getSubDocument(mngr, "SCORECARD.queryMap.blocks", &blocks)
+	err := getSubDocument(mngr, "queryMap.blocks", &blocks)
 	if err != nil {
 		return nil, fmt.Errorf("manager getQueryBlocks error %q", err)
 	}
@@ -175,7 +175,7 @@ func getQueryBlocks(mngr Manager) (map[string]interface{}, error) {
 // retrieve the PlotParams section of the document by subdoc get
 func getPlotParams(mngr Manager) (map[string]interface{}, error) {
 	var plotParams interface{}
-	err := getSubDocument(mngr, "SCORECARD.plotParams", &plotParams)
+	err := getSubDocument(mngr, "plotParams", &plotParams)
 	if err != nil {
 		return nil, fmt.Errorf("manager getPlotParams error %q", err)
 	}
@@ -186,7 +186,7 @@ func getPlotParams(mngr Manager) (map[string]interface{}, error) {
 func getPlotParamCurves(mngr Manager) ([]map[string]interface{}, error) {
 	var curves interface{}
 	var curveArray []map[string]interface{}
-	err := getSubDocument(mngr, "SCORECARD.plotParams.curves", &curves)
+	err := getSubDocument(mngr, "plotParams.curves", &curves)
 	if err != nil {
 		return nil, fmt.Errorf("manager getPlotParamCurves error %q", err)
 	}
@@ -200,7 +200,7 @@ func getPlotParamCurves(mngr Manager) ([]map[string]interface{}, error) {
 // and convert it to a dateRange struct
 func getDateRange(mngr Manager) (director.DateRange, error) {
 	var datesStr interface{}
-	err := getSubDocument(mngr, "SCORECARD.dateRange", &datesStr)
+	err := getSubDocument(mngr, "dateRange", &datesStr)
 	var dateRange director.DateRange
 	// parse the daterange string
 	// "02/19/2023 20:00 - 03/21/2023 20:00"
@@ -359,7 +359,7 @@ func (mngr Manager) Run() (scorecardAppUrl string, err error) {
 	for i := 0; i < numBlocks; i++ {
 		blockName := blockKeys[i]
 		var block interface{}
-		err = getSubDocument(mngr, "SCORECARD.results.blocks."+blockName, &block)
+		err = getSubDocument(mngr, "results.blocks."+blockName, &block)
 		if err != nil {
 			return scorecardAppUrl, fmt.Errorf("manager Run error getting block result %q", err)
 		}
@@ -391,7 +391,7 @@ func (mngr Manager) Run() (scorecardAppUrl string, err error) {
 			queryRegion := queryData[queryRegionName].(map[string]interface{})
 			blockRegionName := blockRegionNames[i]
 			var region interface{}
-			regionPath := "SCORECARD.results.blocks." + blockName + ".data." + blockRegionName
+			regionPath := "results.blocks." + blockName + ".data." + blockRegionName
 			err = getSubDocument(mngr, regionPath, &region)
 			if err != nil {
 				return scorecardAppUrl, fmt.Errorf("error getting region SubDocument %q", err)

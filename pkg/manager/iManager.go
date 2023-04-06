@@ -31,19 +31,18 @@ type cbConnection struct {
 }
 
 type Manager struct {
-	documentId      string
-	environmentFile string
-	cb              *cbConnection
-	ScorecardCB     map[string]interface{}
+	documentId  string
+	cb          *cbConnection
+	ScorecardCB map[string]interface{}
 }
 
 type ManagerBuilder interface {
 	Run() error
 }
 
-func GetManager(managerType, environmentFileName, documentId string) (*Manager, error) {
+func GetManager(managerType, documentId string) (*Manager, error) {
 	if managerType == "SC" {
-		return NewScorecardManager(environmentFileName, documentId)
+		return NewScorecardManager(documentId)
 	} else {
 		return nil, fmt.Errorf("Manager GetManager unsupported managerType: %q", managerType)
 	}

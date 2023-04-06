@@ -19,8 +19,9 @@ func TestNewJobStore(t *testing.T) {
 		{
 			name: "Test New Job Store",
 			want: &JobStore{
-				jobs:   map[int]Job{},
-				nextID: 0,
+				jobs:         map[int]Job{},
+				reverseIndex: map[string]int{},
+				nextID:       0,
 			},
 		},
 	}
@@ -100,9 +101,19 @@ func TestJobStore_CreateJob(t *testing.T) {
 		wg.Wait()
 
 		assert.Equal(t, wantedCount, len(js.jobs))
-
 	})
-	// TODO - what happens if we get the same docID submitted multiple times?
+
+	t.Run("Test creating duplicate jobs", func(t *testing.T) {
+		js := NewJobStore()
+		wantErr := "docID already exists"
+
+		_, _ = js.CreateJob("foo")
+		_, gotErr := js.CreateJob("foo")
+
+		if assert.NotNil(t, gotErr) {
+			assert.Equal(t, gotErr.Error(), wantErr)
+		}
+	})
 }
 
 func TestJobStore_GetJob(t *testing.T) {

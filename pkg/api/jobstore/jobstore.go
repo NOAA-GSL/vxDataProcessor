@@ -82,6 +82,7 @@ type JobStore struct {
 	lock            sync.RWMutex // lock for modifying jobs & nextID
 	processLock     sync.Mutex   // lock for updating nextIDToProcess
 	jobs            map[int]Job
+	reverseIndex    map[string]int // map for doing reverse job lookups
 	nextID          int
 	nextIDToProcess int
 }
@@ -89,6 +90,7 @@ type JobStore struct {
 func NewJobStore() *JobStore {
 	js := &JobStore{}
 	js.jobs = make(map[int]Job)
+	js.reverseIndex = make(map[string]int)
 	return js
 }
 
@@ -97,9 +99,13 @@ func (js *JobStore) CreateJob(docID string) (int, error) {
 	js.lock.Lock()
 	defer js.lock.Unlock()
 
-	// FIXME: Test for and dissallow duplicate docID values
 	if docID == "" {
 		return 0, fmt.Errorf("expected a non-empty docID")
+	}
+
+	_, exists := js.reverseIndex[docID]
+	if exists {
+		return 0, fmt.Errorf("docID already exists")
 	}
 
 	job := Job{
@@ -109,6 +115,7 @@ func (js *JobStore) CreateJob(docID string) (int, error) {
 	}
 
 	js.jobs[js.nextID] = job
+	js.reverseIndex[docID] = js.nextID
 	js.nextID++
 	return job.ID, nil
 }

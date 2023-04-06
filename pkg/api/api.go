@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/NOAA-GSL/vxDataProcessor/pkg/api/jobstore"
 	"github.com/gin-gonic/gin"
@@ -70,11 +71,15 @@ func Worker(id int, proc Processor, jobs <-chan jobstore.Job, status chan<- jobs
 		status <- job
 
 		// Do work
+		start := time.Now()
 		fmt.Println("Worker", id, "processing docID", job.DocID)
 		err := proc.Run(job.DocID)
+		duration := time.Since(start).Seconds()
+		calculationDuration.WithLabelValues(job.DocID).Observe(duration)
 		if err != nil {
 			job.Status = jobstore.StatusFailed
 			status <- job
+			return
 		}
 
 		// report status

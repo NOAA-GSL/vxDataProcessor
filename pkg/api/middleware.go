@@ -11,8 +11,10 @@ import (
 
 // inspired by https://github.com/zsais/go-gin-prometheus
 
-var defaultMetricPath = "/metrics"
-var subsystem = "gin"
+var (
+	defaultMetricPath = "/metrics"
+	subsystem         = "gin"
+)
 
 var (
 	requestsTotal = prometheus.NewCounterVec(
@@ -45,11 +47,19 @@ var (
 			Help:      "The HTTP response sizes in bytes.",
 		},
 	)
+	calculationDuration = prometheus.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Subsystem: "calc", // Add observability for the calculations done by the Worker
+			Name:      "calculation_duration_seconds",
+			Help:      "Duration of calculations in seconds.",
+		},
+		[]string{"docid"},
+	)
 )
 
 // init runs before main() is evaluated - register our metrics with prometheus
 func init() {
-	prometheus.MustRegister(requestsTotal, requestDuration, requestSize, responseSize)
+	prometheus.MustRegister(requestsTotal, requestDuration, requestSize, responseSize, calculationDuration)
 }
 
 // prometheusMiddleware is a gin middleware function that instruments each request made

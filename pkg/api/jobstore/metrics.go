@@ -8,7 +8,7 @@ var (
 	jobsCreated = prometheus.NewCounter(
 		prometheus.CounterOpts{
 			Subsystem: subsystem,
-			Name:      "jobs_created",
+			Name:      "jobs_created_total",
 			Help:      "Number of jobs in created state.",
 		},
 	)

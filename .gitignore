@@ -25,5 +25,8 @@ processor
 _*
 *.csv
 *.sql
+wolphin.session.sql
+
 # Mac cruft
 .DS_Store
+

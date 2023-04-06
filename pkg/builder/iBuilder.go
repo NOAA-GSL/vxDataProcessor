@@ -42,6 +42,7 @@ A ScorecardCellBuilder is an interface that provides several functions:
 */
 
 type StatType string
+
 const ErrorValue = -9999
 
 type DerivedDataElement struct {
@@ -49,29 +50,31 @@ type DerivedDataElement struct {
 	ExpPop []float64
 }
 
-// -1 or 1
-type GoodnessPolarity int
-type Threshold float64
-type ScorecardCell struct {
-	Data             DerivedDataElement
-	goodnessPolarity GoodnessPolarity
-	majorThreshold   Threshold
-	minorThreshold   Threshold
-	Pvalue           float64
-	ValuePtr         *int
-}
+type (
+	GoodnessPolarity int // -1 or 1
+	Threshold        float64
+	ScorecardCell    struct {
+		Data             DerivedDataElement
+		goodnessPolarity GoodnessPolarity
+		majorThreshold   Threshold
+		minorThreshold   Threshold
+		Pvalue           float64
+		ValuePtr         *int
+	}
+)
+
 // these are floats because of the division in the CalculateStatCTC func
 type CTCRecord struct {
 	Avtime int64
-	Hit  float32
-	Miss float32
-	Fa   float32
-	Cn   float32
+	Hit    float32
+	Miss   float32
+	Fa     float32
+	Cn     float32
 }
 type CTCRecords = []CTCRecord
 
 type ScalarRecord struct {
-	Avtime            int64
+	Avtime          int64
 	SquareDiffSum   float64
 	NSum            float64
 	ObsModelDiffSum float64
@@ -82,11 +85,10 @@ type ScalarRecord struct {
 type ScalarRecords []ScalarRecord
 
 type PreCalcRecord struct {
-	Avtime  int64
-	Stat float64
+	Avtime int64
+	Stat   float64
 }
 type PreCalcRecords []PreCalcRecord
-
 
 type BuilderScalarResult struct {
 	CtlData ScalarRecords

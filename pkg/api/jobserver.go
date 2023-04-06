@@ -44,10 +44,11 @@ func (js *jobServer) createJobHandler(c *gin.Context) {
 	}
 
 	id, err := js.store.CreateJob(rj.DocID)
-	if err.Error() == "docID already exists" {
-		c.String(http.StatusBadRequest, err.Error())
-		return
-	} else if err != nil {
+	if err != nil {
+		if err.Error() == "docID already exists" {
+			c.String(http.StatusBadRequest, err.Error())
+			return
+		}
 		c.String(http.StatusInternalServerError, err.Error()) // TODO: Better error message
 		return
 	}

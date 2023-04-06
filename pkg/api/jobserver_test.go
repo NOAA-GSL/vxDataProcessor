@@ -96,4 +96,20 @@ func Test_jobServer_createJobHandler(t *testing.T) {
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 	})
+
+	t.Run("Test a duplicate job submission", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		jsonStr := []byte(`{"docid": "json"}`)
+		c.Request, _ = http.NewRequest(http.MethodPost, "/jobs/", bytes.NewBuffer(jsonStr))
+
+		store := jobstore.NewJobStore()
+		_, _ = store.CreateJob("json")
+		js := NewJobServer(store)
+
+		js.createJobHandler(c)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Equal(t, "docID already exists", w.Body.String())
+	})
 }

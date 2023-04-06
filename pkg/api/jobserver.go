@@ -39,13 +39,16 @@ func (js *jobServer) createJobHandler(c *gin.Context) {
 
 	var rj RequestJob
 	if err := c.ShouldBindJSON(&rj); err != nil {
-		c.String(http.StatusBadRequest, err.Error()) //TODO: Better error message
+		c.String(http.StatusBadRequest, err.Error()) // TODO: Better error message
 		return
 	}
 
 	id, err := js.store.CreateJob(rj.DocID)
-	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error()) //TODO: Better error message
+	if err.Error() == "docID already exists" {
+		c.String(http.StatusBadRequest, err.Error())
+		return
+	} else if err != nil {
+		c.String(http.StatusInternalServerError, err.Error()) // TODO: Better error message
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"id": id})

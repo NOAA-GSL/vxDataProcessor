@@ -5,20 +5,24 @@ import (
 	"fmt"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/NOAA-GSL/vxDataProcessor/pkg/api/jobstore"
 	"github.com/gin-gonic/gin"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 // SetupRouter defines the routes the API server will respond to along with
 // their handlers
 func SetupRouter(js *jobstore.JobStore) *gin.Engine {
 	router := gin.Default()
-	server := NewJobServer(js)
+	server := newJobServer(js)
+	router.Use(prometheusMiddleware()) // attach our Prometheus middleware
 
 	router.POST("/jobs/", server.createJobHandler)
 	router.GET("/jobs/", server.getAllJobsHandler)
 	router.GET("/jobs/:id", server.getJobHandler)
+	router.GET(defaultMetricPath, gin.WrapH(promhttp.Handler())) // expose Prometheus metrics
 
 	// healthcheck
 	router.GET("/ping", func(context *gin.Context) {
@@ -67,11 +71,15 @@ func Worker(id int, proc Processor, jobs <-chan jobstore.Job, status chan<- jobs
 		status <- job
 
 		// Do work
+		start := time.Now()
 		fmt.Println("Worker", id, "processing docID", job.DocID)
 		err := proc.Run(job.DocID)
+		duration := time.Since(start).Seconds()
+		calculationDuration.WithLabelValues(job.DocID).Observe(duration)
 		if err != nil {
 			job.Status = jobstore.StatusFailed
 			status <- job
+			return
 		}
 
 		// report status

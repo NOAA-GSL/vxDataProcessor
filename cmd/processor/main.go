@@ -6,7 +6,7 @@ import (
 )
 
 func main() {
-	// TODO - benchmark if it'd be better if these channels were buffered. They will block until a reciever frees up.
+	// TODO - benchmark if it'd be better if these channels were buffered. They will block until a receiver frees up.
 	jobs := make(chan jobstore.Job)
 	status := make(chan jobstore.Job)
 	js := jobstore.NewJobStore()

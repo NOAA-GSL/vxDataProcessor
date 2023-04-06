@@ -82,6 +82,7 @@ type JobStore struct {
 	lock            sync.RWMutex // lock for modifying jobs & nextID
 	processLock     sync.Mutex   // lock for updating nextIDToProcess
 	jobs            map[int]Job
+	reverseIndex    map[string]int // map for doing reverse job lookups
 	nextID          int
 	nextIDToProcess int
 }
@@ -89,6 +90,7 @@ type JobStore struct {
 func NewJobStore() *JobStore {
 	js := &JobStore{}
 	js.jobs = make(map[int]Job)
+	js.reverseIndex = make(map[string]int)
 	return js
 }
 
@@ -97,9 +99,13 @@ func (js *JobStore) CreateJob(docID string) (int, error) {
 	js.lock.Lock()
 	defer js.lock.Unlock()
 
-	// FIXME: Test for and dissallow duplicate docID values
 	if docID == "" {
 		return 0, fmt.Errorf("expected a non-empty docID")
+	}
+
+	_, exists := js.reverseIndex[docID]
+	if exists {
+		return 0, fmt.Errorf("docID already exists")
 	}
 
 	job := Job{
@@ -109,7 +115,12 @@ func (js *JobStore) CreateJob(docID string) (int, error) {
 	}
 
 	js.jobs[js.nextID] = job
+	js.reverseIndex[docID] = js.nextID
 	js.nextID++
+
+	// Update Prometheus metrics
+	jobsCreated.Inc()
+	jobsToBeProcessed.Inc()
 	return job.ID, nil
 }
 
@@ -120,11 +131,10 @@ func (js *JobStore) GetJob(id int) (Job, error) {
 	defer js.lock.RUnlock()
 
 	j, ok := js.jobs[id]
-	if ok {
-		return j, nil
-	} else {
+	if !ok {
 		return Job{}, fmt.Errorf("job with id=%d not found", id)
 	}
+	return j, nil
 }
 
 // GetAllJobs returns all the jobs in the store, in arbitrary order.
@@ -151,15 +161,14 @@ func (js *JobStore) GetJobsToProcess(numJobs int) ([]Job, error) {
 			// No job with that ID, return
 			if len(jobsToProcess) == 0 {
 				return []Job{}, fmt.Errorf("No unprocessed jobs available")
-			} else {
-				// Return what we have
-				js.nextIDToProcess = js.nextIDToProcess + len(jobsToProcess)
-				return jobsToProcess, nil
 			}
+			// Return what we have
+			js.nextIDToProcess += len(jobsToProcess)
+			return jobsToProcess, nil
 		}
 		jobsToProcess = append(jobsToProcess, j)
 	}
-	js.nextIDToProcess = js.nextIDToProcess + len(jobsToProcess)
+	js.nextIDToProcess += len(jobsToProcess)
 	return jobsToProcess, nil
 }
 
@@ -176,10 +185,24 @@ func (js *JobStore) UpdateJobStatus(id int, status JobStatus) error {
 	}
 
 	if job.Status == StatusCompleted {
-		return fmt.Errorf("Job already marked as completed.")
+		return fmt.Errorf("job already marked as completed")
 	}
 	job.Status = status
 
 	js.jobs[id] = job
+
+	// Update Prometheus metrics
+	switch status {
+	case StatusProcessing:
+		jobsToBeProcessed.Dec()
+		jobsProcessing.Inc()
+	case StatusCompleted:
+		jobsProcessing.Dec()
+		jobsCompleted.Inc()
+	case StatusFailed:
+		jobsProcessing.Dec()
+		jobsFailed.Inc()
+
+	}
 	return nil
 }

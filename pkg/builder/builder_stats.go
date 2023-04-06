@@ -2,10 +2,10 @@ package builder
 
 import (
 	"fmt"
-	"github.com/go-playground/validator/v10"
 	"math"
-)
 
+	"github.com/go-playground/validator/v10"
+)
 
 type DataSet struct {
 	ctlPop []PreCalcRecord
@@ -46,15 +46,15 @@ func CalculateStatCTC(hit float32, fa float32, miss float32, cn float32, statist
 	}
 
 	switch statistic {
-	case "TSS (True Skill Score)": //radar
+	case "TSS (True Skill Score)": // radar
 		value = ((hit*cn - fa*miss) / ((hit + miss) * (fa + cn))) * 100
 	// some PODy measures look for a value over a threshold, some look for under
-	case "PODy (POD of value < threshold)": //ceiling
+	case "PODy (POD of value < threshold)": // ceiling
 		value = hit / (hit + miss) * 100
-	case "PODy (POD of value > threshold)": //radar
+	case "PODy (POD of value > threshold)": // radar
 		value = hit / (hit + miss) * 100
 	// some PODn measures look for a value under a threshold, some look for over
-	case "PODn (POD of value > threshold)": //ceiling
+	case "PODn (POD of value > threshold)": // ceiling
 		value = cn / (cn + fa) * 100
 	case "PODn (POD of value < threshold)": // radar
 		value = cn / (cn + fa) * 100
@@ -84,11 +84,11 @@ func CalculateStatScalar(squareDiffSum, NSum, obsModelDiffSum, modelSum, obsSum,
 	var err error
 	var value float64
 	switch statistic {
-	case "RMSE": //surface
+	case "RMSE": // surface
 		value = math.Sqrt(squareDiffSum / NSum)
-	case "Bias (Model - Obs)": //surface
+	case "Bias (Model - Obs)": // surface
 		value = (modelSum - obsSum) / NSum
-	case "MAE (temp and dewpoint only)": //surface
+	case "MAE (temp and dewpoint only)": // surface
 		value = absSum / NSum
 	case "MAE": // landuse
 		value = absSum / NSum
@@ -105,8 +105,8 @@ func GetMatchedDataSet(dataSet DataSet) (DataSet, error) {
 	var result DataSet
 	var indexCtl int = 0
 	var indexExp int = 0
-	var lenCtl = len(dataSet.ctlPop)
-	var lenExp = len(dataSet.expPop)
+	lenCtl := len(dataSet.ctlPop)
+	lenExp := len(dataSet.expPop)
 	var err error = nil
 	defer func() {
 		if r := recover(); r != nil {
@@ -114,7 +114,7 @@ func GetMatchedDataSet(dataSet DataSet) (DataSet, error) {
 		}
 	}()
 	if lenCtl == 0 || lenExp == 0 {
-		return DataSet{ctlPop:[]PreCalcRecord{},expPop: []PreCalcRecord{}}, nil
+		return DataSet{ctlPop: []PreCalcRecord{}, expPop: []PreCalcRecord{}}, nil
 	}
 	for {
 		if dataSet.ctlPop[indexCtl].Avtime == dataSet.expPop[indexExp].Avtime {

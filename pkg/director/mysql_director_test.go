@@ -4,18 +4,18 @@
 package director
 
 import (
-	"testing"
 	"fmt"
 	"os"
 	"strings"
+	"testing"
 	"time"
+
 	"github.com/NOAA-GSL/vxDataProcessor/pkg/builder"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/joho/godotenv"
 )
 
 func Test_getMySqlConnection(t *testing.T) {
-
 	type args struct {
 		mysqlCredentials DbCredentials
 	}
@@ -45,9 +45,9 @@ func Test_getMySqlConnection(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "test_connection",
-			args: args{mysqlCredentials: mysqlCredentials},
-			want: "*sql.DB",
+			name:    "test_connection",
+			args:    args{mysqlCredentials: mysqlCredentials},
+			want:    "*sql.DB",
 			wantErr: false,
 		},
 	}
@@ -66,9 +66,8 @@ func Test_getMySqlConnection(t *testing.T) {
 	}
 }
 
-//record.squareDiffSum record.NSum record.obsModelDiffSum record.modelSum record.obsSum record.absSum record.time
+// record.squareDiffSum record.NSum record.obsModelDiffSum record.modelSum record.obsSum record.absSum record.time
 func Test_mySqlQuery(t *testing.T) {
-
 	var environmentFile string = fmt.Sprint(os.Getenv("HOME"), "/vxDataProcessor.env")
 	err := godotenv.Load(environmentFile)
 	if err != nil {
@@ -89,59 +88,59 @@ func Test_mySqlQuery(t *testing.T) {
 		t.Fatalf("Undefined MYSQL_PASSWORD in environment")
 	}
 	mysqlDB, err := getMySqlConnection(mysqlCredentials)
-	if (err != nil){
+	if err != nil {
 		t.Fatalf("getMySqlConnection() error = %v", err)
 		return
 	}
 	defer mysqlDB.Close()
 	tests := []struct {
-		name    string
-		args    string
-		fromEpoch string
-		toEpoch string
-		recordType	 string
-		want    int
-		wantErr bool
+		name       string
+		args       string
+		fromEpoch  string
+		toEpoch    string
+		recordType string
+		want       int
+		wantErr    bool
 	}{
 		{
-			name: "test_query_scalar",
-			args: "testdata/scalar_stmnt.sql",
+			name:       "test_query_scalar",
+			args:       "testdata/scalar_stmnt.sql",
 			recordType: "scalar",
-			fromEpoch: "1675281600",// Tue, 1 Feb 2023 20:00:00 GMT
-			toEpoch: "1677700800",// Tue, 1 Mar 2023 20:00:00 GMT
-			want: 667,
-			wantErr: false,
+			fromEpoch:  "1675281600", // Tue, 1 Feb 2023 20:00:00 GMT
+			toEpoch:    "1677700800", // Tue, 1 Mar 2023 20:00:00 GMT
+			want:       667,
+			wantErr:    false,
 		},
 		{
-			name: "test_query_ctc",
-			args: "testdata/ctc_stmnt.sql",
+			name:       "test_query_ctc",
+			args:       "testdata/ctc_stmnt.sql",
 			recordType: "ctc",
-			fromEpoch: "1675281600",// Tue, 1 Feb 2023 20:00:00 GMT
-			toEpoch: "1677700800",// Tue, 1 Mar 2023 20:00:00 GMT
-			want: 613,
-			wantErr: false,
+			fromEpoch:  "1675281600", // Tue, 1 Feb 2023 20:00:00 GMT
+			toEpoch:    "1677700800", // Tue, 1 Mar 2023 20:00:00 GMT
+			want:       613,
+			wantErr:    false,
 		},
 		{
-			name: "test_query_precalc",
-			args: "testdata/precalc_stmnt.sql",
+			name:       "test_query_precalc",
+			args:       "testdata/precalc_stmnt.sql",
 			recordType: "precalc",
-			fromEpoch: "1587513600", // Wednesday, April 22, 2020 12:00:00 AM
-			toEpoch: "1631620800", // Tuesday, September 14, 2021 12:00:00 PM
-			want: 1000,
-			wantErr: false,
+			fromEpoch:  "1587513600", // Wednesday, April 22, 2020 12:00:00 AM
+			toEpoch:    "1631620800", // Tuesday, September 14, 2021 12:00:00 PM
+			want:       1000,
+			wantErr:    false,
 		},
 	}
 
 	for _, tt := range tests {
 		buf, err := os.ReadFile(tt.args)
-		if (err != nil){
+		if err != nil {
 			t.Fatalf("Test_mySqlQuery() error reading test statement= %v", err)
 			return
 		}
 
 		stmnt := string(buf)
 		fromEpoch := tt.fromEpoch // Tue, 1 Feb 2023 20:00:00 GMT
-		toEpoch := tt.toEpoch  // Tue, 1 Mar 2023 20:00:00 GMT
+		toEpoch := tt.toEpoch     // Tue, 1 Mar 2023 20:00:00 GMT
 		stmnt = strings.ReplaceAll(stmnt, "{ { fromSecs } }", fromEpoch)
 		stmnt = strings.ReplaceAll(stmnt, "{ { toSecs } }", toEpoch)
 		t.Run(tt.name, func(t *testing.T) {
@@ -155,32 +154,32 @@ func Test_mySqlQuery(t *testing.T) {
 			defer rows.Close()
 			for rows.Next() {
 				switch tt.recordType {
-					case "scalar":
-						var record builder.ScalarRecord
-						if err := rows.Scan(&record.Avtime,&record.SquareDiffSum, &record.NSum, &record.ObsModelDiffSum, &record.ModelSum, &record.ObsSum, &record.AbsSum); err != nil {
-							t.Errorf("could not scan row: %v", err)
-						} else {
-							records = append(records, record)
-						}
-					case "ctc":
-						var record builder.CTCRecord
-						if err := rows.Scan(&record.Avtime, &record.Hit, &record.Miss, &record.Fa, &record.Cn); err != nil {
-							t.Errorf("could not scan row: %v", err)
-						}
+				case "scalar":
+					var record builder.ScalarRecord
+					if err := rows.Scan(&record.Avtime, &record.SquareDiffSum, &record.NSum, &record.ObsModelDiffSum, &record.ModelSum, &record.ObsSum, &record.AbsSum); err != nil {
+						t.Errorf("could not scan row: %v", err)
+					} else {
 						records = append(records, record)
-					case "precalc":
-						var record builder.PreCalcRecord
-						if err := rows.Scan(&record.Avtime, &record.Stat); err != nil {
-							t.Errorf("could not scan row: %v", err)
-						}
-						records = append(records, record)
-					default:
-						t.Fatalf("Test_mySqlQuery unrecognized record type %q", tt.recordType)
+					}
+				case "ctc":
+					var record builder.CTCRecord
+					if err := rows.Scan(&record.Avtime, &record.Hit, &record.Miss, &record.Fa, &record.Cn); err != nil {
+						t.Errorf("could not scan row: %v", err)
+					}
+					records = append(records, record)
+				case "precalc":
+					var record builder.PreCalcRecord
+					if err := rows.Scan(&record.Avtime, &record.Stat); err != nil {
+						t.Errorf("could not scan row: %v", err)
+					}
+					records = append(records, record)
+				default:
+					t.Fatalf("Test_mySqlQuery unrecognized record type %q", tt.recordType)
 				}
 			}
 			elapsed := time.Since(start)
 			fmt.Printf("The query and scan took combined %s", elapsed)
-			if tt.want != len(records){
+			if tt.want != len(records) {
 				t.Errorf("Test_mySqlQuery() data length is wrong = %v", len(records))
 			}
 		})

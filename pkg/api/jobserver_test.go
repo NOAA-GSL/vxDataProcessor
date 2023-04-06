@@ -87,8 +87,8 @@ func Test_jobServer_createJobHandler(t *testing.T) {
 	t.Run("Test a bad job submission", func(t *testing.T) {
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
-		var jsonStr = []byte(`{"random": "json"}`)
-		c.Request, _ = http.NewRequest("POST", "/jobs/", bytes.NewBuffer(jsonStr))
+		jsonStr := []byte(`{"random": "json"}`)
+		c.Request, _ = http.NewRequest(http.MethodPost, "/jobs/", bytes.NewBuffer(jsonStr))
 
 		js := NewJobServer(nil)
 

@@ -127,11 +127,10 @@ func (js *JobStore) GetJob(id int) (Job, error) {
 	defer js.lock.RUnlock()
 
 	j, ok := js.jobs[id]
-	if ok {
-		return j, nil
-	} else {
+	if !ok {
 		return Job{}, fmt.Errorf("job with id=%d not found", id)
 	}
+	return j, nil
 }
 
 // GetAllJobs returns all the jobs in the store, in arbitrary order.
@@ -158,15 +157,14 @@ func (js *JobStore) GetJobsToProcess(numJobs int) ([]Job, error) {
 			// No job with that ID, return
 			if len(jobsToProcess) == 0 {
 				return []Job{}, fmt.Errorf("No unprocessed jobs available")
-			} else {
-				// Return what we have
-				js.nextIDToProcess = js.nextIDToProcess + len(jobsToProcess)
-				return jobsToProcess, nil
 			}
+			// Return what we have
+			js.nextIDToProcess += len(jobsToProcess)
+			return jobsToProcess, nil
 		}
 		jobsToProcess = append(jobsToProcess, j)
 	}
-	js.nextIDToProcess = js.nextIDToProcess + len(jobsToProcess)
+	js.nextIDToProcess += len(jobsToProcess)
 	return jobsToProcess, nil
 }
 
@@ -183,7 +181,7 @@ func (js *JobStore) UpdateJobStatus(id int, status JobStatus) error {
 	}
 
 	if job.Status == StatusCompleted {
-		return fmt.Errorf("Job already marked as completed.")
+		return fmt.Errorf("job already marked as completed")
 	}
 	job.Status = status
 

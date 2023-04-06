@@ -326,7 +326,5 @@ func TestJobStore_updateJobStatus(t *testing.T) {
 		if err.Error() != want {
 			t.Errorf("JobStore.updateJobStatus got error '%v', wanted error '%v'", err.Error(), want)
 		}
-
 	})
-
 }

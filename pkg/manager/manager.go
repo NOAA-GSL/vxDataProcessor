@@ -432,7 +432,7 @@ func (mngr Manager) Run() (err error) {
 
 var myScorecardManager = Manager{}
 
-func NewScorecardManager(documentId string) (*Manager, error) {
+func newScorecardManager(documentId string) (*Manager, error) {
 	myScorecardManager.ScorecardCB = nil
 	myScorecardManager.cb = &cbConnection{}
 	myScorecardManager.documentId = documentId

@@ -326,7 +326,7 @@ func Test_runManager(t *testing.T) {
 		t.Fatal(fmt.Sprint("manager upsertTestDoc error upserting test scorecard", err))
 	}
 	// get a manager
-	manager, err := NewScorecardManager(documentId)
+	manager, err := newScorecardManager(documentId)
 	if err != nil {
 		t.Fatal(fmt.Sprint("manager test NewScorecardManager error getting a manager", err))
 	}

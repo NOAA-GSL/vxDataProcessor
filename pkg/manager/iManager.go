@@ -42,7 +42,7 @@ type ManagerBuilder interface {
 
 func GetManager(managerType, documentId string) (*Manager, error) {
 	if managerType == "SC" {
-		return NewScorecardManager(documentId)
+		return newScorecardManager(documentId)
 	} else {
 		return nil, fmt.Errorf("Manager GetManager unsupported managerType: %q", managerType)
 	}

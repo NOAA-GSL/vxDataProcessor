@@ -80,10 +80,7 @@ func Test_getMySqlConnection(t *testing.T) {
 
 // record.squareDiffSum record.NSum record.obsModelDiffSum record.modelSum record.obsSum record.absSum record.time
 func Test_mySqlQuery(t *testing.T) {
-	err := loadEnvironmentFile()
-	if err != nil {
-		t.Fatalf("Error loading the environment file, %v", err)
-	}
+	loadEnvironmentFile()
 	var mysqlCredentials DbCredentials
 	// refer to https://github.com/go-sql-driver/mysql/#dsn-data-source-name
 	mysqlCredentials.Host = os.Getenv("MYSQL_HOST")

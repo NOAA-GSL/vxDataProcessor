@@ -6,6 +6,7 @@ package manager
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"reflect"
 	"sort"
@@ -14,9 +15,26 @@ import (
 
 	"github.com/NOAA-GSL/vxDataProcessor/pkg/director"
 	"github.com/couchbase/gocb/v2"
+	"github.com/joho/godotenv"
 )
 
+func loadEnvironmentFile() {
+	environmentFile, set := os.LookupEnv("PROC_ENV_PATH")
+	if !set {
+		err := godotenv.Load() // Loads from "$(pwd)/.env"
+		if err != nil {
+			log.Printf("Couldn't load environment file: %q", environmentFile)
+		}
+	} else {
+		err := godotenv.Load(environmentFile) // Loads from whatever PROC_ENV_PATH has been set to
+		if err != nil {
+			log.Printf("Couldn't load environment file: %q", environmentFile)
+		}
+	}
+}
+
 func getTestDoc(mngr *Manager) (map[string]interface{}, error) {
+	loadEnvironmentFile()
 	// get the test scorecard document (this is a Result - not a document)
 	var scorecardDataIn *gocb.GetResult
 	scorecardDataIn, err := mngr.cb.Collection.Get("SCTEST:test_scorecard", nil)
@@ -33,6 +51,7 @@ func getTestDoc(mngr *Manager) (map[string]interface{}, error) {
 }
 
 func upsertTestDoc(mngr *Manager) error {
+	loadEnvironmentFile()
 	// read the test document from the test file
 	testScorcardFile := "./testdata/test_scorecard.json"
 	if _, err := os.Stat(testScorcardFile); err != nil {
@@ -56,8 +75,8 @@ func TestDirector_test_connection(t *testing.T) {
 	var cbCredentials director.DbCredentials
 	var mysqlCredentials director.DbCredentials
 	var err error
-	var environmentFile string = fmt.Sprint(os.Getenv("HOME"), "/vxDataProcessor.env")
-	mysqlCredentials, cbCredentials, err = loadEnvironmant(environmentFile)
+	loadEnvironmentFile()
+	mysqlCredentials, cbCredentials, err = loadEnvironmant()
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestDirector_test_connection load environment error ", err))
 	}
@@ -70,7 +89,7 @@ func TestDirector_test_connection(t *testing.T) {
 		return
 	}
 	var documentId string = "SCTEST:test_scorecard"
-	mngr, _ := GetManager("SC", environmentFile, documentId)
+	mngr, _ := GetManager("SC", documentId)
 	err = getConnection(mngr, cbCredentials)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestDirector_test_connection Build GetConnection error ", err))
@@ -99,15 +118,15 @@ func Test_loadEnvironmant(t *testing.T) {
 	}{
 		{
 			name:                 "test load environment",
-			args:                 fmt.Sprint(os.Getenv("HOME"), "/vxDataProcessor.env"),
 			wantMysqlCredentials: director.DbCredentials{},
 			wantCbCredentials:    director.DbCredentials{},
 			wantErr:              false,
 		},
 	}
+	loadEnvironmentFile()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotMysqlCredentials, gotCbCredentials, err := loadEnvironmant(tt.args)
+			gotMysqlCredentials, gotCbCredentials, err := loadEnvironmant()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("loadEnvironmant() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -165,13 +184,13 @@ func Test_getQueryBlocks(t *testing.T) {
 	var documentId string = "SCTEST:test_scorecard"
 	var mngr *Manager
 	var err error
-	environmentFile := fmt.Sprint(os.Getenv("HOME"), "/vxDataProcessor.env")
-	mngr, err = GetManager("SC", environmentFile, documentId)
+	loadEnvironmentFile()
+	mngr, err = GetManager("SC", documentId)
 	if err != nil {
 		t.Fatal(fmt.Errorf("manager loadEnvironmant error GetManager %q", err))
 	}
 	var cbCredentials director.DbCredentials
-	_, cbCredentials, err = loadEnvironmant(mngr.environmentFile)
+	_, cbCredentials, err = loadEnvironmant()
 	if err != nil {
 		t.Fatal(fmt.Errorf("manager loadEnvironmant error loadEnvironmant %q", err))
 	}
@@ -226,13 +245,13 @@ func Test_getSliceResultBlocks(t *testing.T) {
 	var documentId string = "SCTEST:test_scorecard"
 	var mngr *Manager
 	var err error
-	environmentFile := fmt.Sprint(os.Getenv("HOME"), "/vxDataProcessor.env")
-	mngr, err = GetManager("SC", environmentFile, documentId)
+	loadEnvironmentFile()
+	mngr, err = GetManager("SC", documentId)
 	if err != nil {
 		t.Fatal(fmt.Errorf("manager loadEnvironmant error GetManager %q", err))
 	}
 	var cbCredentials director.DbCredentials
-	_, cbCredentials, err = loadEnvironmant(mngr.environmentFile)
+	_, cbCredentials, err = loadEnvironmant()
 	if err != nil {
 		t.Fatal(fmt.Errorf("manager loadEnvironmant error loadEnvironmant %q", err))
 	}
@@ -287,15 +306,14 @@ func Test_runManager(t *testing.T) {
 	var documentId string = "SCTEST:test_scorecard"
 	var mngr *Manager
 	var err error
-	environmentFile := fmt.Sprint(os.Getenv("HOME"), "/vxDataProcessor.env")
 	start := time.Now()
-
-	mngr, err = GetManager("SC", environmentFile, documentId)
+	loadEnvironmentFile()
+	mngr, err = GetManager("SC", documentId)
 	if err != nil {
 		t.Fatal(fmt.Errorf("manager loadEnvironmant error GetManager %q", err))
 	}
 	var cbCredentials director.DbCredentials
-	_, cbCredentials, err = loadEnvironmant(mngr.environmentFile)
+	_, cbCredentials, err = loadEnvironmant()
 	if err != nil {
 		t.Fatal(fmt.Errorf("manager loadEnvironmant error loadEnvironmant %q", err))
 	}
@@ -308,16 +326,13 @@ func Test_runManager(t *testing.T) {
 		t.Fatal(fmt.Sprint("manager upsertTestDoc error upserting test scorecard", err))
 	}
 	// get a manager
-	manager, err := NewScorecardManager(environmentFile, documentId)
+	manager, err := newScorecardManager(documentId)
 	if err != nil {
 		t.Fatal(fmt.Sprint("manager test NewScorecardManager error getting a manager", err))
 	}
-	scorecardAppUrl, err := manager.Run()
+	err = manager.Run()
 	if err != nil {
 		t.Fatal(fmt.Sprint("manager test run error ", err))
-	}
-	if scorecardAppUrl != "https://mats-docker-dev.gsd.esrl.noaa.gov/scorecard" {
-		t.Fatalf("manager test run error - did return proper scorecardAppUrl - got %q error is %q", scorecardAppUrl, err)
 	}
 	elapsed := time.Since(start)
 	fmt.Printf("The test took combined %s", elapsed)

@@ -52,17 +52,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/NOAA-GSL/vxDataProcessor/pkg/client"
 	"github.com/NOAA-GSL/vxDataProcessor/pkg/director"
 	"github.com/couchbase/gocb/v2"
-	"github.com/joho/godotenv"
 )
 
-func loadEnvironmant(environmentFile string) (mysqlCredentials, cbCredentials director.DbCredentials, err error) {
-	err = godotenv.Load(environmentFile)
-	if err != nil {
-		return director.DbCredentials{}, director.DbCredentials{}, fmt.Errorf("Error loading .env file: %q", environmentFile)
-	}
-
+func loadEnvironmant() (mysqlCredentials, cbCredentials director.DbCredentials, err error) {
 	cbCredentials = director.DbCredentials{
 		Scope:      "_default",
 		Collection: "SCORECARD",
@@ -166,7 +161,7 @@ func getSubDocument(mngr Manager, path string, subDocPtr *interface{}) error {
 // retrieve the queryMap.blocks section of the document by subdoc get
 func getQueryBlocks(mngr Manager) (map[string]interface{}, error) {
 	var blocks interface{}
-	err := getSubDocument(mngr, "SCORECARD.queryMap.blocks", &blocks)
+	err := getSubDocument(mngr, "queryMap.blocks", &blocks)
 	if err != nil {
 		return nil, fmt.Errorf("manager getQueryBlocks error %q", err)
 	}
@@ -176,7 +171,7 @@ func getQueryBlocks(mngr Manager) (map[string]interface{}, error) {
 // retrieve the PlotParams section of the document by subdoc get
 func getPlotParams(mngr Manager) (map[string]interface{}, error) {
 	var plotParams interface{}
-	err := getSubDocument(mngr, "SCORECARD.plotParams", &plotParams)
+	err := getSubDocument(mngr, "plotParams", &plotParams)
 	if err != nil {
 		return nil, fmt.Errorf("manager getPlotParams error %q", err)
 	}
@@ -187,7 +182,7 @@ func getPlotParams(mngr Manager) (map[string]interface{}, error) {
 func getPlotParamCurves(mngr Manager) ([]map[string]interface{}, error) {
 	var curves interface{}
 	var curveArray []map[string]interface{}
-	err := getSubDocument(mngr, "SCORECARD.plotParams.curves", &curves)
+	err := getSubDocument(mngr, "plotParams.curves", &curves)
 	if err != nil {
 		return nil, fmt.Errorf("manager getPlotParamCurves error %q", err)
 	}
@@ -201,7 +196,7 @@ func getPlotParamCurves(mngr Manager) ([]map[string]interface{}, error) {
 // and convert it to a dateRange struct
 func getDateRange(mngr Manager) (director.DateRange, error) {
 	var datesStr interface{}
-	err := getSubDocument(mngr, "SCORECARD.dateRange", &datesStr)
+	err := getSubDocument(mngr, "dateRange", &datesStr)
 	var dateRange director.DateRange
 	// parse the daterange string
 	// "02/19/2023 20:00 - 03/21/2023 20:00"
@@ -276,6 +271,14 @@ func getThresholds(plotParams map[string]interface{}) (minorThreshold float64, m
 	return minorThreshold, majorThreshold, nil
 }
 
+func notifyMatsRefresh(scorecardAppUrl string, docId string) error {
+	err := client.NotifyScorecard(scorecardAppUrl, docId)
+	if err != nil {
+		return fmt.Errorf("manager notifyMATSRefresh error: %v", err)
+	}
+	return err
+}
+
 func processRegion(
 	mngr Manager,
 	appName string,
@@ -288,6 +291,7 @@ func processRegion(
 	dateRange director.DateRange,
 	minorThreshold float64,
 	majorThreshold float64,
+	documentScorecardAppUrl string,
 ) error {
 	if strings.ToUpper(appName) == "CB" {
 		log.Print("launch CB director - which we don't have yet")
@@ -309,48 +313,57 @@ func processRegion(
 		return fmt.Errorf("manager Run error upserting resultRegion: %q error: %q", blockRegionName, err)
 	}
 	// notify server to update with scorecardApUrl
+	// try to get the SCORECARD_APP_URL from the environment
+	scorecardAppUrl := os.Getenv("DEBUG_SCORECARD_APP_URL")
+	if scorecardAppUrl == "" {
+		// not in environment. so use the one from the document
+		scorecardAppUrl = documentScorecardAppUrl
+	}
+	err = notifyMatsRefresh(scorecardAppUrl, mngr.documentId)
+	if err != nil {
+		return fmt.Errorf("manager Run error Failed to Notify appUrl %q: error: %q", scorecardAppUrl, err)
+	}
 	return nil
 }
 
-func (mngr Manager) Run() (scorecardAppUrl string, err error) {
+func (mngr Manager) Run() (err error) {
 	// load the environment
 	var mysqlCredentials, cbCredentials director.DbCredentials
 	var minorThreshold float64
 	var majorThreshold float64
 	// initially unknown
-	scorecardAppUrl = ""
-	mysqlCredentials, cbCredentials, err = loadEnvironmant(mngr.environmentFile)
+	mysqlCredentials, cbCredentials, err = loadEnvironmant()
 	if err != nil {
-		return scorecardAppUrl, fmt.Errorf("manager loadEnvironmant error %q", err)
+		return fmt.Errorf("manager loadEnvironmant error %q", err)
 	}
 	err = getConnection(&mngr, cbCredentials)
 	if err != nil {
-		return scorecardAppUrl, fmt.Errorf("manager Run GetConnection error: %q", err)
+		return fmt.Errorf("manager Run GetConnection error: %q", err)
 	}
 	queryBlocks, err := getQueryBlocks(mngr)
 	if err != nil {
 		err = fmt.Errorf("manager Run error getting queryBlocks: %q", err)
-		return scorecardAppUrl, err
+		return err
 	}
 	plotParams, err := getPlotParams(mngr)
 	if err != nil {
 		err = fmt.Errorf("manager Run error getting plotParamCurves: %q", err)
-		return scorecardAppUrl, err
+		return err
 	}
 	minorThreshold, majorThreshold, err = getThresholds(plotParams)
 	if err != nil {
 		err = fmt.Errorf("manager Run error getting thresholds: %q", err)
-		return scorecardAppUrl, err
+		return err
 	}
 	curves, err := getPlotParamCurves(mngr)
 	if err != nil {
 		err = fmt.Errorf("manager Run error getting plotParamCurves: %q", err)
-		return scorecardAppUrl, err
+		return err
 	}
 	dateRange, err := getDateRange(mngr)
 	if err != nil {
 		err = fmt.Errorf("manager Run error getting daterange: %q", err)
-		return scorecardAppUrl, err
+		return err
 	}
 	numCurves := len(curves)
 	// blocks and queryBlocks have the same keys
@@ -360,11 +373,11 @@ func (mngr Manager) Run() (scorecardAppUrl string, err error) {
 	for i := 0; i < numBlocks; i++ {
 		blockName := blockKeys[i]
 		var block interface{}
-		err = getSubDocument(mngr, "SCORECARD.results.blocks."+blockName, &block)
+		err = getSubDocument(mngr, "results.blocks."+blockName, &block)
 		if err != nil {
-			return scorecardAppUrl, fmt.Errorf("manager Run error getting block result %q", err)
+			return fmt.Errorf("manager Run error getting block result %q", err)
 		}
-		scorecardAppUrl = block.(map[string]interface{})["blockApplication"].(string)
+		scorecardAppUrl := block.(map[string]interface{})["blockApplication"].(string)
 		queryBlock := queryBlocks[blockKeys[i]].(map[string]interface{})
 		var appName string
 		for i := 0; i < numCurves; i++ {
@@ -382,20 +395,20 @@ func (mngr Manager) Run() (scorecardAppUrl string, err error) {
 		numBlockRegions := len(blockRegionNames)
 		numQueryRegions := len(queryRegionNames)
 		if numBlockRegions != numQueryRegions {
-			return scorecardAppUrl, fmt.Errorf("manager Run Number of block regions %v does not equal the number of query regions %v", numBlockRegions, numQueryRegions)
+			return fmt.Errorf("manager Run Number of block regions %v does not equal the number of query regions %v", numBlockRegions, numQueryRegions)
 		}
 		if !reflect.DeepEqual(blockRegionNames, queryRegionNames) {
-			return scorecardAppUrl, fmt.Errorf("manager block regions list %v does not equal query regions list %v", blockRegionNames, queryRegionNames)
+			return fmt.Errorf("manager block regions list %v does not equal query regions list %v", blockRegionNames, queryRegionNames)
 		}
 		for i := 0; i < numBlockRegions; i++ {
 			queryRegionName := queryRegionNames[i]
 			queryRegion := queryData[queryRegionName].(map[string]interface{})
 			blockRegionName := blockRegionNames[i]
 			var region interface{}
-			regionPath := "SCORECARD.results.blocks." + blockName + ".data." + blockRegionName
+			regionPath := "results.blocks." + blockName + ".data." + blockRegionName
 			err = getSubDocument(mngr, regionPath, &region)
 			if err != nil {
-				return scorecardAppUrl, fmt.Errorf("error getting region SubDocument %q", err)
+				return fmt.Errorf("error getting region SubDocument %q", err)
 			}
 			err = processRegion(mngr,
 				appName,
@@ -407,20 +420,19 @@ func (mngr Manager) Run() (scorecardAppUrl string, err error) {
 				mysqlCredentials,
 				dateRange,
 				minorThreshold,
-				majorThreshold)
+				majorThreshold,
+				scorecardAppUrl)
 			if err != nil {
-				return scorecardAppUrl, fmt.Errorf("error processing scorecard Run %q", err)
+				return fmt.Errorf("error processing scorecard Run %q", err)
 			}
 		}
 	}
-	return scorecardAppUrl, nil
+	return nil
 }
 
 var myScorecardManager = Manager{}
 
-func NewScorecardManager(environmentFile, documentId string) (*Manager, error) {
-	myScorecardManager.environmentFile = environmentFile
-	myScorecardManager.ScorecardCB = nil
+func newScorecardManager(documentId string) (*Manager, error) {
 	myScorecardManager.cb = &cbConnection{}
 	myScorecardManager.documentId = documentId
 	return &myScorecardManager, nil

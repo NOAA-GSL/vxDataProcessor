@@ -184,16 +184,20 @@ func processSub(region interface{}, queryElem interface{}) (interface{}, error) 
 		// what kind of data?
 		if strings.Contains(ctlQueryStatement, "hits") {
 			// get the data
-			ctlQueryResult, err := queryDataCTC(ctlQueryStatement)
-			// handle error
+			expQueryResult, err := queryDataCTC(expQueryStatement)
 			if err != nil {
 				queryError = true
-				log.Printf("mysql_director queryDataCTC ctlQueryStatement error %q", err)
+				if !strings.Contains(err.Error(), "Error 1146 (42S02)") {
+					log.Printf("mysql_director queryDataCTC expQueryStatement error %q", err)
+				}
 			} else {
-				expQueryResult, err := queryDataCTC(expQueryStatement)
+				ctlQueryResult, err := queryDataCTC(ctlQueryStatement)
+				// handle error
 				if err != nil {
 					queryError = true
-					log.Printf("mysql_director queryDataCTC expQueryStatement error %q", err)
+					if !strings.Contains(err.Error(), "Error 1146 (42S02)") {
+						log.Printf("mysql_director queryDataCTC ctlQueryStatement error %q", err)
+					}
 				} else {
 					queryResult = builder.BuilderCTCResult{CtlData: ctlQueryResult, ExpData: expQueryResult}
 				}
@@ -204,12 +208,16 @@ func processSub(region interface{}, queryElem interface{}) (interface{}, error) 
 			// handle error
 			if err != nil {
 				queryError = true
-				log.Printf("mysql_director queryDataScalar ctlQueryStatement error %q", err)
+				if !strings.Contains(err.Error(), "Error 1146 (42S02)") {
+					log.Printf("mysql_director queryDataScalar ctlQueryStatement error %q", err)
+				}
 			} else {
 				expQueryResult, err := queryDataScalar(expQueryStatement)
 				if err != nil {
 					queryError = true
-					log.Printf("mysql_director queryDataScalar expQueryStatementerror %q", err)
+					if !strings.Contains(err.Error(), "Error 1146 (42S02)") {
+						log.Printf("mysql_director queryDataScalar expQueryStatement error %q", err)
+					}
 				} else {
 					queryResult = builder.BuilderScalarResult{CtlData: ctlQueryResult, ExpData: expQueryResult}
 				}
@@ -220,12 +228,16 @@ func processSub(region interface{}, queryElem interface{}) (interface{}, error) 
 			// handle error
 			if err != nil {
 				queryError = true
-				log.Printf("mysql_director queryDataPreCalc ctlQueryStatement error %q", err)
+				if !strings.Contains(err.Error(), "Error 1146 (42S02)") {
+					log.Printf("mysql_director queryDataPreCalc ctlQueryStatement error %q", err)
+				}
 			} else {
 				expQueryResult, err := queryDataPreCalc(expQueryStatement)
 				if err != nil {
 					queryError = true
-					log.Printf("mysql_director queryDataPreCalc expQueryStatement error %q", err)
+					if !strings.Contains(err.Error(), "Error 1146 (42S02)") {
+						log.Printf("mysql_director queryDataPreCalc expQueryStatement error %q", err)
+					}
 				} else {
 					queryResult = builder.BuilderPreCalcResult{CtlData: ctlQueryResult, ExpData: expQueryResult}
 				}
@@ -242,7 +254,9 @@ func processSub(region interface{}, queryElem interface{}) (interface{}, error) 
 		// The build will fill in the value (write into the result)
 		// Build(qr QueryResult, statisticType string, dataType string
 		if queryError {
-			log.Printf("mysql_director query error %v", err)
+			if err != nil {
+				log.Printf("mysql_director query error %v", err)
+			}
 			return builder.ErrorValue, err
 		} else {
 			scc := builder.NewTwoSampleTTestBuilder()

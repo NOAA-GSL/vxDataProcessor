@@ -18,7 +18,8 @@
 
 # Project-specific files
 tmp/
-.env
+.env*
+*.env
 .idea
 .vscode
 processor

@@ -15,14 +15,28 @@ import (
 	"github.com/joho/godotenv"
 )
 
+func loadEnvironmentFile() error {
+	environmentFile, set := os.LookupEnv("PROC_ENV_PATH")
+	if !set {
+		err := godotenv.Load() // Loads from "$(pwd)/.env"
+		if err != nil {
+			return fmt.Errorf("Couldn't load environment file: %q", environmentFile)
+		}
+	} else {
+		err := godotenv.Load(environmentFile) // Loads from whatever PROC_ENV_PATH has been set to
+		if err != nil {
+			return fmt.Errorf("Couldn't load environment file: %q", environmentFile)
+		}
+	}
+}
+
 func Test_getMySqlConnection(t *testing.T) {
 	type args struct {
 		mysqlCredentials DbCredentials
 	}
-	var environmentFile string = fmt.Sprint(os.Getenv("HOME"), "/vxDataProcessor.env")
-	err := godotenv.Load(environmentFile)
+	err := loadEnvironmentFile()
 	if err != nil {
-		t.Fatalf("Error loading .env file: %q", environmentFile)
+		t.Fatalf("Error loading the environment file, %w", err)
 	}
 	var mysqlCredentials DbCredentials
 	// refer to https://github.com/go-sql-driver/mysql/#dsn-data-source-name
@@ -68,10 +82,9 @@ func Test_getMySqlConnection(t *testing.T) {
 
 // record.squareDiffSum record.NSum record.obsModelDiffSum record.modelSum record.obsSum record.absSum record.time
 func Test_mySqlQuery(t *testing.T) {
-	var environmentFile string = fmt.Sprint(os.Getenv("HOME"), "/vxDataProcessor.env")
-	err := godotenv.Load(environmentFile)
+	err := loadEnvironmentFile()
 	if err != nil {
-		t.Fatalf("Error loading .env file: %q", environmentFile)
+		t.Fatalf("Error loading the environment file, %w", err)
 	}
 	var mysqlCredentials DbCredentials
 	// refer to https://github.com/go-sql-driver/mysql/#dsn-data-source-name

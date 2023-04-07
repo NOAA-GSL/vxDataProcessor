@@ -19,11 +19,17 @@ import (
 )
 
 func loadEnvironmentFile() {
-	// load the ${HOME}/.env if it exists
-	environmentFile := fmt.Sprint(os.Getenv("HOME"), "/.env")
-	err := godotenv.Load(environmentFile)
-	if err != nil {
-		log.Printf("Couldn't load environment file: %q", environmentFile)
+	environmentFile, set := os.LookupEnv("PROC_ENV_PATH")
+	if !set {
+		err := godotenv.Load() // Loads from "$(pwd)/.env"
+		if err != nil {
+			log.Printf("Couldn't load environment file: %q", environmentFile)
+		}
+	} else {
+		err := godotenv.Load(environmentFile) // Loads from whatever PROC_ENV_PATH has been set to
+		if err != nil {
+			log.Printf("Couldn't load environment file: %q", environmentFile)
+		}
 	}
 }
 

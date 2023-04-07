@@ -314,7 +314,7 @@ func processRegion(
 	}
 	// notify server to update with scorecardApUrl
 	// try to get the SCORECARD_APP_URL from the environment
-	scorecardAppUrl := os.Getenv("SCORECARD_APP_URL")
+	scorecardAppUrl := os.Getenv("DEBUG_SCORECARD_APP_URL")
 	if scorecardAppUrl == "" {
 		// not in environment. so use the one from the document
 		scorecardAppUrl = documentScorecardAppUrl
@@ -433,7 +433,6 @@ func (mngr Manager) Run() (err error) {
 var myScorecardManager = Manager{}
 
 func newScorecardManager(documentId string) (*Manager, error) {
-	myScorecardManager.ScorecardCB = nil
 	myScorecardManager.cb = &cbConnection{}
 	myScorecardManager.documentId = documentId
 	return &myScorecardManager, nil

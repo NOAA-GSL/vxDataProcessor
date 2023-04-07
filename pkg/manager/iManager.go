@@ -31,9 +31,8 @@ type cbConnection struct {
 }
 
 type Manager struct {
-	documentId  string
-	cb          *cbConnection
-	ScorecardCB map[string]interface{}
+	documentId string
+	cb         *cbConnection
 }
 
 type ManagerBuilder interface {

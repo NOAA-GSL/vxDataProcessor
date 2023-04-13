@@ -88,8 +88,8 @@ func TestDirector_test_connection(t *testing.T) {
 		t.Errorf("loadEnvironmant() error  did return mysqlCredentials from loadEnvironment")
 		return
 	}
-	var documentId string = "SCTEST:test_scorecard"
-	mngr, _ := GetManager("SC", documentId)
+	documentID := "SCTEST:test_scorecard"
+	mngr, _ := GetManager("SC", documentID)
 	err = getConnection(mngr, cbCredentials)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestDirector_test_connection Build GetConnection error ", err))
@@ -181,11 +181,11 @@ func Test_loadEnvironmant(t *testing.T) {
 
 func Test_getQueryBlocks(t *testing.T) {
 	// setup a test document
-	var documentId string = "SCTEST:test_scorecard"
+	documentID := "SCTEST:test_scorecard"
 	var mngr *Manager
 	var err error
 	loadEnvironmentFile()
-	mngr, err = GetManager("SC", documentId)
+	mngr, err = GetManager("SC", documentID)
 	if err != nil {
 		t.Fatal(fmt.Errorf("manager loadEnvironmant error GetManager %q", err))
 	}
@@ -242,11 +242,11 @@ func Test_getQueryBlocks(t *testing.T) {
 
 func Test_getSliceResultBlocks(t *testing.T) {
 	// setup a test document
-	var documentId string = "SCTEST:test_scorecard"
+	documentID := "SCTEST:test_scorecard"
 	var mngr *Manager
 	var err error
 	loadEnvironmentFile()
-	mngr, err = GetManager("SC", documentId)
+	mngr, err = GetManager("SC", documentID)
 	if err != nil {
 		t.Fatal(fmt.Errorf("manager loadEnvironmant error GetManager %q", err))
 	}
@@ -303,12 +303,12 @@ func Test_getSliceResultBlocks(t *testing.T) {
 
 func Test_runManager(t *testing.T) {
 	// setup a test document
-	var documentId string = "SCTEST:test_scorecard"
+	documentID := "SCTEST:test_scorecard"
 	var mngr *Manager
 	var err error
 	start := time.Now()
 	loadEnvironmentFile()
-	mngr, err = GetManager("SC", documentId)
+	mngr, err = GetManager("SC", documentID)
 	if err != nil {
 		t.Fatal(fmt.Errorf("manager loadEnvironmant error GetManager %q", err))
 	}
@@ -326,7 +326,7 @@ func Test_runManager(t *testing.T) {
 		t.Fatal(fmt.Sprint("manager upsertTestDoc error upserting test scorecard", err))
 	}
 	// get a manager
-	manager, err := newScorecardManager(documentId)
+	manager, err := newScorecardManager(documentID)
 	if err != nil {
 		t.Fatal(fmt.Sprint("manager test NewScorecardManager error getting a manager", err))
 	}

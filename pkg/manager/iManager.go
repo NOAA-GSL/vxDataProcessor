@@ -31,7 +31,7 @@ type cbConnection struct {
 }
 
 type Manager struct {
-	documentId string
+	documentID string
 	cb         *cbConnection
 }
 
@@ -42,7 +42,6 @@ type ManagerBuilder interface {
 func GetManager(documentType, documentID string) (*Manager, error) {
 	if documentType == "SC" {
 		return newScorecardManager(documentID)
-	} else {
-		return nil, fmt.Errorf("Manager GetManager unsupported managerType: %q", documentType)
 	}
+	return nil, fmt.Errorf("Manager GetManager unsupported managerType: %q", documentType)
 }

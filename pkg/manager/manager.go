@@ -130,7 +130,7 @@ func upsertSubDocument(mngr Manager, path string, subDoc interface{}) error {
 	mops := []gocb.MutateInSpec{
 		gocb.UpsertSpec(path, subDoc, &gocb.UpsertSpecOptions{}),
 	}
-	upsertResult, err := mngr.cb.Collection.MutateIn(mngr.documentId, mops, &gocb.MutateInOptions{
+	upsertResult, err := mngr.cb.Collection.MutateIn(mngr.documentID, mops, &gocb.MutateInOptions{
 		Timeout: 10050 * time.Millisecond,
 	})
 	if err != nil {
@@ -147,7 +147,7 @@ func getSubDocument(mngr Manager, path string, subDocPtr *interface{}) error {
 	ops := []gocb.LookupInSpec{
 		gocb.GetSpec(path, &gocb.GetSpecOptions{IsXattr: false}),
 	}
-	getResult, err := mngr.cb.Collection.LookupIn(mngr.documentId, ops, &gocb.LookupInOptions{})
+	getResult, err := mngr.cb.Collection.LookupIn(mngr.documentID, ops, &gocb.LookupInOptions{})
 	if err != nil {
 		return fmt.Errorf("manager getSubDocument LookupIn error %q", err)
 	}
@@ -244,7 +244,7 @@ func convertStdToPercent(std string) (percent float64, err error) {
 	return percent, err
 }
 
-func getThresholds(plotParams map[string]interface{}) (minorThreshold float64, majorThreshold float64, err error) {
+func getThresholds(plotParams map[string]interface{}) (minorThreshold, majorThreshold float64, err error) {
 	percentStddev := plotParams["scorecard-percent-stdv"]
 	switch percentStddev {
 	case "Percent":
@@ -271,8 +271,8 @@ func getThresholds(plotParams map[string]interface{}) (minorThreshold float64, m
 	return minorThreshold, majorThreshold, nil
 }
 
-func notifyMatsRefresh(scorecardAppUrl string, docId string) error {
-	err := client.NotifyScorecard(scorecardAppUrl, docId)
+func notifyMatsRefresh(scorecardAppURL, docID string) error {
+	err := client.NotifyScorecard(scorecardAppURL, docID)
 	if err != nil {
 		return fmt.Errorf("manager notifyMATSRefresh error: %v", err)
 	}
@@ -291,7 +291,7 @@ func processRegion(
 	dateRange director.DateRange,
 	minorThreshold float64,
 	majorThreshold float64,
-	documentScorecardAppUrl string,
+	documentScorecardAppURL string,
 ) error {
 	if strings.ToUpper(appName) == "CB" {
 		log.Print("launch CB director - which we don't have yet")
@@ -314,14 +314,14 @@ func processRegion(
 	}
 	// notify server to update with scorecardApUrl
 	// try to get the SCORECARD_APP_URL from the environment
-	scorecardAppUrl := os.Getenv("DEBUG_SCORECARD_APP_URL")
-	if scorecardAppUrl == "" {
+	scorecardAppURL := os.Getenv("DEBUG_SCORECARD_APP_URL")
+	if scorecardAppURL == "" {
 		// not in environment. so use the one from the document
-		scorecardAppUrl = documentScorecardAppUrl
+		scorecardAppURL = documentScorecardAppURL
 	}
-	err = notifyMatsRefresh(scorecardAppUrl, mngr.documentId)
+	err = notifyMatsRefresh(scorecardAppURL, mngr.documentID)
 	if err != nil {
-		return fmt.Errorf("manager Run error Failed to Notify appUrl %q: error: %q", scorecardAppUrl, err)
+		return fmt.Errorf("manager Run error Failed to Notify appUrl %q: error: %q", scorecardAppURL, err)
 	}
 	return nil
 }
@@ -377,7 +377,7 @@ func (mngr Manager) Run() (err error) {
 		if err != nil {
 			return fmt.Errorf("manager Run error getting block result %q", err)
 		}
-		scorecardAppUrl := block.(map[string]interface{})["blockApplication"].(string)
+		scorecardAppURL := block.(map[string]interface{})["blockApplication"].(string)
 		queryBlock := queryBlocks[blockKeys[i]].(map[string]interface{})
 		var appName string
 		for i := 0; i < numCurves; i++ {
@@ -421,7 +421,7 @@ func (mngr Manager) Run() (err error) {
 				dateRange,
 				minorThreshold,
 				majorThreshold,
-				scorecardAppUrl)
+				scorecardAppURL)
 			if err != nil {
 				return fmt.Errorf("error processing scorecard Run %q", err)
 			}
@@ -432,8 +432,8 @@ func (mngr Manager) Run() (err error) {
 
 var myScorecardManager = Manager{}
 
-func newScorecardManager(documentId string) (*Manager, error) {
+func newScorecardManager(documentID string) (*Manager, error) {
 	myScorecardManager.cb = &cbConnection{}
-	myScorecardManager.documentId = documentId
+	myScorecardManager.documentID = documentID
 	return &myScorecardManager, nil
 }

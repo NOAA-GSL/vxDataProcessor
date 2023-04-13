@@ -57,7 +57,7 @@ import (
 	"github.com/couchbase/gocb/v2"
 )
 
-func loadEnvironmant() (mysqlCredentials, cbCredentials director.DbCredentials, err error) {
+func loadEnvironment() (mysqlCredentials, cbCredentials director.DbCredentials, err error) {
 	cbCredentials = director.DbCredentials{
 		Scope:      "_default",
 		Collection: "SCORECARD",
@@ -332,7 +332,7 @@ func (mngr Manager) Run() (err error) {
 	var minorThreshold float64
 	var majorThreshold float64
 	// initially unknown
-	mysqlCredentials, cbCredentials, err = loadEnvironmant()
+	mysqlCredentials, cbCredentials, err = loadEnvironment()
 	if err != nil {
 		return fmt.Errorf("manager loadEnvironmant error %q", err)
 	}

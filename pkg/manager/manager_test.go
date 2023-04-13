@@ -89,7 +89,8 @@ func TestDirector_test_connection(t *testing.T) {
 		return
 	}
 	documentID := "SCTEST:test_scorecard"
-	mngr, _ := GetManager("SC", documentID)
+	t.Setenv("PROC_TESTING_ACCEPT_SCTEST_DOCIDS", "")
+	mngr, _ := GetManager(documentID)
 	err = getConnection(mngr, cbCredentials)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestDirector_test_connection Build GetConnection error ", err))
@@ -182,10 +183,11 @@ func Test_loadEnvironmant(t *testing.T) {
 func Test_getQueryBlocks(t *testing.T) {
 	// setup a test document
 	documentID := "SCTEST:test_scorecard"
+	t.Setenv("PROC_TESTING_ACCEPT_SCTEST_DOCIDS", "")
 	var mngr *Manager
 	var err error
 	loadEnvironmentFile()
-	mngr, err = GetManager("SC", documentID)
+	mngr, err = GetManager(documentID)
 	if err != nil {
 		t.Fatal(fmt.Errorf("manager loadEnvironmant error GetManager %q", err))
 	}
@@ -243,10 +245,11 @@ func Test_getQueryBlocks(t *testing.T) {
 func Test_getSliceResultBlocks(t *testing.T) {
 	// setup a test document
 	documentID := "SCTEST:test_scorecard"
+	t.Setenv("PROC_TESTING_ACCEPT_SCTEST_DOCIDS", "")
 	var mngr *Manager
 	var err error
 	loadEnvironmentFile()
-	mngr, err = GetManager("SC", documentID)
+	mngr, err = GetManager(documentID)
 	if err != nil {
 		t.Fatal(fmt.Errorf("manager loadEnvironmant error GetManager %q", err))
 	}
@@ -304,11 +307,12 @@ func Test_getSliceResultBlocks(t *testing.T) {
 func Test_runManager(t *testing.T) {
 	// setup a test document
 	documentID := "SCTEST:test_scorecard"
+	t.Setenv("PROC_TESTING_ACCEPT_SCTEST_DOCIDS", "")
 	var mngr *Manager
 	var err error
 	start := time.Now()
 	loadEnvironmentFile()
-	mngr, err = GetManager("SC", documentID)
+	mngr, err = GetManager(documentID)
 	if err != nil {
 		t.Fatal(fmt.Errorf("manager loadEnvironmant error GetManager %q", err))
 	}

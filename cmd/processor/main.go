@@ -8,8 +8,8 @@ import (
 
 // ProcessorFactory is a wrapper function to satisfy the requirements of
 // Worker and to keep the api package ignorant of the manager package
-func processorFactory(processor, docID string) (api.Processor, error) {
-	return manager.GetManager(processor, docID)
+func processorFactory(docID string) (api.Processor, error) {
+	return manager.GetManager(docID)
 }
 
 func main() {

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"sync"
 	"testing"
 
@@ -32,9 +33,9 @@ func (tp *TestProcess) Run() error {
 	return nil
 }
 
-func ProcessorFactoryMock(processor, docID string) (Processor, error) {
-	// processor = strings.Split(docID, ":")[0]
-	switch processor {
+func ProcessorFactoryMock(docID string) (Processor, error) {
+	documentType := strings.Split(docID, ":")[0]
+	switch documentType {
 	case "SC":
 		return &TestProcess{DocID: docID}, nil
 	case "Err":

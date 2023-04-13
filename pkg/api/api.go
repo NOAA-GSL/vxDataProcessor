@@ -4,7 +4,6 @@ package api
 import (
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/NOAA-GSL/vxDataProcessor/pkg/api/jobstore"
@@ -41,7 +40,7 @@ type Processor interface {
 }
 
 // Worker receives jobs on a channel, processes them, and reports the status on a return channel
-func Worker(id int, getProcessor func(string, string) (Processor, error), jobs <-chan jobstore.Job, status chan<- jobstore.Job) {
+func Worker(id int, getProcessor func(string) (Processor, error), jobs <-chan jobstore.Job, status chan<- jobstore.Job) {
 	for {
 		job := <-jobs // block until we get a job
 		fmt.Println("Worker", id, "started docID", job.DocID)
@@ -52,8 +51,7 @@ func Worker(id int, getProcessor func(string, string) (Processor, error), jobs <
 		start := time.Now()
 		fmt.Println("Worker", id, "processing docID", job.DocID)
 
-		docType := strings.Split(job.DocID, ":")[0]
-		mgr, err := getProcessor(docType, job.DocID)
+		mgr, err := getProcessor(job.DocID)
 		if err != nil {
 			job.Status = jobstore.StatusFailed
 			status <- job

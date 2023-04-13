@@ -40,7 +40,7 @@ func process() int {
 		}
 	}
 
-	mngr, err := manager.GetManager("SC", documentID)
+	mngr, err := manager.GetManager(documentID)
 	if err != nil {
 		log.Printf("manager loadEnvironmant error GetManager %q", err)
 		return 2

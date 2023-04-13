@@ -76,20 +76,21 @@ func TestDirector_test_connection(t *testing.T) {
 	var mysqlCredentials director.DbCredentials
 	var err error
 	loadEnvironmentFile()
-	mysqlCredentials, cbCredentials, err = loadEnvironmant()
+	mysqlCredentials, cbCredentials, err = loadEnvironment()
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestDirector_test_connection load environment error ", err))
 	}
 	if (director.DbCredentials{}) == cbCredentials {
-		t.Errorf("loadEnvironmant() error  did return cbCredentials from loadEnvironment")
+		t.Errorf("loadEnvironment() error  did return cbCredentials from loadEnvironment")
 		return
 	}
 	if (director.DbCredentials{} == mysqlCredentials) {
-		t.Errorf("loadEnvironmant() error  did return mysqlCredentials from loadEnvironment")
+		t.Errorf("loadEnvironment() error  did return mysqlCredentials from loadEnvironment")
 		return
 	}
-	var documentId string = "SCTEST:test_scorecard"
-	mngr, _ := GetManager("SC", documentId)
+	documentID := "SCTEST:test_scorecard"
+	t.Setenv("PROC_TESTING_ACCEPT_SCTEST_DOCIDS", "")
+	mngr, _ := GetManager(documentID)
 	err = getConnection(mngr, cbCredentials)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestDirector_test_connection Build GetConnection error ", err))
@@ -108,7 +109,7 @@ func TestDirector_test_connection(t *testing.T) {
 	}
 }
 
-func Test_loadEnvironmant(t *testing.T) {
+func Test_loadEnvironment(t *testing.T) {
 	tests := []struct {
 		name                 string
 		args                 string
@@ -126,53 +127,53 @@ func Test_loadEnvironmant(t *testing.T) {
 	loadEnvironmentFile()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotMysqlCredentials, gotCbCredentials, err := loadEnvironmant()
+			gotMysqlCredentials, gotCbCredentials, err := loadEnvironment()
 			if (err != nil) != tt.wantErr {
-				t.Errorf("loadEnvironmant() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("loadEnvironment() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if (director.DbCredentials{}) == gotCbCredentials {
-				t.Errorf("loadEnvironmant() error  did return CbCredentials from loadEnvironment")
+				t.Errorf("loadEnvironment() error  did return CbCredentials from loadEnvironment")
 				return
 			}
 			if (director.DbCredentials{} == gotMysqlCredentials) {
-				t.Errorf("loadEnvironmant() error  did return MysqlCredentials from loadEnvironment")
+				t.Errorf("loadEnvironment() error  did return MysqlCredentials from loadEnvironment")
 				return
 			}
 			if os.Getenv("CB_HOST") == "" {
-				t.Errorf("loadEnvironmant() error  did not find CB_HOST in environment")
+				t.Errorf("loadEnvironment() error  did not find CB_HOST in environment")
 				return
 			}
 			if os.Getenv("CB_USER") == "" {
-				t.Errorf("loadEnvironmant() error  did not find CB_HOST in environment")
+				t.Errorf("loadEnvironment() error  did not find CB_HOST in environment")
 				return
 			}
 			if os.Getenv("CB_PASSWORD") == "" {
-				t.Errorf("loadEnvironmant() error  did not find CB_USER in environment")
+				t.Errorf("loadEnvironment() error  did not find CB_USER in environment")
 				return
 			}
 			if os.Getenv("CB_BUCKET") == "" {
-				t.Errorf("loadEnvironmant() error  did not find CB_BUCKET in environment")
+				t.Errorf("loadEnvironment() error  did not find CB_BUCKET in environment")
 				return
 			}
 			if os.Getenv("CB_SCOPE") == "" {
-				t.Errorf("loadEnvironmant() error  did not find CB_SCOPE in environment")
+				t.Errorf("loadEnvironment() error  did not find CB_SCOPE in environment")
 				return
 			}
 			if os.Getenv("CB_COLLECTION") == "" {
-				t.Errorf("loadEnvironmant() error  did not find CB_COLLECTION in environment")
+				t.Errorf("loadEnvironment() error  did not find CB_COLLECTION in environment")
 				return
 			}
 			if os.Getenv("MYSQL_HOST") == "" {
-				t.Errorf("loadEnvironmant() error  did not find MYSQL_HOST in environment")
+				t.Errorf("loadEnvironment() error  did not find MYSQL_HOST in environment")
 				return
 			}
 			if os.Getenv("MYSQL_USER") == "" {
-				t.Errorf("loadEnvironmant() error  did not find MYSQL_USER in environment")
+				t.Errorf("loadEnvironment() error  did not find MYSQL_USER in environment")
 				return
 			}
 			if os.Getenv("MYSQL_PASSWORD") == "" {
-				t.Errorf("loadEnvironmant() error  did not find MYSQL_PASSWORD in environment")
+				t.Errorf("loadEnvironment() error  did not find MYSQL_PASSWORD in environment")
 				return
 			}
 		})
@@ -181,22 +182,23 @@ func Test_loadEnvironmant(t *testing.T) {
 
 func Test_getQueryBlocks(t *testing.T) {
 	// setup a test document
-	var documentId string = "SCTEST:test_scorecard"
+	documentID := "SCTEST:test_scorecard"
+	t.Setenv("PROC_TESTING_ACCEPT_SCTEST_DOCIDS", "")
 	var mngr *Manager
 	var err error
 	loadEnvironmentFile()
-	mngr, err = GetManager("SC", documentId)
+	mngr, err = GetManager(documentID)
 	if err != nil {
-		t.Fatal(fmt.Errorf("manager loadEnvironmant error GetManager %q", err))
+		t.Fatal(fmt.Errorf("manager loadEnvironment error GetManager %q", err))
 	}
 	var cbCredentials director.DbCredentials
-	_, cbCredentials, err = loadEnvironmant()
+	_, cbCredentials, err = loadEnvironment()
 	if err != nil {
-		t.Fatal(fmt.Errorf("manager loadEnvironmant error loadEnvironmant %q", err))
+		t.Fatal(fmt.Errorf("manager loadEnvironment error loadEnvironment %q", err))
 	}
 	err = getConnection(mngr, cbCredentials)
 	if err != nil {
-		t.Fatal(fmt.Errorf("manager loadEnvironmant error getConnection %q", err))
+		t.Fatal(fmt.Errorf("manager loadEnvironment error getConnection %q", err))
 	}
 	err = upsertTestDoc(mngr)
 	if err != nil {
@@ -242,22 +244,23 @@ func Test_getQueryBlocks(t *testing.T) {
 
 func Test_getSliceResultBlocks(t *testing.T) {
 	// setup a test document
-	var documentId string = "SCTEST:test_scorecard"
+	documentID := "SCTEST:test_scorecard"
+	t.Setenv("PROC_TESTING_ACCEPT_SCTEST_DOCIDS", "")
 	var mngr *Manager
 	var err error
 	loadEnvironmentFile()
-	mngr, err = GetManager("SC", documentId)
+	mngr, err = GetManager(documentID)
 	if err != nil {
-		t.Fatal(fmt.Errorf("manager loadEnvironmant error GetManager %q", err))
+		t.Fatal(fmt.Errorf("manager loadEnvironment error GetManager %q", err))
 	}
 	var cbCredentials director.DbCredentials
-	_, cbCredentials, err = loadEnvironmant()
+	_, cbCredentials, err = loadEnvironment()
 	if err != nil {
-		t.Fatal(fmt.Errorf("manager loadEnvironmant error loadEnvironmant %q", err))
+		t.Fatal(fmt.Errorf("manager loadEnvironment error loadEnvironment %q", err))
 	}
 	err = getConnection(mngr, cbCredentials)
 	if err != nil {
-		t.Fatal(fmt.Errorf("manager loadEnvironmant error getConnection %q", err))
+		t.Fatal(fmt.Errorf("manager loadEnvironment error getConnection %q", err))
 	}
 	err = upsertTestDoc(mngr)
 	if err != nil {
@@ -303,30 +306,31 @@ func Test_getSliceResultBlocks(t *testing.T) {
 
 func Test_runManager(t *testing.T) {
 	// setup a test document
-	var documentId string = "SCTEST:test_scorecard"
+	documentID := "SCTEST:test_scorecard"
+	t.Setenv("PROC_TESTING_ACCEPT_SCTEST_DOCIDS", "")
 	var mngr *Manager
 	var err error
 	start := time.Now()
 	loadEnvironmentFile()
-	mngr, err = GetManager("SC", documentId)
+	mngr, err = GetManager(documentID)
 	if err != nil {
-		t.Fatal(fmt.Errorf("manager loadEnvironmant error GetManager %q", err))
+		t.Fatal(fmt.Errorf("manager loadEnvironment error GetManager %q", err))
 	}
 	var cbCredentials director.DbCredentials
-	_, cbCredentials, err = loadEnvironmant()
+	_, cbCredentials, err = loadEnvironment()
 	if err != nil {
-		t.Fatal(fmt.Errorf("manager loadEnvironmant error loadEnvironmant %q", err))
+		t.Fatal(fmt.Errorf("manager loadEnvironment error loadEnvironment %q", err))
 	}
 	err = getConnection(mngr, cbCredentials)
 	if err != nil {
-		t.Fatal(fmt.Errorf("manager loadEnvironmant error getConnection %q", err))
+		t.Fatal(fmt.Errorf("manager loadEnvironment error getConnection %q", err))
 	}
 	err = upsertTestDoc(mngr)
 	if err != nil {
 		t.Fatal(fmt.Sprint("manager upsertTestDoc error upserting test scorecard", err))
 	}
 	// get a manager
-	manager, err := newScorecardManager(documentId)
+	manager, err := newScorecardManager(documentID)
 	if err != nil {
 		t.Fatal(fmt.Sprint("manager test NewScorecardManager error getting a manager", err))
 	}

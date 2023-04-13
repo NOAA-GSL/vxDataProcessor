@@ -23,6 +23,9 @@ tmp/
 .idea
 .vscode
 processor
+!cmd/processor
+cli
+!cmd/cli
 _*
 *.csv
 *.sql

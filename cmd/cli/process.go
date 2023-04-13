@@ -24,7 +24,7 @@ func process() int {
 		return 1
 	}
 
-	documentId := os.Args[1]
+	documentID := os.Args[1]
 	start := time.Now()
 	environmentFile, set := os.LookupEnv("PROC_ENV_PATH")
 	if !set {
@@ -40,17 +40,19 @@ func process() int {
 		}
 	}
 
-	mngr, err := manager.GetManager("SC", documentId)
+	mngr, err := manager.GetManager(documentID)
 	if err != nil {
 		log.Printf("manager loadEnvironmant error GetManager %q", err)
 		return 2
 	}
+
 	err = mngr.Run()
 	if err != nil {
 		log.Printf("manager test run error %q", err)
 		return 6
 	}
+
 	elapsed := time.Since(start)
-	fmt.Printf("Ttook combined %s", elapsed)
+	fmt.Printf("Took combined %s", elapsed)
 	return 0
 }

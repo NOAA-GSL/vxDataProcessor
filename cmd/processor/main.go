@@ -3,7 +3,14 @@ package main
 import (
 	"github.com/NOAA-GSL/vxDataProcessor/pkg/api"
 	"github.com/NOAA-GSL/vxDataProcessor/pkg/api/jobstore"
+	"github.com/NOAA-GSL/vxDataProcessor/pkg/manager"
 )
+
+// ProcessorFactory is a wrapper function to satisfy the requirements of
+// Worker and to keep the api package ignorant of the manager package
+func processorFactory(docID string) (api.Processor, error) {
+	return manager.GetManager(docID)
+}
 
 func main() {
 	// TODO - benchmark if it'd be better if these channels were buffered. They will block until a receiver frees up.
@@ -16,8 +23,7 @@ func main() {
 
 	// create a pool of workers
 	for w := 1; w <= 5; w++ {
-		proc := &api.TestProcess{}
-		go api.Worker(w, proc, jobs, status)
+		go api.Worker(w, processorFactory, jobs, status)
 	}
 
 	router := api.SetupRouter(js)

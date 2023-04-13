@@ -45,12 +45,14 @@ func process() int {
 		log.Printf("manager loadEnvironmant error GetManager %q", err)
 		return 2
 	}
+
 	err = mngr.Run()
 	if err != nil {
 		log.Printf("manager test run error %q", err)
 		return 6
 	}
+
 	elapsed := time.Since(start)
-	fmt.Printf("Ttook combined %s", elapsed)
+	fmt.Printf("Took combined %s", elapsed)
 	return 0
 }

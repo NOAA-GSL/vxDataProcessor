@@ -39,10 +39,10 @@ type ManagerBuilder interface {
 	Run() error
 }
 
-func GetManager(managerType, documentId string) (*Manager, error) {
-	if managerType == "SC" {
-		return newScorecardManager(documentId)
+func GetManager(documentType, documentID string) (*Manager, error) {
+	if documentType == "SC" {
+		return newScorecardManager(documentID)
 	} else {
-		return nil, fmt.Errorf("Manager GetManager unsupported managerType: %q", managerType)
+		return nil, fmt.Errorf("Manager GetManager unsupported managerType: %q", documentType)
 	}
 }

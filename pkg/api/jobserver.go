@@ -33,8 +33,8 @@ func (js *jobServer) getAllJobsHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, allJobs)
 }
 
-// isAcceptableDocType tests the scorecard docType passed in to make sure it's valid
-func isAcceptableDocType(docType string) bool {
+// isValidDocType tests the scorecard docType passed in to make sure it's valid
+func isValidDocType(docType string) bool {
 	switch docType {
 	case "SC":
 		return true
@@ -57,7 +57,7 @@ func (js *jobServer) createJobHandler(c *gin.Context) {
 
 	// test the DocID is a valid type
 	docType := strings.Split(rj.DocID, ":")[0]
-	if !isAcceptableDocType(docType) {
+	if !isValidDocType(docType) {
 		c.String(http.StatusBadRequest, fmt.Sprintf("Unknown scorecard document type %v", docType)) // TODO: Better error message
 		return
 	}

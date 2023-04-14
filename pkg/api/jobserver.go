@@ -1,8 +1,10 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/NOAA-GSL/vxDataProcessor/pkg/api/jobstore"
 	"github.com/gin-gonic/gin"
@@ -31,6 +33,16 @@ func (js *jobServer) getAllJobsHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, allJobs)
 }
 
+// isAcceptableDocType tests the scorecard docType passed in to make sure it's valid
+func isAcceptableDocType(docType string) bool {
+	switch docType {
+	case "SC":
+		return true
+	default:
+		return false
+	}
+}
+
 // createJobHandler handles requests to create a new Job in the store
 func (js *jobServer) createJobHandler(c *gin.Context) {
 	type RequestJob struct {
@@ -40,6 +52,13 @@ func (js *jobServer) createJobHandler(c *gin.Context) {
 	var rj RequestJob
 	if err := c.ShouldBindJSON(&rj); err != nil {
 		c.String(http.StatusBadRequest, err.Error()) // TODO: Better error message
+		return
+	}
+
+	// test the DocID is a valid type
+	docType := strings.Split(rj.DocID, ":")[0]
+	if !isAcceptableDocType(docType) {
+		c.String(http.StatusBadRequest, fmt.Sprintf("Unknown scorecard document type %v", docType)) // TODO: Better error message
 		return
 	}
 

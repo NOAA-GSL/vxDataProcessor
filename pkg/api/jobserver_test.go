@@ -87,7 +87,7 @@ func Test_jobServer_createJobHandler(t *testing.T) {
 	t.Run("Test a bad job submission", func(t *testing.T) {
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
-		jsonStr := []byte(`{"random": "json"}`)
+		jsonStr := []byte(`{"random": "SC:json"}`)
 		c.Request, _ = http.NewRequest(http.MethodPost, "/jobs/", bytes.NewBuffer(jsonStr))
 
 		js := newJobServer(nil)
@@ -100,11 +100,11 @@ func Test_jobServer_createJobHandler(t *testing.T) {
 	t.Run("Test a duplicate job submission", func(t *testing.T) {
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
-		jsonStr := []byte(`{"docid": "json"}`)
+		jsonStr := []byte(`{"docid": "SC:json"}`)
 		c.Request, _ = http.NewRequest(http.MethodPost, "/jobs/", bytes.NewBuffer(jsonStr))
 
 		store := jobstore.NewJobStore()
-		_, _ = store.CreateJob("json")
+		_, _ = store.CreateJob("SC:json")
 		js := newJobServer(store)
 
 		js.createJobHandler(c)

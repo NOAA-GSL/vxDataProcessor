@@ -27,6 +27,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/NOAA-GSL/vxDataProcessor/pkg/builder"
@@ -34,6 +35,8 @@ import (
 )
 
 var dateRange DateRange
+
+const noTableFound = "Error 1146 (42S02)"
 
 func Keys[K comparable, V any](m map[K]V) []K {
 	keys := make([]K, 0, len(m))
@@ -143,32 +146,29 @@ func queryDataScalar(stmnt string) (queryResult builder.ScalarRecords, err error
 	return queryResult, nil
 }
 
-// utility to test if an []string contains a specific string
-func contains(s []string, e string) bool {
-	for _, a := range s {
-		if a == e {
-			return true
-		}
-	}
-	return false
-}
-
 var (
 	statistics    []string
 	statisticType string
 	thisIsALeaf   bool
 )
 
+type errval struct {
+	err error
+	val int
+}
+
 // Recursively process a region/Block until all the leaves (which are cells) have been traversed and processed
-func processSub(region interface{}, queryElem interface{}) (interface{}, error) {
-	thisIsALeaf = false
+func processSub(region interface{}, queryElem interface{}, wgPtr *sync.WaitGroup, muPtr *sync.Mutex) (interface{}, error) {
 	var err error
 	keys := Keys(queryElem.(map[string]interface{}))
-	if contains(keys, "controlQueryTemplate") {
-		thisIsALeaf = true
+	thisIsALeaf = false
+	for _, k := range keys {
+		if k == "controlQueryTemplate" {
+			thisIsALeaf = true
+			break
+		}
 	}
 	if thisIsALeaf { // now we have a struct
-		// if I already had a leaf on this branch trim it
 		// get the queries
 		var ctlQueryStatement string = queryElem.(map[string]interface{})["controlQueryTemplate"].(string)
 		var expQueryStatement string = queryElem.(map[string]interface{})["experimentalQueryTemplate"].(string)
@@ -184,19 +184,20 @@ func processSub(region interface{}, queryElem interface{}) (interface{}, error) 
 		// what kind of data?
 		if strings.Contains(ctlQueryStatement, "hits") {
 			// get the data
-			expQueryResult, err := queryDataCTC(expQueryStatement)
+			ctlQueryResult, err := queryDataCTC(ctlQueryStatement)
 			if err != nil {
 				queryError = true
-				if !strings.Contains(err.Error(), "Error 1146 (42S02)") {
-					log.Printf("mysql_director queryDataCTC expQueryStatement error %q", err)
+				if !strings.Contains(err.Error(), noTableFound) {
+					log.Printf("mysql_director queryDataCTC ctlQueryStatement error %q", err)
 				}
 			} else {
-				ctlQueryResult, err := queryDataCTC(ctlQueryStatement)
+				log.Printf("querying exp CTC data - statement %q", expQueryStatement)
+				expQueryResult, err := queryDataCTC(expQueryStatement)
 				// handle error
 				if err != nil {
 					queryError = true
-					if !strings.Contains(err.Error(), "Error 1146 (42S02)") {
-						log.Printf("mysql_director queryDataCTC ctlQueryStatement error %q", err)
+					if !strings.Contains(err.Error(), noTableFound) {
+						log.Printf("mysql_director queryDataCTC expQueryStatement error %q", err)
 					}
 				} else {
 					queryResult = builder.BuilderCTCResult{CtlData: ctlQueryResult, ExpData: expQueryResult}
@@ -205,17 +206,21 @@ func processSub(region interface{}, queryElem interface{}) (interface{}, error) 
 		} else if strings.Contains(ctlQueryStatement, "square_diff_sum") {
 			// get the data
 			ctlQueryResult, err := queryDataScalar(ctlQueryStatement)
+			if len(ctlQueryResult) == 0 {
+				// no data is ok, but no need to go on either
+				return builder.ErrorValue, err
+			}
 			// handle error
 			if err != nil {
 				queryError = true
-				if !strings.Contains(err.Error(), "Error 1146 (42S02)") {
+				if !strings.Contains(err.Error(), noTableFound) {
 					log.Printf("mysql_director queryDataScalar ctlQueryStatement error %q", err)
 				}
 			} else {
 				expQueryResult, err := queryDataScalar(expQueryStatement)
 				if err != nil {
 					queryError = true
-					if !strings.Contains(err.Error(), "Error 1146 (42S02)") {
+					if !strings.Contains(err.Error(), noTableFound) {
 						log.Printf("mysql_director queryDataScalar expQueryStatement error %q", err)
 					}
 				} else {
@@ -228,14 +233,14 @@ func processSub(region interface{}, queryElem interface{}) (interface{}, error) 
 			// handle error
 			if err != nil {
 				queryError = true
-				if !strings.Contains(err.Error(), "Error 1146 (42S02)") {
+				if !strings.Contains(err.Error(), noTableFound) {
 					log.Printf("mysql_director queryDataPreCalc ctlQueryStatement error %q", err)
 				}
 			} else {
 				expQueryResult, err := queryDataPreCalc(expQueryStatement)
 				if err != nil {
 					queryError = true
-					if !strings.Contains(err.Error(), "Error 1146 (42S02)") {
+					if !strings.Contains(err.Error(), noTableFound) {
 						log.Printf("mysql_director queryDataPreCalc expQueryStatement error %q", err)
 					}
 				} else {
@@ -244,7 +249,6 @@ func processSub(region interface{}, queryElem interface{}) (interface{}, error) 
 			}
 		} else {
 			// unknown data type
-			log.Printf("mysql_director queryDataPreCalc error %v", err)
 			return builder.ErrorValue, fmt.Errorf("mysql_director queryDataPreCalc error %q", err)
 		}
 
@@ -259,12 +263,22 @@ func processSub(region interface{}, queryElem interface{}) (interface{}, error) 
 			}
 			return builder.ErrorValue, err
 		} else {
-			scc := builder.NewTwoSampleTTestBuilder()
-			value, err := (scc.Build(queryResult, statisticType, mysqlDirector.minorThreshold, mysqlDirector.majorThreshold))
-			if err != nil {
-				return builder.ErrorValue, fmt.Errorf("mysql_director processSub error from builder %q", err)
+			// increment the waitgroup counter
+			wgPtr.Add(1)
+			// run builder in parallel
+			c := make(chan errval)
+			go func() {
+				defer wgPtr.Done()
+				fmt.Println(".")
+				scc := builder.NewTwoSampleTTestBuilder()
+				value, err := (scc.Build(queryResult, statisticType, mysqlDirector.minorThreshold, mysqlDirector.majorThreshold, muPtr))
+				c <- errval{err: err, val: value}
+			}()
+			ret := <-c
+			if ret.err != nil {
+				return builder.ErrorValue, fmt.Errorf("mysql_director processSub error from builder %q", ret.err)
 			} else {
-				return value, nil
+				return ret.val, nil
 			}
 		}
 	} else {
@@ -272,11 +286,14 @@ func processSub(region interface{}, queryElem interface{}) (interface{}, error) 
 		// check to see if this is a statistic elem, so we can set the statisticType
 		var keys []string = Keys((region).(map[string]interface{}))
 		for _, elemKey := range keys {
-			if contains(statistics, elemKey) {
-				statisticType = elemKey
+			for _, s := range statistics {
+				if elemKey == fmt.Sprint(s) {
+					statisticType = elemKey
+					break
+				}
 			}
 			queryElem := queryElem.(map[string]interface{})[elemKey]
-			region.(map[string]interface{})[elemKey], err = processSub(region.(map[string]interface{})[elemKey], queryElem)
+			region.(map[string]interface{})[elemKey], err = processSub(region.(map[string]interface{})[elemKey], queryElem, wgPtr, muPtr)
 			if err != nil {
 				return builder.ErrorValue, err
 			}
@@ -292,8 +309,12 @@ func (director *Director) Run(region interface{}, queryMap map[string]interface{
 	// get all the statistic strings (they are the keys of the regionMap)
 	statistics = Keys((region).(map[string]interface{})) // declared at the top
 	dateRange = director.dateRange
+	// declare a waitgroup so that we can wait for all the stats to finish running
+	var wg sync.WaitGroup
+	var mu sync.Mutex
 	// process the regionMap (all the values will be filled in)
-	region, err := processSub(region, queryMap)
+	region, err := processSub(region, queryMap, &wg, &mu)
+	wg.Wait()
 	if err != nil {
 		return region, fmt.Errorf("mysql_director error in Run %q", err)
 	}

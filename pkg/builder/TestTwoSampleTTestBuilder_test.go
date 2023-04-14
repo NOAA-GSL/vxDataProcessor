@@ -2,6 +2,7 @@ package builder
 
 import (
 	"fmt"
+	"sync"
 	"testing"
 	"time"
 )
@@ -11,6 +12,11 @@ var (
 	minorThreshold = Threshold(0.05)
 	majorThreshold = Threshold(0.01)
 	cellPtr        = GetBuilder("TwoSampleTTest")
+)
+
+var (
+	mu    sync.Mutex
+	muPtr *sync.Mutex = &mu
 )
 
 // test for zero variance
@@ -52,13 +58,13 @@ func TestTwoSampleTTestBuilder_test_identical(t *testing.T) {
 	queryResult.CtlData = ctlData
 	queryResult.ExpData = expData
 	var statistic string = "TSS (True Skill Score)"
-	err = (*cellPtr).DeriveInputData(queryResult, statistic)
+	err = (*cellPtr).DeriveInputData(queryResult, statistic, muPtr)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_1 - ComputeSignificance - error message : ", err))
 	}
 
 	// expect an error here - sample has zero variance
-	err = (*cellPtr).ComputeSignificance()
+	err = (*cellPtr).ComputeSignificance(muPtr)
 	if err != nil {
 		t.Fatal("TestTwoSampleTTestBuilder_test_identical - ComputeSignificance - error message : ", err)
 	}
@@ -103,17 +109,17 @@ func TestTwoSampleTTestBuilder_test_2(t *testing.T) {
 	queryResult.CtlData = ctlData
 	queryResult.ExpData = expData
 	var statistic string = "TSS (True Skill Score)"
-	err = (*cellPtr).DeriveInputData(queryResult, statistic)
+	err = (*cellPtr).DeriveInputData(queryResult, statistic, muPtr)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_2 - ComputeSignificance - error message : ", err))
 	}
 
-	err = (*cellPtr).ComputeSignificance()
+	err = (*cellPtr).ComputeSignificance(muPtr)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_2 - ComputeSignificance - error message : ", err))
 	}
-	if *(*cellPtr).ValuePtr != 2 {
-		t.Fatal("test_2_wrong value :", *(*cellPtr).ValuePtr)
+	if (*cellPtr).Value != 2 {
+		t.Fatal("test_2_wrong value :", (*cellPtr).Value)
 	}
 }
 
@@ -157,17 +163,17 @@ func TestTwoSampleTTestBuilder_test_1(t *testing.T) {
 	queryResult.CtlData = ctlData
 	queryResult.ExpData = expData
 	var statistic string = "TSS (True Skill Score)"
-	err = (*cellPtr).DeriveInputData(queryResult, statistic)
+	err = (*cellPtr).DeriveInputData(queryResult, statistic, muPtr)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_1 - ComputeSignificance - error message : ", err))
 	}
-	err = (*cellPtr).ComputeSignificance()
+	err = (*cellPtr).ComputeSignificance(muPtr)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_1 - ComputeSignificance - error message : ", err))
 	}
-	fmt.Println("Pval is", (*cellPtr).Pvalue, "value is ", *(*cellPtr).ValuePtr)
-	if *((*cellPtr).ValuePtr) != 1 {
-		t.Fatal("test_1 wrong value :", *(*cellPtr).ValuePtr)
+	fmt.Println("Pval is", (*cellPtr).Pvalue, "value is ", (*cellPtr).Value)
+	if (*cellPtr).Value != 1 {
+		t.Fatal("test_1 wrong value :", (*cellPtr).Value)
 	}
 }
 
@@ -213,17 +219,17 @@ func TestTwoSampleTTestBuilder_test_0(t *testing.T) {
 	queryResult.CtlData = ctlData
 	queryResult.ExpData = expData
 	var statistic string = "TSS (True Skill Score)"
-	err = (*cellPtr).DeriveInputData(queryResult, statistic)
+	err = (*cellPtr).DeriveInputData(queryResult, statistic, muPtr)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_1 - ComputeSignificance - error message : ", err))
 	}
-	err = (*cellPtr).ComputeSignificance()
+	err = (*cellPtr).ComputeSignificance(muPtr)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_0 - ComputeSignificance - error message : ", err))
 	}
-	fmt.Println("Pval is", (*cellPtr).Pvalue, "value is ", *(*cellPtr).ValuePtr)
-	if *((*cellPtr).ValuePtr) != 0 {
-		t.Fatal("test_0 wrong value :", *(*cellPtr).ValuePtr)
+	fmt.Println("Pval is", (*cellPtr).Pvalue, "value is ", (*cellPtr).Value)
+	if (*cellPtr).Value != 0 {
+		t.Fatal("test_0 wrong value :", (*cellPtr).Value)
 	}
 }
 
@@ -265,11 +271,11 @@ func TestTwoSampleTTestBuilder_different_lengths(t *testing.T) {
 	queryResult.CtlData = ctlData
 	queryResult.ExpData = expData
 	var statistic string = "TSS (True Skill Score)"
-	err = (*cellPtr).DeriveInputData(queryResult, statistic)
+	err = (*cellPtr).DeriveInputData(queryResult, statistic, muPtr)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_1 - ComputeSignificance - error message : ", err))
 	}
-	err = (*cellPtr).ComputeSignificance()
+	err = (*cellPtr).ComputeSignificance(muPtr)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_0 - ComputeSignificance - error message : ", err))
 	}
@@ -319,17 +325,17 @@ func TestTwoSampleTTestBuilder_test__match_ctl_short_1(t *testing.T) {
 	queryResult.CtlData = ctlData
 	queryResult.ExpData = expData
 	var statistic string = "TSS (True Skill Score)"
-	err = (*cellPtr).DeriveInputData(queryResult, statistic)
+	err = (*cellPtr).DeriveInputData(queryResult, statistic, muPtr)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_1 - ComputeSignificance - error message : ", err))
 	}
-	err = (*cellPtr).ComputeSignificance()
+	err = (*cellPtr).ComputeSignificance(muPtr)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_1 - ComputeSignificance - error message : ", err))
 	}
-	fmt.Println("Pval is", (*cellPtr).Pvalue, "value is ", *(*cellPtr).ValuePtr)
-	if *((*cellPtr).ValuePtr) != 1 {
-		t.Fatal("test_1 wrong value :", *(*cellPtr).ValuePtr)
+	fmt.Println("Pval is", (*cellPtr).Pvalue, "value is ", (*cellPtr).Value)
+	if (*cellPtr).Value != 1 {
+		t.Fatal("test_1 wrong value :", (*cellPtr).Value)
 	}
 }
 
@@ -377,16 +383,16 @@ func TestTwoSampleTTestBuilder_test__match_exp_short_1(t *testing.T) {
 	queryResult.CtlData = ctlData
 	queryResult.ExpData = expData
 	var statistic string = "TSS (True Skill Score)"
-	err = (*cellPtr).DeriveInputData(queryResult, statistic)
+	err = (*cellPtr).DeriveInputData(queryResult, statistic, muPtr)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_1 - ComputeSignificance - error message : ", err))
 	}
-	err = (*cellPtr).ComputeSignificance()
+	err = (*cellPtr).ComputeSignificance(muPtr)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_1 - ComputeSignificance - error message : ", err))
 	}
-	fmt.Println("Pval is", (*cellPtr).Pvalue, "value is ", *(*cellPtr).ValuePtr)
-	if *((*cellPtr).ValuePtr) != 1 {
-		t.Fatal("test_1 wrong value :", *(*cellPtr).ValuePtr)
+	fmt.Println("Pval is", (*cellPtr).Pvalue, "value is ", (*cellPtr).Value)
+	if (*cellPtr).Value != 1 {
+		t.Fatal("test_1 wrong value :", (*cellPtr).Value)
 	}
 }

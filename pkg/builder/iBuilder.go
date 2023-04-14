@@ -40,6 +40,9 @@ A ScorecardCellBuilder is an interface that provides several functions:
 	of the builder to set the particular values, derive data, and cumpute
 	significance values for an array of input data elements.
 */
+import (
+	"sync"
+)
 
 type StatType string
 
@@ -59,7 +62,7 @@ type (
 		majorThreshold   Threshold
 		minorThreshold   Threshold
 		Pvalue           float64
-		ValuePtr         *int
+		Value            int
 	}
 )
 
@@ -107,9 +110,10 @@ type ScorecardCellBuilder interface {
 	SetGoodnessPolarity(GoodnessPolarity)
 	SetMajorThreshold(Threshold)
 	SetMinorThreshold(Threshold)
-	DeriveInputData(QueryResult interface{}, statisticType string)
+	DeriveInputData(QueryResult interface{}, statisticType string, muPtr *sync.Mutex)
 	ComputeSignificance(scc *ScorecardCell)
 	GetValue()
+	SetValue(value int32, mu sync.Mutex)
 	Build(res interface{}, qr interface{}, statisticType string)
 }
 

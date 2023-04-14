@@ -35,6 +35,7 @@ import (
 	"log"
 	"reflect"
 	"strings"
+	"sync"
 
 	"github.com/aclements/go-moremath/stats"
 	"github.com/go-playground/validator/v10"
@@ -85,14 +86,6 @@ func (scc *ScorecardCell) SetMinorThreshold(threshold Threshold) error {
 
 // get the return value based on the major and minor thresholds compared to the p-value
 func (scc *ScorecardCell) deriveValue(difference float64, pval float64) (int, error) {
-	if errs := validate.Var(difference, "required"); errs != nil {
-		log.Print(errs)
-		return 0, fmt.Errorf("TwoSampleTTestBuilder deriveValue %q", errs)
-	}
-	if errs := validate.Var(pval, "required"); errs != nil {
-		fmt.Println(errs)
-		return ErrorValue, fmt.Errorf("TwoSampleTTestBuilder deriveValue %q", errs)
-	}
 	if pval <= float64(scc.majorThreshold) {
 		return 2 * int(scc.goodnessPolarity), nil
 	}
@@ -100,6 +93,13 @@ func (scc *ScorecardCell) deriveValue(difference float64, pval float64) (int, er
 		return 1 * int(scc.goodnessPolarity), nil
 	}
 	return 0, nil
+}
+
+// set the value field - controlled by mutex
+func (scc *ScorecardCell) SetValue(value int, mu *sync.Mutex) {
+	mu.Lock()
+	scc.Value = value
+	mu.Unlock()
 }
 
 // using the experimental Query Result and the control QueryResult and the statistic
@@ -147,7 +147,7 @@ func (scc *ScorecardCell) deriveScalarInputData(queryResult BuilderScalarResult,
 			ctlData = append(ctlData, PreCalcRecord{Stat: stat, Avtime: record.Avtime})
 		}
 	}
-	for _, record = range queryResult.CtlData {
+	for _, record = range queryResult.ExpData {
 		stat, err = CalculateStatScalar(record.SquareDiffSum, record.NSum, record.ObsModelDiffSum, record.ModelSum, record.ObsSum, record.AbsSum, statisticType)
 		if err == nil {
 			// include this one
@@ -172,7 +172,7 @@ func (scc *ScorecardCell) derivePreCalcInputData(queryResult BuilderPreCalcResul
 	return dataSet, err
 }
 
-func (scc *ScorecardCell) DeriveInputData(qrPtr interface{}, statisticType string) (err error) {
+func (scc *ScorecardCell) DeriveInputData(qrPtr interface{}, statisticType string, muPtr *sync.Mutex) (err error) {
 	var dataSet DataSet
 	var matchedDataSet DataSet
 	dataType := reflect.TypeOf(qrPtr).Name()
@@ -192,6 +192,11 @@ func (scc *ScorecardCell) DeriveInputData(qrPtr interface{}, statisticType strin
 	// match the unmatched DataSet
 	matchedDataSet, err = GetMatchedDataSet(dataSet)
 	// convert matched DataSet to DerivedDataElement
+	// if len(matchedDataSet.ctlPop) == 0 || len(matchedDataSet.expPop) == 0 &&
+	// 	len(dataSet.ctlPop) == 41 && len(dataSet.expPop) == 693 {
+	// 	data := fmt.Sprintf("%+v", dataSet)
+	// 	err = os.WriteFile("/tmp/test.data", []byte(data), 0644)
+	// }
 	var de DerivedDataElement
 	for i := 0; i < len(matchedDataSet.ctlPop); i++ {
 		de.CtlPop = append(de.CtlPop, matchedDataSet.ctlPop[i].Stat)
@@ -201,7 +206,7 @@ func (scc *ScorecardCell) DeriveInputData(qrPtr interface{}, statisticType strin
 	return err
 }
 
-func (scc *ScorecardCell) ComputeSignificance() error {
+func (scc *ScorecardCell) ComputeSignificance(muPtr *sync.Mutex) error {
 	// scc should have already been populated
 	if scc.Data.CtlPop == nil || scc.Data.ExpPop == nil {
 		return fmt.Errorf("TwoSampleTTestBuilder ComputeSignificance - no data")
@@ -215,13 +220,13 @@ func (scc *ScorecardCell) ComputeSignificance() error {
 	if errs := validate.Var(derivedData.CtlPop, "required"); errs != nil {
 		log.Print(errs)
 		var v int = ErrorValue
-		scc.ValuePtr = &v
+		scc.SetValue(v, muPtr)
 		return fmt.Errorf("TwoSampleTTestBuilder ComputeSignificance %q", errs)
 	}
 	if errs := validate.Var(derivedData.ExpPop, "required"); errs != nil {
 		log.Print(errs)
 		var v int = ErrorValue
-		scc.ValuePtr = &v
+		scc.SetValue(v, muPtr)
 		return fmt.Errorf("TwoSampleTTestBuilder ComputeSignificance %q", errs)
 	}
 	//&TTestResult{N1: n1, N2: n2, T: t, DoF: dof, AltHypothesis: alt, P: p}
@@ -233,13 +238,13 @@ func (scc *ScorecardCell) ComputeSignificance() error {
 			// set pval to 1 and value to 0
 			scc.Pvalue = 1
 			var v int = 0
-			scc.ValuePtr = &v
+			scc.SetValue(v, muPtr)
 			return nil
 		} else {
 			log.Print(err)
 			scc.Pvalue = ErrorValue
 			var v int = ErrorValue
-			scc.ValuePtr = &v
+			scc.SetValue(v, muPtr)
 			return fmt.Errorf("TwoSampleTTestBuilder ComputeSignificance %q", err)
 		}
 	} else {
@@ -248,15 +253,12 @@ func (scc *ScorecardCell) ComputeSignificance() error {
 		meanExp := stats.Mean(derivedData.ExpPop)
 		difference := (meanCtl - meanExp)
 		scc.Pvalue = ret.P
-		// have to dereference valuePtr - just because
-		var v int
-		v, err = scc.deriveValue(difference, ret.P)
+		v, err := scc.deriveValue(difference, ret.P)
 		if err != nil {
 			log.Print(err)
-			// scc.Value = &v
 			return fmt.Errorf("TwoSampleTTestBuilder ComputeSignificance - deriveValue error:  %q", err)
 		}
-		scc.ValuePtr = &v
+		scc.SetValue(v, muPtr)
 	}
 	return nil // no errors
 }
@@ -265,7 +267,7 @@ func (scc *ScorecardCell) ComputeSignificance() error {
 func (scc *ScorecardCell) GetValue() int {
 	// NOTE: a reference to a non-interface method with a value receiver using
 	// a pointer will automatically dereference that pointer
-	return *scc.ValuePtr
+	return scc.Value
 }
 
 func NewTwoSampleTTestBuilder() *ScorecardCell {
@@ -323,11 +325,9 @@ func getGoodnessPolarity(statisticType string) (polarity GoodnessPolarity, err e
 	}
 }
 
-func (scc *ScorecardCell) Build(qrPtr interface{}, statisticType string, minorThreshold float64, majorThreshold float64) (value int, err error) {
+func (scc *ScorecardCell) Build(qrPtr interface{}, statisticType string, minorThreshold float64, majorThreshold float64, muPtr *sync.Mutex) (value int, err error) {
 	// DerivePreCalcInputData(ctlQR PreCalcRecords, expQR PreCalcRecords, statisticType string)
 	// build the input data elements and
-	// for all the input elements fire off a thread to do the compute
-
 	goodnessPolarity, err := getGoodnessPolarity(statisticType)
 	if err != nil {
 		return ErrorValue, fmt.Errorf("mysql_director Build SetGoodnessPolarity error  %q", err)
@@ -336,12 +336,12 @@ func (scc *ScorecardCell) Build(qrPtr interface{}, statisticType string, minorTh
 	if err != nil {
 		return ErrorValue, fmt.Errorf("mysql_director Build SetGoodnessPolarity error  %q", err)
 	}
-	err = scc.DeriveInputData(qrPtr, statisticType)
+	err = scc.DeriveInputData(qrPtr, statisticType, muPtr)
 	if err != nil {
 		return ErrorValue, fmt.Errorf("mysql_director - build - SetInputData - error message :  %q", err)
 	}
 	// computes the significance for the data derived in DeriveInputData and stored in cellPtr.data
-	err = scc.ComputeSignificance()
+	err = scc.ComputeSignificance(muPtr)
 	if err != nil {
 		return ErrorValue, fmt.Errorf("mysql_director - build - ComputeSignificance - error message :  %q", err)
 	}

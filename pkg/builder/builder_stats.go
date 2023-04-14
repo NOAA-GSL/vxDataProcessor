@@ -117,10 +117,16 @@ func GetMatchedDataSet(dataSet DataSet) (DataSet, error) {
 		return DataSet{ctlPop: []PreCalcRecord{}, expPop: []PreCalcRecord{}}, nil
 	}
 	for {
+		if indexCtl > lenCtl-1 || indexExp > lenExp-1 {
+			break
+		}
 		if dataSet.ctlPop[indexCtl].Avtime == dataSet.expPop[indexExp].Avtime {
 			// time matches and valid values so append to result
-			result.ctlPop = append(result.ctlPop, dataSet.ctlPop[indexCtl])
-			result.expPop = append(result.expPop, dataSet.expPop[indexExp])
+			// remove fill data
+			if math.Round(dataSet.ctlPop[indexCtl].Stat) != ErrorValue && math.Round(dataSet.expPop[indexExp].Stat) != ErrorValue {
+				result.ctlPop = append(result.ctlPop, dataSet.ctlPop[indexCtl])
+				result.expPop = append(result.expPop, dataSet.expPop[indexExp])
+			}
 			indexCtl++
 			indexExp++
 		} else {
@@ -134,9 +140,6 @@ func GetMatchedDataSet(dataSet DataSet) (DataSet, error) {
 			}
 			// continue with new index
 			continue
-		}
-		if indexCtl >= lenCtl || indexExp >= lenExp {
-			break
 		}
 	}
 	return result, err

@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -57,12 +58,12 @@ func TestPingEndpoint(t *testing.T) {
 }
 
 func TestJobsEndpoint(t *testing.T) {
-	t.Run("Test Creating a Job", func(t *testing.T) {
+	t.Run("Test creating a Job", func(t *testing.T) {
 		router := SetupRouter(nil)
 
 		// Setup
 		w := httptest.NewRecorder()
-		jsonStr := []byte(`{"docid": "myid1"}`)
+		jsonStr := []byte(`{"docid": "SC:myid1"}`)
 
 		// Test
 		req, _ := http.NewRequest(http.MethodPost, "/jobs/", bytes.NewBuffer(jsonStr))
@@ -72,13 +73,37 @@ func TestJobsEndpoint(t *testing.T) {
 		assert.Equal(t, `{"id":0}`, w.Body.String())
 	})
 
+	t.Run("Test creating an invalid Job type", func(t *testing.T) {
+		router := SetupRouter(nil)
+
+		// Setup
+		w := httptest.NewRecorder()
+		jsonStr := []byte(`{"docid": "Err:myid1"}`)
+		want := errResponse{
+			Code:    http.StatusBadRequest,
+			Message: "Invalid scorecard document type Err",
+		}
+
+		// Test
+		req, _ := http.NewRequest(http.MethodPost, "/jobs/", bytes.NewBuffer(jsonStr))
+		router.ServeHTTP(w, req)
+		got := errResponse{}
+		err := json.Unmarshal(w.Body.Bytes(), &got)
+		if err != nil {
+			t.Fatal("Issue unmarshalling JSON response")
+		}
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Equal(t, want, got)
+	})
+
 	t.Run("Test Getting All Jobs", func(t *testing.T) {
 		router := SetupRouter(nil)
 
 		// Setup
 		// TODO - is there a better way to insert state?
 		w := httptest.NewRecorder()
-		jsonStr := []byte(`{"docid": "myid1"}`)
+		jsonStr := []byte(`{"docid": "SC:myid1"}`)
 		req, _ := http.NewRequest(http.MethodPost, "/jobs/", bytes.NewBuffer(jsonStr))
 		router.ServeHTTP(w, req)
 		assert.Equal(t, http.StatusOK, w.Code)
@@ -89,7 +114,7 @@ func TestJobsEndpoint(t *testing.T) {
 		router.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusOK, w.Code)
-		assert.Equal(t, `[{"id":0,"docid":"myid1","status":"created"}]`, w.Body.String())
+		assert.Equal(t, `[{"id":0,"docid":"SC:myid1","status":"created"}]`, w.Body.String())
 	})
 }
 
@@ -98,7 +123,7 @@ func TestJobsIDEndpoint(t *testing.T) {
 
 	// Setup
 	w := httptest.NewRecorder()
-	jsonStr := []byte(`{"docid": "myid1"}`)
+	jsonStr := []byte(`{"docid": "SC:myid1"}`)
 	req, _ := http.NewRequest(http.MethodPost, "/jobs/", bytes.NewBuffer(jsonStr))
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
@@ -109,7 +134,7 @@ func TestJobsIDEndpoint(t *testing.T) {
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
-	assert.Equal(t, `{"id":0,"docid":"myid1","status":"created"}`, w.Body.String())
+	assert.Equal(t, `{"id":0,"docid":"SC:myid1","status":"created"}`, w.Body.String())
 }
 
 func TestWorker(t *testing.T) {

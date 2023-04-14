@@ -53,6 +53,6 @@ func process() int {
 	}
 
 	elapsed := time.Since(start)
-	fmt.Printf("Took combined %s", elapsed)
+	fmt.Printf("Took combined %s ", elapsed)
 	return 0
 }

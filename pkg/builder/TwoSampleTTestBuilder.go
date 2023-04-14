@@ -172,7 +172,7 @@ func (scc *ScorecardCell) derivePreCalcInputData(queryResult BuilderPreCalcResul
 	return dataSet, err
 }
 
-func (scc *ScorecardCell) DeriveInputData(qrPtr interface{}, statisticType string, muPtr *sync.Mutex) (err error) {
+func (scc *ScorecardCell) DeriveInputData(qrPtr interface{}, statisticType string) (err error) {
 	var dataSet DataSet
 	var matchedDataSet DataSet
 	dataType := reflect.TypeOf(qrPtr).Name()
@@ -336,7 +336,7 @@ func (scc *ScorecardCell) Build(qrPtr interface{}, statisticType string, minorTh
 	if err != nil {
 		return ErrorValue, fmt.Errorf("mysql_director Build SetGoodnessPolarity error  %q", err)
 	}
-	err = scc.DeriveInputData(qrPtr, statisticType, muPtr)
+	err = scc.DeriveInputData(qrPtr, statisticType)
 	if err != nil {
 		return ErrorValue, fmt.Errorf("mysql_director - build - SetInputData - error message :  %q", err)
 	}

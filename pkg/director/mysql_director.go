@@ -152,13 +152,14 @@ var (
 	thisIsALeaf   bool
 )
 
+// used to return value and err from go routines
 type errval struct {
 	err error
 	val int
 }
 
 // Recursively process a region/Block until all the leaves (which are cells) have been traversed and processed
-func processSub(region interface{}, queryElem interface{}, wgPtr *sync.WaitGroup, muPtr *sync.Mutex) (interface{}, error) {
+func processSub(region interface{}, queryElem interface{}, wgPtr *sync.WaitGroup, muPtr *sync.Mutex, cellCountPtr *int) (interface{}, error) {
 	var err error
 	keys := Keys(queryElem.(map[string]interface{}))
 	thisIsALeaf = false
@@ -269,7 +270,7 @@ func processSub(region interface{}, queryElem interface{}, wgPtr *sync.WaitGroup
 			c := make(chan errval)
 			go func() {
 				defer wgPtr.Done()
-				fmt.Println(".")
+				*cellCountPtr++
 				scc := builder.NewTwoSampleTTestBuilder()
 				value, err := (scc.Build(queryResult, statisticType, mysqlDirector.minorThreshold, mysqlDirector.majorThreshold, muPtr))
 				c <- errval{err: err, val: value}
@@ -293,7 +294,7 @@ func processSub(region interface{}, queryElem interface{}, wgPtr *sync.WaitGroup
 				}
 			}
 			queryElem := queryElem.(map[string]interface{})[elemKey]
-			region.(map[string]interface{})[elemKey], err = processSub(region.(map[string]interface{})[elemKey], queryElem, wgPtr, muPtr)
+			region.(map[string]interface{})[elemKey], err = processSub(region.(map[string]interface{})[elemKey], queryElem, wgPtr, muPtr, cellCountPtr)
 			if err != nil {
 				return builder.ErrorValue, err
 			}
@@ -303,7 +304,7 @@ func processSub(region interface{}, queryElem interface{}, wgPtr *sync.WaitGroup
 }
 
 // build a section of a scorecard - this is a region of a block (think vertical slice on the scorecard)
-func (director *Director) Run(region interface{}, queryMap map[string]interface{}) (interface{}, error) {
+func (director *Director) Run(region interface{}, queryMap map[string]interface{}, cellCountPtr *int) (interface{}, error) {
 	// This is recursive. Recurse down to the cell levl then traverse back up processing
 	// all the cells on the way
 	// get all the statistic strings (they are the keys of the regionMap)
@@ -313,7 +314,7 @@ func (director *Director) Run(region interface{}, queryMap map[string]interface{
 	var wg sync.WaitGroup
 	var mu sync.Mutex
 	// process the regionMap (all the values will be filled in)
-	region, err := processSub(region, queryMap, &wg, &mu)
+	region, err := processSub(region, queryMap, &wg, &mu, cellCountPtr)
 	wg.Wait()
 	if err != nil {
 		return region, fmt.Errorf("mysql_director error in Run %q", err)

@@ -58,7 +58,7 @@ func TestTwoSampleTTestBuilder_test_identical(t *testing.T) {
 	queryResult.CtlData = ctlData
 	queryResult.ExpData = expData
 	var statistic string = "TSS (True Skill Score)"
-	err = (*cellPtr).DeriveInputData(queryResult, statistic, muPtr)
+	err = (*cellPtr).DeriveInputData(queryResult, statistic)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_1 - ComputeSignificance - error message : ", err))
 	}
@@ -109,7 +109,7 @@ func TestTwoSampleTTestBuilder_test_2(t *testing.T) {
 	queryResult.CtlData = ctlData
 	queryResult.ExpData = expData
 	var statistic string = "TSS (True Skill Score)"
-	err = (*cellPtr).DeriveInputData(queryResult, statistic, muPtr)
+	err = (*cellPtr).DeriveInputData(queryResult, statistic)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_2 - ComputeSignificance - error message : ", err))
 	}
@@ -163,7 +163,7 @@ func TestTwoSampleTTestBuilder_test_1(t *testing.T) {
 	queryResult.CtlData = ctlData
 	queryResult.ExpData = expData
 	var statistic string = "TSS (True Skill Score)"
-	err = (*cellPtr).DeriveInputData(queryResult, statistic, muPtr)
+	err = (*cellPtr).DeriveInputData(queryResult, statistic)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_1 - ComputeSignificance - error message : ", err))
 	}
@@ -219,7 +219,7 @@ func TestTwoSampleTTestBuilder_test_0(t *testing.T) {
 	queryResult.CtlData = ctlData
 	queryResult.ExpData = expData
 	var statistic string = "TSS (True Skill Score)"
-	err = (*cellPtr).DeriveInputData(queryResult, statistic, muPtr)
+	err = (*cellPtr).DeriveInputData(queryResult, statistic)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_1 - ComputeSignificance - error message : ", err))
 	}
@@ -271,7 +271,7 @@ func TestTwoSampleTTestBuilder_different_lengths(t *testing.T) {
 	queryResult.CtlData = ctlData
 	queryResult.ExpData = expData
 	var statistic string = "TSS (True Skill Score)"
-	err = (*cellPtr).DeriveInputData(queryResult, statistic, muPtr)
+	err = (*cellPtr).DeriveInputData(queryResult, statistic)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_1 - ComputeSignificance - error message : ", err))
 	}
@@ -325,7 +325,7 @@ func TestTwoSampleTTestBuilder_test__match_ctl_short_1(t *testing.T) {
 	queryResult.CtlData = ctlData
 	queryResult.ExpData = expData
 	var statistic string = "TSS (True Skill Score)"
-	err = (*cellPtr).DeriveInputData(queryResult, statistic, muPtr)
+	err = (*cellPtr).DeriveInputData(queryResult, statistic)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_1 - ComputeSignificance - error message : ", err))
 	}
@@ -383,7 +383,7 @@ func TestTwoSampleTTestBuilder_test__match_exp_short_1(t *testing.T) {
 	queryResult.CtlData = ctlData
 	queryResult.ExpData = expData
 	var statistic string = "TSS (True Skill Score)"
-	err = (*cellPtr).DeriveInputData(queryResult, statistic, muPtr)
+	err = (*cellPtr).DeriveInputData(queryResult, statistic)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_1 - ComputeSignificance - error message : ", err))
 	}

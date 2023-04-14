@@ -293,6 +293,7 @@ func processRegion(
 	minorThreshold float64,
 	majorThreshold float64,
 	documentScorecardAppURL string,
+	cellCountPtr *int,
 ) error {
 	if strings.ToUpper(appName) == "CB" {
 		log.Print("launch CB director - which we don't have yet")
@@ -303,7 +304,7 @@ func processRegion(
 			err = fmt.Errorf("manager Run error getting director: %q", err)
 			return err
 		}
-		*region, err = mysqlDirector.Run(*region, queryRegion)
+		*region, err = mysqlDirector.Run(*region, queryRegion, cellCountPtr)
 		if err != nil {
 			err = fmt.Errorf("manager Run error running director: %q", err)
 			return err
@@ -332,6 +333,7 @@ func (mngr Manager) Run() (err error) {
 	var mysqlCredentials, cbCredentials director.DbCredentials
 	var minorThreshold float64
 	var majorThreshold float64
+	cellCount := 0
 	// initially unknown
 	mysqlCredentials, cbCredentials, err = loadEnvironment()
 	if err != nil {
@@ -426,7 +428,8 @@ func (mngr Manager) Run() (err error) {
 					dateRange,
 					minorThreshold,
 					majorThreshold,
-					scorecardAppUrl)
+					scorecardAppUrl,
+					&cellCount)
 				return err
 			})
 		}
@@ -435,6 +438,7 @@ func (mngr Manager) Run() (err error) {
 	if err := errGroup.Wait(); err != nil {
 		return fmt.Errorf("error processing scorecard Run %q", err)
 	}
+	fmt.Printf("This run processed: %v cells", cellCount)
 	return nil
 }
 

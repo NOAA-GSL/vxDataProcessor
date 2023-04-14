@@ -112,7 +112,6 @@ func TestDirector_test_connection(t *testing.T) {
 func Test_loadEnvironment(t *testing.T) {
 	tests := []struct {
 		name                 string
-		args                 string
 		wantMysqlCredentials director.DbCredentials
 		wantCbCredentials    director.DbCredentials
 		wantErr              bool

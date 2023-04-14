@@ -51,5 +51,5 @@ func GetManager(documentID string) (*Manager, error) {
 			return newScorecardManager(documentID)
 		}
 	}
-	return nil, fmt.Errorf("Manager GetManager unsupported managerType: %q", documentType)
+	return nil, fmt.Errorf("Manager GetManager unsupported documentType: %q", documentType)
 }

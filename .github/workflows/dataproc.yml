@@ -30,7 +30,7 @@ jobs:
       - name: Build
         run: go build -v ./...
       - name: Test
-        run: go test -v -cover ./...
+        run: go test -v -shuffle=on -cover ./...
       - name: Test for flaky tests
         run: go test -count 100 ./...
       - name: Test for race conditions
@@ -39,6 +39,8 @@ jobs:
   build:
     name: Build Docker image
     runs-on: ubuntu-latest
+    permissions:
+      packages: write
     steps:
       - uses: actions/checkout@v3
       - name: Generate image metadata

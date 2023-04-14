@@ -4,7 +4,6 @@ package api
 import (
 	"fmt"
 	"net/http"
-	"sync"
 	"time"
 
 	"github.com/NOAA-GSL/vxDataProcessor/pkg/api/jobstore"
@@ -35,35 +34,13 @@ func SetupRouter(js *jobstore.JobStore) *gin.Engine {
 }
 
 // Processor is an interface used to inject calculation functions into the Worker
+// processor is intended to encapsulate the manager.manager struct
 type Processor interface {
-	Run(string) error
-}
-
-// TestProcess Implements the Calculator interface with some hooks for triggering testing behavior
-type TestProcess struct {
-	// FIXME - this will be moved to the _test file once we have a real processor to use
-	lock         sync.Mutex
-	DocID        string
-	Processed    bool
-	TriggerError bool
-}
-
-// Run is a dummy method for testing that satisfies the Processor interface
-func (tp *TestProcess) Run(str string) error {
-	// FIXME - this will be moved to the _test file once we have a real processor to use
-	tp.lock.Lock()
-	defer tp.lock.Unlock()
-	if tp.TriggerError {
-		return fmt.Errorf("TestProcess - Unable to process %v", tp.DocID)
-	}
-	tp.DocID = str
-	fmt.Println("TestProcess - Processed", tp.DocID)
-	tp.Processed = true
-	return nil
+	Run() error
 }
 
 // Worker receives jobs on a channel, processes them, and reports the status on a return channel
-func Worker(id int, proc Processor, jobs <-chan jobstore.Job, status chan<- jobstore.Job) {
+func Worker(id int, getProcessor func(string) (Processor, error), jobs <-chan jobstore.Job, status chan<- jobstore.Job) {
 	for {
 		job := <-jobs // block until we get a job
 		fmt.Println("Worker", id, "started docID", job.DocID)
@@ -73,7 +50,15 @@ func Worker(id int, proc Processor, jobs <-chan jobstore.Job, status chan<- jobs
 		// Do work
 		start := time.Now()
 		fmt.Println("Worker", id, "processing docID", job.DocID)
-		err := proc.Run(job.DocID)
+
+		mgr, err := getProcessor(job.DocID)
+		if err != nil {
+			job.Status = jobstore.StatusFailed
+			status <- job
+			return
+		}
+
+		err = mgr.Run()
 		duration := time.Since(start).Seconds()
 		calculationDuration.WithLabelValues(job.DocID).Observe(duration)
 		if err != nil {

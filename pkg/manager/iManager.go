@@ -19,6 +19,8 @@ processed.
 */
 import (
 	"fmt"
+	"os"
+	"strings"
 
 	"github.com/couchbase/gocb/v2"
 )
@@ -31,7 +33,7 @@ type cbConnection struct {
 }
 
 type Manager struct {
-	documentId string
+	documentID string
 	cb         *cbConnection
 }
 
@@ -39,10 +41,15 @@ type ManagerBuilder interface {
 	Run() error
 }
 
-func GetManager(managerType, documentId string) (*Manager, error) {
-	if managerType == "SC" {
-		return newScorecardManager(documentId)
-	} else {
-		return nil, fmt.Errorf("Manager GetManager unsupported managerType: %q", managerType)
+func GetManager(documentID string) (*Manager, error) {
+	documentType := strings.Split(documentID, ":")[0]
+	if documentType == "SC" {
+		return newScorecardManager(documentID)
+	} else if documentType == "SCTEST" {
+		_, set := os.LookupEnv("PROC_TESTING_ACCEPT_SCTEST_DOCIDS") // This should only be valid when testing
+		if set {
+			return newScorecardManager(documentID)
+		}
 	}
+	return nil, fmt.Errorf("Manager GetManager unsupported managerType: %q", documentType)
 }

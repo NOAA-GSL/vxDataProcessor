@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -78,13 +79,22 @@ func TestJobsEndpoint(t *testing.T) {
 		// Setup
 		w := httptest.NewRecorder()
 		jsonStr := []byte(`{"docid": "Err:myid1"}`)
+		want := errResponse{
+			Code:    http.StatusBadRequest,
+			Message: "Invalid scorecard document type Err",
+		}
 
 		// Test
 		req, _ := http.NewRequest(http.MethodPost, "/jobs/", bytes.NewBuffer(jsonStr))
 		router.ServeHTTP(w, req)
+		got := errResponse{}
+		err := json.Unmarshal(w.Body.Bytes(), &got)
+		if err != nil {
+			t.Fatal("Issue unmarshalling JSON response")
+		}
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
-		assert.Equal(t, "Unknown scorecard document type Err", w.Body.String())
+		assert.Equal(t, want, got)
 	})
 
 	t.Run("Test Getting All Jobs", func(t *testing.T) {

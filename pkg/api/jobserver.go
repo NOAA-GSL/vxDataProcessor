@@ -51,24 +51,37 @@ func (js *jobServer) createJobHandler(c *gin.Context) {
 
 	var rj RequestJob
 	if err := c.ShouldBindJSON(&rj); err != nil {
-		c.String(http.StatusBadRequest, err.Error()) // TODO: Better error message
+		// TODO - Use error handling middleware & c.Error
+		c.JSON(http.StatusBadRequest, gin.H{
+			"code":    http.StatusBadRequest,
+			"message": "Invalid JSON - expecting a 'docid' key",
+		})
 		return
 	}
 
 	// test the DocID is a valid type
 	docType := strings.Split(rj.DocID, ":")[0]
 	if !isValidDocType(docType) {
-		c.String(http.StatusBadRequest, fmt.Sprintf("Unknown scorecard document type %v", docType)) // TODO: Better error message
+		c.JSON(http.StatusBadRequest, gin.H{
+			"code":    http.StatusBadRequest,
+			"message": fmt.Sprintf("Invalid scorecard document type %v", docType),
+		})
 		return
 	}
 
 	id, err := js.store.CreateJob(rj.DocID)
 	if err != nil {
 		if err.Error() == "docID already exists" {
-			c.String(http.StatusBadRequest, err.Error())
+			c.JSON(http.StatusBadRequest, gin.H{
+				"code":    http.StatusBadRequest,
+				"message": "That docid already exists",
+			})
 			return
 		}
-		c.String(http.StatusInternalServerError, err.Error()) // TODO: Better error message
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"code":    http.StatusInternalServerError,
+			"message": err.Error(),
+		})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"id": id})
@@ -78,13 +91,19 @@ func (js *jobServer) createJobHandler(c *gin.Context) {
 func (js *jobServer) getJobHandler(c *gin.Context) {
 	id, err := strconv.Atoi(c.Params.ByName("id"))
 	if err != nil {
-		c.String(http.StatusBadRequest, err.Error())
+		c.JSON(http.StatusBadRequest, gin.H{
+			"code":    http.StatusBadRequest,
+			"message": fmt.Sprintf("Unable to parse job id \"%v\", an int is required", c.Params.ByName("id")),
+		})
 		return
 	}
 
 	job, err := js.store.GetJob(id)
 	if err != nil {
-		c.String(http.StatusNotFound, err.Error())
+		c.JSON(http.StatusNotFound, gin.H{
+			"code":    http.StatusNotFound,
+			"message": err.Error(),
+		})
 		return
 	}
 

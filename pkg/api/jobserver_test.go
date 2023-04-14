@@ -13,6 +13,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+type errResponse struct {
+	Code    int    `json:"code" binding:"required"`
+	Message string `json:"message" binding:"required"`
+}
+
 func TestNewJobServer(t *testing.T) {
 	filledJS := jobstore.NewJobStore()
 	_, _ = filledJS.CreateJob("foo")
@@ -75,7 +80,7 @@ func Test_jobServer_getAllJobsHandler(t *testing.T) {
 		got := []jobstore.Job{}
 		err := json.Unmarshal(w.Body.Bytes(), &got)
 		if err != nil {
-			t.Error("Issue unmarshalling JSON response")
+			t.Fatal("Issue unmarshalling JSON response")
 		}
 
 		assert.Equal(t, http.StatusOK, w.Code)
@@ -85,6 +90,10 @@ func Test_jobServer_getAllJobsHandler(t *testing.T) {
 
 func Test_jobServer_createJobHandler(t *testing.T) {
 	t.Run("Test a bad job submission", func(t *testing.T) {
+		want := errResponse{
+			Code:    http.StatusBadRequest,
+			Message: "Invalid JSON - expecting a 'docid' key",
+		}
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
 		jsonStr := []byte(`{"random": "SC:json"}`)
@@ -94,10 +103,21 @@ func Test_jobServer_createJobHandler(t *testing.T) {
 
 		js.createJobHandler(c)
 
+		got := errResponse{}
+		err := json.Unmarshal(w.Body.Bytes(), &got)
+		if err != nil {
+			t.Fatal("Issue unmarshalling JSON response")
+		}
+
 		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Equal(t, got, want)
 	})
 
 	t.Run("Test a duplicate job submission", func(t *testing.T) {
+		want := errResponse{
+			Code:    http.StatusBadRequest,
+			Message: "That docid already exists",
+		}
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
 		jsonStr := []byte(`{"docid": "SC:json"}`)
@@ -109,7 +129,13 @@ func Test_jobServer_createJobHandler(t *testing.T) {
 
 		js.createJobHandler(c)
 
+		got := errResponse{}
+		err := json.Unmarshal(w.Body.Bytes(), &got)
+		if err != nil {
+			t.Fatal("Issue unmarshalling JSON response")
+		}
+
 		assert.Equal(t, http.StatusBadRequest, w.Code)
-		assert.Equal(t, "docID already exists", w.Body.String())
+		assert.Equal(t, want, got)
 	})
 }

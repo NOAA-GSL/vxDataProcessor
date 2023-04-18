@@ -66,40 +66,42 @@ func (scc *ScorecardCell) SetGoodnessPolarity(polarity GoodnessPolarity) error {
 
 // set the major p-value threshold
 func (scc *ScorecardCell) SetMajorThreshold(threshold Threshold) error {
-	if errs := validate.Var(threshold, "required,gt=0,lt=.5"); errs != nil {
-		log.Print(errs)
-		return fmt.Errorf("TwoSampleTTestBuilder SetMajorThreshold %q", errs)
-	}
 	scc.majorThreshold = threshold
 	return nil // no errors
 }
 
 // set the major p-value threshold
 func (scc *ScorecardCell) SetMinorThreshold(threshold Threshold) error {
-	if errs := validate.Var(threshold, "required,gt=0,lt=.5"); errs != nil {
-		log.Print(errs)
-		return fmt.Errorf("TwoSampleTTestBuilder SetMinorThreshold %q", errs)
-	}
 	scc.minorThreshold = threshold
 	return nil // no errors
 }
 
-// get the return value based on the major and minor thresholds compared to the p-value
+// get the return value based on the major and minor thresholds compared to the p-value.
+// If the difference is negative and the goodnessPolarity is positive then the result
+// value is negative. If the difference is positive and the goodnessPolarity is negative
+// then the result value is negative. If the difference is positive and the goodnessPolarity
+// is positive then the result value is positive. If the difference is negative and the
+// goodnessPolarity is negative then the result value is positive.
+
 func (scc *ScorecardCell) deriveValue(difference float64, pval float64) (int, error) {
-	if pval <= float64(scc.majorThreshold) {
-		return 2 * int(scc.goodnessPolarity), nil
+	diffSign := 1
+	if difference < 0 {
+		diffSign = -1
 	}
-	if pval <= float64(scc.minorThreshold) {
-		return 1 * int(scc.goodnessPolarity), nil
+	if pval <= float64(100-scc.majorThreshold) {
+		return 2 * diffSign * int(scc.goodnessPolarity), nil
+	}
+	if pval <= float64(100-scc.minorThreshold) {
+		return 1 * diffSign * int(scc.goodnessPolarity), nil
 	}
 	return 0, nil
 }
 
 // set the value field - controlled by mutex
 func (scc *ScorecardCell) SetValue(value int) {
-	scc.Mu.Lock()
+	scc.mu.Lock()
 	scc.value = value
-	scc.Mu.Unlock()
+	scc.mu.Unlock()
 }
 
 // using the experimental Query Result and the control QueryResult and the statistic
@@ -243,7 +245,7 @@ func (scc *ScorecardCell) ComputeSignificance() error {
 			return fmt.Errorf("TwoSampleTTestBuilder ComputeSignificance %q", err)
 		}
 	} else {
-		// what are the means of the populations
+		// what are the means of the populations?
 		meanCtl := stats.Mean(derivedData.CtlPop)
 		meanExp := stats.Mean(derivedData.ExpPop)
 		difference := (meanCtl - meanExp)
@@ -267,7 +269,7 @@ func (scc *ScorecardCell) GetValue() int {
 
 func NewTwoSampleTTestBuilder() *ScorecardCell {
 	validate = validator.New()
-	return &ScorecardCell{Mu: sync.Mutex{}}
+	return &ScorecardCell{mu: sync.Mutex{}}
 }
 
 func getGoodnessPolarity(statisticType string) (polarity GoodnessPolarity, err error) {
@@ -331,6 +333,17 @@ func (scc *ScorecardCell) Build(qrPtr interface{}, statisticType string, minorTh
 	if err != nil {
 		return ErrorValue, fmt.Errorf("mysql_director Build SetGoodnessPolarity error  %q", err)
 	}
+
+	err = scc.SetMinorThreshold(Threshold(minorThreshold))
+	if err != nil {
+		return ErrorValue, fmt.Errorf("mysql_director Build SetMinorThreshold error  %q", err)
+	}
+
+	err = scc.SetMajorThreshold(Threshold(majorThreshold))
+	if err != nil {
+		return ErrorValue, fmt.Errorf("mysql_director Build SetMajorThreshold error  %q", err)
+	}
+
 	err = scc.DeriveInputData(qrPtr, statisticType)
 	if err != nil {
 		return ErrorValue, fmt.Errorf("mysql_director - build - SetInputData - error message :  %q", err)

@@ -57,7 +57,7 @@ type (
 	GoodnessPolarity int // -1 or 1
 	Threshold        float64
 	ScorecardCell    struct {
-		Mu               sync.Mutex
+		mu               sync.Mutex
 		Data             DerivedDataElement
 		goodnessPolarity GoodnessPolarity
 		majorThreshold   Threshold
@@ -114,7 +114,7 @@ type ScorecardCellBuilder interface {
 	DeriveInputData(QueryResult interface{}, statisticType string)
 	ComputeSignificance()
 	GetValue()
-	SetValue(value int32, mu sync.Mutex)
+	SetValue(value int32)
 	Build(res interface{}, qr interface{}, statisticType string)
 }
 

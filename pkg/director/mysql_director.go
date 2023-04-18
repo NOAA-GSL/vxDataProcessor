@@ -159,7 +159,7 @@ type errval struct {
 }
 
 // Recursively process a region/Block until all the leaves (which are cells) have been traversed and processed
-func processSub(region interface{}, queryElem interface{}, wgPtr *sync.WaitGroup, muPtr *sync.Mutex, cellCountPtr *int) (interface{}, error) {
+func processSub(region interface{}, queryElem interface{}, wgPtr *sync.WaitGroup, cellCountPtr *int) (interface{}, error) {
 	var err error
 	keys := Keys(queryElem.(map[string]interface{}))
 	thisIsALeaf = false
@@ -293,7 +293,7 @@ func processSub(region interface{}, queryElem interface{}, wgPtr *sync.WaitGroup
 				defer wgPtr.Done()
 				*cellCountPtr++
 				scc := builder.NewTwoSampleTTestBuilder()
-				value, err := (scc.Build(queryResult, statisticType, mysqlDirector.minorThreshold, mysqlDirector.majorThreshold, muPtr))
+				value, err := (scc.Build(queryResult, statisticType, mysqlDirector.minorThreshold, mysqlDirector.majorThreshold))
 				c <- errval{err: err, val: value}
 			}()
 			ret := <-c
@@ -315,7 +315,7 @@ func processSub(region interface{}, queryElem interface{}, wgPtr *sync.WaitGroup
 				}
 			}
 			queryElem := queryElem.(map[string]interface{})[elemKey]
-			region.(map[string]interface{})[elemKey], err = processSub(region.(map[string]interface{})[elemKey], queryElem, wgPtr, muPtr, cellCountPtr)
+			region.(map[string]interface{})[elemKey], err = processSub(region.(map[string]interface{})[elemKey], queryElem, wgPtr, cellCountPtr)
 			if err != nil {
 				return builder.ErrorValue, err
 			}
@@ -333,9 +333,8 @@ func (director *Director) Run(region interface{}, queryMap map[string]interface{
 	dateRange = director.dateRange
 	// declare a waitgroup so that we can wait for all the stats to finish running
 	var wg sync.WaitGroup
-	var mu sync.Mutex
 	// process the regionMap (all the values will be filled in)
-	region, err := processSub(region, queryMap, &wg, &mu, cellCountPtr)
+	region, err := processSub(region, queryMap, &wg, cellCountPtr)
 	wg.Wait()
 	if err != nil {
 		return region, fmt.Errorf("mysql_director error in Run %q", err)

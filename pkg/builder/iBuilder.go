@@ -114,7 +114,7 @@ type ScorecardCellBuilder interface {
 	DeriveInputData(QueryResult interface{}, statisticType string)
 	ComputeSignificance()
 	GetValue()
-	SetValue(value int32, mu sync.Mutex)
+	SetValue(value int32)
 	Build(res interface{}, qr interface{}, statisticType string)
 }
 

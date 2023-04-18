@@ -320,7 +320,7 @@ func getGoodnessPolarity(statisticType string) (polarity GoodnessPolarity, err e
 	}
 }
 
-func (scc *ScorecardCell) Build(qrPtr interface{}, statisticType string, minorThreshold float64, majorThreshold float64, muPtr *sync.Mutex) (value int, err error) {
+func (scc *ScorecardCell) Build(qrPtr interface{}, statisticType string, minorThreshold float64, majorThreshold float64) (value int, err error) {
 	// DerivePreCalcInputData(ctlQR PreCalcRecords, expQR PreCalcRecords, statisticType string)
 	// build the input data elements and
 	goodnessPolarity, err := getGoodnessPolarity(statisticType)

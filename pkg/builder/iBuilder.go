@@ -56,7 +56,9 @@ type DerivedDataElement struct {
 type (
 	GoodnessPolarity int // -1 or 1
 	Threshold        float64
+	Mu               sync.Mutex // used for setValue to synchronize go routine access
 	ScorecardCell    struct {
+		Mu               sync.Mutex
 		Data             DerivedDataElement
 		goodnessPolarity GoodnessPolarity
 		majorThreshold   Threshold
@@ -110,8 +112,8 @@ type ScorecardCellBuilder interface {
 	SetGoodnessPolarity(GoodnessPolarity)
 	SetMajorThreshold(Threshold)
 	SetMinorThreshold(Threshold)
-	DeriveInputData(QueryResult interface{}, statisticType string, muPtr *sync.Mutex)
-	ComputeSignificance(scc *ScorecardCell)
+	DeriveInputData(QueryResult interface{}, statisticType string)
+	ComputeSignificance()
 	GetValue()
 	SetValue(value int32, mu sync.Mutex)
 	Build(res interface{}, qr interface{}, statisticType string)

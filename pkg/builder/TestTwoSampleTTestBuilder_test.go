@@ -2,7 +2,6 @@ package builder
 
 import (
 	"fmt"
-	"sync"
 	"testing"
 	"time"
 )
@@ -14,22 +13,17 @@ var (
 	cellPtr        = GetBuilder("TwoSampleTTest")
 )
 
-var (
-	mu    sync.Mutex
-	muPtr *sync.Mutex = &mu
-)
-
 // test for zero variance
 func TestTwoSampleTTestBuilder_test_identical(t *testing.T) {
-	err := (*cellPtr).SetGoodnessPolarity(gp)
+	err := cellPtr.SetGoodnessPolarity(gp)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_identical - SetGoodnessPolarity - error message : ", err))
 	}
-	err = (*cellPtr).SetMinorThreshold(minorThreshold)
+	err = cellPtr.SetMinorThreshold(minorThreshold)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_identical - SetMinorThreshold - error message : ", err))
 	}
-	err = (*cellPtr).SetMajorThreshold(majorThreshold)
+	err = cellPtr.SetMajorThreshold(majorThreshold)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_identical - SetMajorThreshold - error message : ", err))
 	}
@@ -58,13 +52,13 @@ func TestTwoSampleTTestBuilder_test_identical(t *testing.T) {
 	queryResult.CtlData = ctlData
 	queryResult.ExpData = expData
 	var statistic string = "TSS (True Skill Score)"
-	err = (*cellPtr).DeriveInputData(queryResult, statistic)
+	err = cellPtr.DeriveInputData(queryResult, statistic)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_1 - ComputeSignificance - error message : ", err))
 	}
 
 	// expect an error here - sample has zero variance
-	err = (*cellPtr).ComputeSignificance(muPtr)
+	err = cellPtr.ComputeSignificance()
 	if err != nil {
 		t.Fatal("TestTwoSampleTTestBuilder_test_identical - ComputeSignificance - error message : ", err)
 	}
@@ -73,15 +67,15 @@ func TestTwoSampleTTestBuilder_test_identical(t *testing.T) {
 // this test has inputs that should return a value of 2
 func TestTwoSampleTTestBuilder_test_2(t *testing.T) {
 	cellPtr := NewTwoSampleTTestBuilder()
-	err := (*cellPtr).SetGoodnessPolarity(gp)
+	err := cellPtr.SetGoodnessPolarity(gp)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_2 - SetGoodnessPolarity - error message : ", err))
 	}
-	err = (*cellPtr).SetMinorThreshold(minorThreshold)
+	err = cellPtr.SetMinorThreshold(minorThreshold)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_2 - SetMinorThreshold - error message : ", err))
 	}
-	err = (*cellPtr).SetMajorThreshold(majorThreshold)
+	err = cellPtr.SetMajorThreshold(majorThreshold)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_2 - SetMajorThreshold - error message : ", err))
 	}
@@ -109,31 +103,31 @@ func TestTwoSampleTTestBuilder_test_2(t *testing.T) {
 	queryResult.CtlData = ctlData
 	queryResult.ExpData = expData
 	var statistic string = "TSS (True Skill Score)"
-	err = (*cellPtr).DeriveInputData(queryResult, statistic)
+	err = cellPtr.DeriveInputData(queryResult, statistic)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_2 - ComputeSignificance - error message : ", err))
 	}
 
-	err = (*cellPtr).ComputeSignificance(muPtr)
+	err = cellPtr.ComputeSignificance()
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_2 - ComputeSignificance - error message : ", err))
 	}
-	if (*cellPtr).Value != 2 {
-		t.Fatal("test_2_wrong value :", (*cellPtr).Value)
+	if cellPtr.Value != 2 {
+		t.Fatal("test_2_wrong value :", cellPtr.Value)
 	}
 }
 
 // this test has inputs that should return a value of 1
 func TestTwoSampleTTestBuilder_test_1(t *testing.T) {
-	err := (*cellPtr).SetGoodnessPolarity(gp)
+	err := cellPtr.SetGoodnessPolarity(gp)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_1 - SetGoodnessPolarity - error message : ", err))
 	}
-	err = (*cellPtr).SetMinorThreshold(minorThreshold)
+	err = cellPtr.SetMinorThreshold(minorThreshold)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_1 - SetMinorThreshold - error message : ", err))
 	}
-	err = (*cellPtr).SetMajorThreshold(majorThreshold)
+	err = cellPtr.SetMajorThreshold(majorThreshold)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_1 - SetMajorThreshold - error message : ", err))
 	}
@@ -163,31 +157,31 @@ func TestTwoSampleTTestBuilder_test_1(t *testing.T) {
 	queryResult.CtlData = ctlData
 	queryResult.ExpData = expData
 	var statistic string = "TSS (True Skill Score)"
-	err = (*cellPtr).DeriveInputData(queryResult, statistic)
+	err = cellPtr.DeriveInputData(queryResult, statistic)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_1 - ComputeSignificance - error message : ", err))
 	}
-	err = (*cellPtr).ComputeSignificance(muPtr)
+	err = cellPtr.ComputeSignificance()
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_1 - ComputeSignificance - error message : ", err))
 	}
-	fmt.Println("Pval is", (*cellPtr).Pvalue, "value is ", (*cellPtr).Value)
-	if (*cellPtr).Value != 1 {
-		t.Fatal("test_1 wrong value :", (*cellPtr).Value)
+	fmt.Println("Pval is", cellPtr.Pvalue, "value is ", cellPtr.Value)
+	if cellPtr.Value != 1 {
+		t.Fatal("test_1 wrong value :", cellPtr.Value)
 	}
 }
 
 // this test has inputs that should return a value of 0
 func TestTwoSampleTTestBuilder_test_0(t *testing.T) {
-	err := (*cellPtr).SetGoodnessPolarity(gp)
+	err := cellPtr.SetGoodnessPolarity(gp)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_0 - SetGoodnessPolarity - error message : ", err))
 	}
-	err = (*cellPtr).SetMinorThreshold(minorThreshold)
+	err = cellPtr.SetMinorThreshold(minorThreshold)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_0 - SetMinorThreshold - error message : ", err))
 	}
-	err = (*cellPtr).SetMajorThreshold(majorThreshold)
+	err = cellPtr.SetMajorThreshold(majorThreshold)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_0 - SetMajorThreshold - error message : ", err))
 	}
@@ -219,30 +213,30 @@ func TestTwoSampleTTestBuilder_test_0(t *testing.T) {
 	queryResult.CtlData = ctlData
 	queryResult.ExpData = expData
 	var statistic string = "TSS (True Skill Score)"
-	err = (*cellPtr).DeriveInputData(queryResult, statistic)
+	err = cellPtr.DeriveInputData(queryResult, statistic)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_1 - ComputeSignificance - error message : ", err))
 	}
-	err = (*cellPtr).ComputeSignificance(muPtr)
+	err = cellPtr.ComputeSignificance()
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_0 - ComputeSignificance - error message : ", err))
 	}
-	fmt.Println("Pval is", (*cellPtr).Pvalue, "value is ", (*cellPtr).Value)
-	if (*cellPtr).Value != 0 {
-		t.Fatal("test_0 wrong value :", (*cellPtr).Value)
+	fmt.Println("Pval is", cellPtr.Pvalue, "value is ", cellPtr.Value)
+	if cellPtr.Value != 0 {
+		t.Fatal("test_0 wrong value :", cellPtr.Value)
 	}
 }
 
 func TestTwoSampleTTestBuilder_different_lengths(t *testing.T) {
-	err := (*cellPtr).SetGoodnessPolarity(gp)
+	err := cellPtr.SetGoodnessPolarity(gp)
 	if err != nil {
 		t.Fatal(fmt.Sprint("SampleTTestBuilder_diff - SetGoodnessPolarity - error message : ", err))
 	}
-	err = (*cellPtr).SetMinorThreshold(minorThreshold)
+	err = cellPtr.SetMinorThreshold(minorThreshold)
 	if err != nil {
 		t.Fatal(fmt.Sprint("SampleTTestBuilder_diff - SetMinorThreshold - error message : ", err))
 	}
-	err = (*cellPtr).SetMajorThreshold(majorThreshold)
+	err = cellPtr.SetMajorThreshold(majorThreshold)
 	if err != nil {
 		t.Fatal(fmt.Sprint("SampleTTestBuilder_diff - SetMajorThreshold - error message : ", err))
 	}
@@ -271,11 +265,11 @@ func TestTwoSampleTTestBuilder_different_lengths(t *testing.T) {
 	queryResult.CtlData = ctlData
 	queryResult.ExpData = expData
 	var statistic string = "TSS (True Skill Score)"
-	err = (*cellPtr).DeriveInputData(queryResult, statistic)
+	err = cellPtr.DeriveInputData(queryResult, statistic)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_1 - ComputeSignificance - error message : ", err))
 	}
-	err = (*cellPtr).ComputeSignificance(muPtr)
+	err = cellPtr.ComputeSignificance()
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_0 - ComputeSignificance - error message : ", err))
 	}
@@ -283,15 +277,15 @@ func TestTwoSampleTTestBuilder_different_lengths(t *testing.T) {
 
 // this test has inputs that should return a value of 1 after matching (ctl missing one element)
 func TestTwoSampleTTestBuilder_test__match_ctl_short_1(t *testing.T) {
-	err := (*cellPtr).SetGoodnessPolarity(gp)
+	err := cellPtr.SetGoodnessPolarity(gp)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_1 - SetGoodnessPolarity - error message : ", err))
 	}
-	err = (*cellPtr).SetMinorThreshold(minorThreshold)
+	err = cellPtr.SetMinorThreshold(minorThreshold)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_1 - SetMinorThreshold - error message : ", err))
 	}
-	err = (*cellPtr).SetMajorThreshold(majorThreshold)
+	err = cellPtr.SetMajorThreshold(majorThreshold)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_1 - SetMajorThreshold - error message : ", err))
 	}
@@ -325,31 +319,31 @@ func TestTwoSampleTTestBuilder_test__match_ctl_short_1(t *testing.T) {
 	queryResult.CtlData = ctlData
 	queryResult.ExpData = expData
 	var statistic string = "TSS (True Skill Score)"
-	err = (*cellPtr).DeriveInputData(queryResult, statistic)
+	err = cellPtr.DeriveInputData(queryResult, statistic)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_1 - ComputeSignificance - error message : ", err))
 	}
-	err = (*cellPtr).ComputeSignificance(muPtr)
+	err = cellPtr.ComputeSignificance()
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_1 - ComputeSignificance - error message : ", err))
 	}
-	fmt.Println("Pval is", (*cellPtr).Pvalue, "value is ", (*cellPtr).Value)
-	if (*cellPtr).Value != 1 {
-		t.Fatal("test_1 wrong value :", (*cellPtr).Value)
+	fmt.Println("Pval is", cellPtr.Pvalue, "value is ", cellPtr.Value)
+	if cellPtr.Value != 1 {
+		t.Fatal("test_1 wrong value :", cellPtr.Value)
 	}
 }
 
 // this test has inputs that should return a value of 1 after matching (exp missing one element)
 func TestTwoSampleTTestBuilder_test__match_exp_short_1(t *testing.T) {
-	err := (*cellPtr).SetGoodnessPolarity(gp)
+	err := cellPtr.SetGoodnessPolarity(gp)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_1 - SetGoodnessPolarity - error message : ", err))
 	}
-	err = (*cellPtr).SetMinorThreshold(minorThreshold)
+	err = cellPtr.SetMinorThreshold(minorThreshold)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_1 - SetMinorThreshold - error message : ", err))
 	}
-	err = (*cellPtr).SetMajorThreshold(majorThreshold)
+	err = cellPtr.SetMajorThreshold(majorThreshold)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_1 - SetMajorThreshold - error message : ", err))
 	}
@@ -383,16 +377,16 @@ func TestTwoSampleTTestBuilder_test__match_exp_short_1(t *testing.T) {
 	queryResult.CtlData = ctlData
 	queryResult.ExpData = expData
 	var statistic string = "TSS (True Skill Score)"
-	err = (*cellPtr).DeriveInputData(queryResult, statistic)
+	err = cellPtr.DeriveInputData(queryResult, statistic)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_1 - ComputeSignificance - error message : ", err))
 	}
-	err = (*cellPtr).ComputeSignificance(muPtr)
+	err = cellPtr.ComputeSignificance()
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_1 - ComputeSignificance - error message : ", err))
 	}
-	fmt.Println("Pval is", (*cellPtr).Pvalue, "value is ", (*cellPtr).Value)
-	if (*cellPtr).Value != 1 {
-		t.Fatal("test_1 wrong value :", (*cellPtr).Value)
+	fmt.Println("Pval is", cellPtr.Pvalue, "value is ", cellPtr.Value)
+	if cellPtr.Value != 1 {
+		t.Fatal("test_1 wrong value :", cellPtr.Value)
 	}
 }

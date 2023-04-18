@@ -186,6 +186,10 @@ func processSub(region interface{}, queryElem interface{}, wgPtr *sync.WaitGroup
 		if strings.Contains(ctlQueryStatement, "hits") {
 			// get the data
 			ctlQueryResult, err := queryDataCTC(ctlQueryStatement)
+			if len(ctlQueryResult) == 0 {
+				// no data is ok, but no need to go on either
+				return builder.ErrorValue, err
+			}
 			if err != nil {
 				queryError = true
 				if !strings.Contains(err.Error(), noTableFound) {
@@ -194,6 +198,10 @@ func processSub(region interface{}, queryElem interface{}, wgPtr *sync.WaitGroup
 			} else {
 				log.Printf("querying exp CTC data - statement %q", expQueryStatement)
 				expQueryResult, err := queryDataCTC(expQueryStatement)
+				if len(expQueryResult) == 0 {
+					// no data is ok, but no need to go on either
+					return builder.ErrorValue, err
+				}
 				// handle error
 				if err != nil {
 					queryError = true
@@ -219,6 +227,11 @@ func processSub(region interface{}, queryElem interface{}, wgPtr *sync.WaitGroup
 				}
 			} else {
 				expQueryResult, err := queryDataScalar(expQueryStatement)
+				if len(expQueryResult) == 0 {
+					// no data is ok, but no need to go on either
+					return builder.ErrorValue, err
+				}
+				// handle error
 				if err != nil {
 					queryError = true
 					if !strings.Contains(err.Error(), noTableFound) {
@@ -231,6 +244,10 @@ func processSub(region interface{}, queryElem interface{}, wgPtr *sync.WaitGroup
 		} else if strings.Contains(ctlQueryStatement, "stat") {
 			// get the data
 			ctlQueryResult, err := queryDataPreCalc(ctlQueryStatement)
+			if len(ctlQueryResult) == 0 {
+				// no data is ok, but no need to go on either
+				return builder.ErrorValue, err
+			}
 			// handle error
 			if err != nil {
 				queryError = true
@@ -239,6 +256,10 @@ func processSub(region interface{}, queryElem interface{}, wgPtr *sync.WaitGroup
 				}
 			} else {
 				expQueryResult, err := queryDataPreCalc(expQueryStatement)
+				if len(expQueryResult) == 0 {
+					// no data is ok, but no need to go on either
+					return builder.ErrorValue, err
+				}
 				if err != nil {
 					queryError = true
 					if !strings.Contains(err.Error(), noTableFound) {

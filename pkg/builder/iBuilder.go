@@ -57,7 +57,7 @@ type (
 	GoodnessPolarity int // -1 or 1
 	Threshold        float64
 	ScorecardCell    struct {
-		Mu               sync.Mutex
+		mu               sync.Mutex
 		Data             DerivedDataElement
 		goodnessPolarity GoodnessPolarity
 		majorThreshold   Threshold

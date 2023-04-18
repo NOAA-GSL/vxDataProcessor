@@ -99,9 +99,9 @@ func (scc *ScorecardCell) deriveValue(difference float64, pval float64) (int, er
 
 // set the value field - controlled by mutex
 func (scc *ScorecardCell) SetValue(value int) {
-	scc.Mu.Lock()
+	scc.mu.Lock()
 	scc.value = value
-	scc.Mu.Unlock()
+	scc.mu.Unlock()
 }
 
 // using the experimental Query Result and the control QueryResult and the statistic
@@ -269,7 +269,7 @@ func (scc *ScorecardCell) GetValue() int {
 
 func NewTwoSampleTTestBuilder() *ScorecardCell {
 	validate = validator.New()
-	return &ScorecardCell{Mu: sync.Mutex{}}
+	return &ScorecardCell{mu: sync.Mutex{}}
 }
 
 func getGoodnessPolarity(statisticType string) (polarity GoodnessPolarity, err error) {

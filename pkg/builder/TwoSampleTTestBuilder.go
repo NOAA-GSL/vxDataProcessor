@@ -98,7 +98,7 @@ func (scc *ScorecardCell) deriveValue(difference float64, pval float64) (int, er
 // set the value field - controlled by mutex
 func (scc *ScorecardCell) SetValue(value int) {
 	scc.Mu.Lock()
-	scc.Value = value
+	scc.value = value
 	scc.Mu.Unlock()
 }
 
@@ -231,13 +231,13 @@ func (scc *ScorecardCell) ComputeSignificance() error {
 		if strings.Contains(fmt.Sprint(err), "zero variance") {
 			// we are not considering identical sets to be errors
 			// set pval to 1 and value to 0
-			scc.Pvalue = 1
+			scc.pvalue = 1
 			var v int = 0
 			scc.SetValue(v)
 			return nil
 		} else {
 			log.Print(err)
-			scc.Pvalue = ErrorValue
+			scc.pvalue = ErrorValue
 			var v int = ErrorValue
 			scc.SetValue(v)
 			return fmt.Errorf("TwoSampleTTestBuilder ComputeSignificance %q", err)
@@ -247,7 +247,7 @@ func (scc *ScorecardCell) ComputeSignificance() error {
 		meanCtl := stats.Mean(derivedData.CtlPop)
 		meanExp := stats.Mean(derivedData.ExpPop)
 		difference := (meanCtl - meanExp)
-		scc.Pvalue = ret.P
+		scc.pvalue = ret.P
 		v, err := scc.deriveValue(difference, ret.P)
 		if err != nil {
 			log.Print(err)
@@ -262,7 +262,7 @@ func (scc *ScorecardCell) ComputeSignificance() error {
 func (scc *ScorecardCell) GetValue() int {
 	// NOTE: a reference to a non-interface method with a value receiver using
 	// a pointer will automatically dereference that pointer
-	return scc.Value
+	return scc.value
 }
 
 func NewTwoSampleTTestBuilder() *ScorecardCell {

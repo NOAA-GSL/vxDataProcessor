@@ -56,15 +56,14 @@ type DerivedDataElement struct {
 type (
 	GoodnessPolarity int // -1 or 1
 	Threshold        float64
-	Mu               sync.Mutex // used for setValue to synchronize go routine access
 	ScorecardCell    struct {
 		Mu               sync.Mutex
 		Data             DerivedDataElement
 		goodnessPolarity GoodnessPolarity
 		majorThreshold   Threshold
 		minorThreshold   Threshold
-		Pvalue           float64
-		Value            int
+		pvalue           float64
+		value            int
 	}
 )
 

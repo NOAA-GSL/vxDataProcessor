@@ -112,8 +112,8 @@ func TestTwoSampleTTestBuilder_test_2(t *testing.T) {
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_2 - ComputeSignificance - error message : ", err))
 	}
-	if cellPtr.Value != 2 {
-		t.Fatal("test_2_wrong value :", cellPtr.Value)
+	if cellPtr.value != 2 {
+		t.Fatal("test_2_wrong value :", cellPtr.value)
 	}
 }
 
@@ -165,9 +165,9 @@ func TestTwoSampleTTestBuilder_test_1(t *testing.T) {
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_1 - ComputeSignificance - error message : ", err))
 	}
-	fmt.Println("Pval is", cellPtr.Pvalue, "value is ", cellPtr.Value)
-	if cellPtr.Value != 1 {
-		t.Fatal("test_1 wrong value :", cellPtr.Value)
+	fmt.Println("Pval is", cellPtr.pvalue, "value is ", cellPtr.value)
+	if cellPtr.value != 1 {
+		t.Fatal("test_1 wrong value :", cellPtr.value)
 	}
 }
 
@@ -221,9 +221,9 @@ func TestTwoSampleTTestBuilder_test_0(t *testing.T) {
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_0 - ComputeSignificance - error message : ", err))
 	}
-	fmt.Println("Pval is", cellPtr.Pvalue, "value is ", cellPtr.Value)
-	if cellPtr.Value != 0 {
-		t.Fatal("test_0 wrong value :", cellPtr.Value)
+	fmt.Println("Pval is", cellPtr.pvalue, "value is ", cellPtr.value)
+	if cellPtr.value != 0 {
+		t.Fatal("test_0 wrong value :", cellPtr.value)
 	}
 }
 
@@ -327,9 +327,9 @@ func TestTwoSampleTTestBuilder_test__match_ctl_short_1(t *testing.T) {
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_1 - ComputeSignificance - error message : ", err))
 	}
-	fmt.Println("Pval is", cellPtr.Pvalue, "value is ", cellPtr.Value)
-	if cellPtr.Value != 1 {
-		t.Fatal("test_1 wrong value :", cellPtr.Value)
+	fmt.Println("Pval is", cellPtr.pvalue, "value is ", cellPtr.value)
+	if cellPtr.value != 1 {
+		t.Fatal("test_1 wrong value :", cellPtr.value)
 	}
 }
 
@@ -385,8 +385,8 @@ func TestTwoSampleTTestBuilder_test__match_exp_short_1(t *testing.T) {
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_1 - ComputeSignificance - error message : ", err))
 	}
-	fmt.Println("Pval is", cellPtr.Pvalue, "value is ", cellPtr.Value)
-	if cellPtr.Value != 1 {
-		t.Fatal("test_1 wrong value :", cellPtr.Value)
+	fmt.Println("Pval is", cellPtr.pvalue, "value is ", cellPtr.value)
+	if cellPtr.value != 1 {
+		t.Fatal("test_1 wrong value :", cellPtr.value)
 	}
 }

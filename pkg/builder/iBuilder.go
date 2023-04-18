@@ -62,8 +62,8 @@ type (
 		goodnessPolarity GoodnessPolarity
 		majorThreshold   Threshold
 		minorThreshold   Threshold
-		Pvalue           float64
-		Value            int
+		pvalue           float64
+		value            int
 	}
 )
 

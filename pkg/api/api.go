@@ -53,18 +53,20 @@ func Worker(id int, getProcessor func(string) (Processor, error), jobs <-chan jo
 
 		mgr, err := getProcessor(job.DocID)
 		if err != nil {
+			fmt.Printf("Error: Job %v - %v\n", job.DocID, err)
 			job.Status = jobstore.StatusFailed
 			status <- job
-			return
+			continue
 		}
 
 		err = mgr.Run()
 		duration := time.Since(start).Seconds()
 		calculationDuration.WithLabelValues(job.DocID).Observe(duration)
 		if err != nil {
+			fmt.Printf("Error: Job %v - %v\n", job.DocID, err)
 			job.Status = jobstore.StatusFailed
 			status <- job
-			return
+			continue
 		}
 
 		// report status

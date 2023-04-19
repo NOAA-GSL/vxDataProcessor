@@ -335,7 +335,7 @@ func (mngr Manager) Run() (err error) {
 	var majorThreshold float64
 	cellCount := 0
 	// initially unknown
-	mysqlCredentials, cbCredentials, err = loadEnvironment()
+	mysqlCredentials, cbCredentials, err := loadEnvironment()
 	if err != nil {
 		return fmt.Errorf("manager loadEnvironmant error %q", err)
 	}
@@ -353,7 +353,7 @@ func (mngr Manager) Run() (err error) {
 		err = fmt.Errorf("manager Run error getting plotParamCurves: %q", err)
 		return err
 	}
-	minorThreshold, majorThreshold, err = getThresholds(plotParams)
+	minorThreshold, majorThreshold, err := getThresholds(plotParams)
 	if err != nil {
 		err = fmt.Errorf("manager Run error getting thresholds: %q", err)
 		return err

@@ -1,9 +1,13 @@
 package main
 
 import (
+	"log"
+	"os"
+
 	"github.com/NOAA-GSL/vxDataProcessor/pkg/api"
 	"github.com/NOAA-GSL/vxDataProcessor/pkg/api/jobstore"
 	"github.com/NOAA-GSL/vxDataProcessor/pkg/manager"
+	"github.com/joho/godotenv"
 )
 
 // ProcessorFactory is a wrapper function to satisfy the requirements of
@@ -13,6 +17,20 @@ func processorFactory(docID string) (api.Processor, error) {
 }
 
 func main() {
+	environmentFile, set := os.LookupEnv("PROC_ENV_PATH")
+	if !set {
+		err := godotenv.Load() // Loads from "$(pwd)/.env"
+		if err != nil {
+			log.Printf("Info - Unable to load .env file - %v", err)
+		}
+	} else {
+		err := godotenv.Load(environmentFile) // Loads from whatever PROC_ENV_PATH has been set to
+		if err != nil {
+			log.Printf("Error - Couldn't load requested environment file at %q, error: %v", environmentFile, err)
+			return
+		}
+	}
+
 	// TODO - benchmark if it'd be better if these channels were buffered. They will block until a receiver frees up.
 	jobs := make(chan jobstore.Job)
 	status := make(chan jobstore.Job)

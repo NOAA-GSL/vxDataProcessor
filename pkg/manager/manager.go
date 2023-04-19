@@ -330,9 +330,6 @@ func processRegion(
 
 func (mngr Manager) Run() (err error) {
 	// load the environment
-	var mysqlCredentials, cbCredentials director.DbCredentials
-	var minorThreshold float64
-	var majorThreshold float64
 	cellCount := 0
 	// initially unknown
 	mysqlCredentials, cbCredentials, err := loadEnvironment()

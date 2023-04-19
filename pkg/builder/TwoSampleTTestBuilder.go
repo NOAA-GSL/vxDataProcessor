@@ -35,6 +35,7 @@ import (
 	"log"
 	"reflect"
 	"strings"
+	"sync"
 
 	"github.com/aclements/go-moremath/stats"
 	"github.com/go-playground/validator/v10"
@@ -65,41 +66,42 @@ func (scc *ScorecardCell) SetGoodnessPolarity(polarity GoodnessPolarity) error {
 
 // set the major p-value threshold
 func (scc *ScorecardCell) SetMajorThreshold(threshold Threshold) error {
-	if errs := validate.Var(threshold, "required,gt=0,lt=.5"); errs != nil {
-		log.Print(errs)
-		return fmt.Errorf("TwoSampleTTestBuilder SetMajorThreshold %q", errs)
-	}
 	scc.majorThreshold = threshold
 	return nil // no errors
 }
 
 // set the major p-value threshold
 func (scc *ScorecardCell) SetMinorThreshold(threshold Threshold) error {
-	if errs := validate.Var(threshold, "required,gt=0,lt=.5"); errs != nil {
-		log.Print(errs)
-		return fmt.Errorf("TwoSampleTTestBuilder SetMinorThreshold %q", errs)
-	}
 	scc.minorThreshold = threshold
 	return nil // no errors
 }
 
-// get the return value based on the major and minor thresholds compared to the p-value
+// get the return value based on the major and minor thresholds compared to the p-value.
+// If the difference is negative and the goodnessPolarity is positive then the result
+// value is negative. If the difference is positive and the goodnessPolarity is negative
+// then the result value is negative. If the difference is positive and the goodnessPolarity
+// is positive then the result value is positive. If the difference is negative and the
+// goodnessPolarity is negative then the result value is positive.
+
 func (scc *ScorecardCell) deriveValue(difference float64, pval float64) (int, error) {
-	if errs := validate.Var(difference, "required"); errs != nil {
-		log.Print(errs)
-		return 0, fmt.Errorf("TwoSampleTTestBuilder deriveValue %q", errs)
+	diffSign := 1
+	if difference < 0 {
+		diffSign = -1
 	}
-	if errs := validate.Var(pval, "required"); errs != nil {
-		fmt.Println(errs)
-		return ErrorValue, fmt.Errorf("TwoSampleTTestBuilder deriveValue %q", errs)
+	if pval <= float64(100-scc.majorThreshold) {
+		return 2 * diffSign * int(scc.goodnessPolarity), nil
 	}
-	if pval <= float64(scc.majorThreshold) {
-		return 2 * int(scc.goodnessPolarity), nil
-	}
-	if pval <= float64(scc.minorThreshold) {
-		return 1 * int(scc.goodnessPolarity), nil
+	if pval <= float64(100-scc.minorThreshold) {
+		return 1 * diffSign * int(scc.goodnessPolarity), nil
 	}
 	return 0, nil
+}
+
+// set the value field - controlled by mutex
+func (scc *ScorecardCell) SetValue(value int) {
+	scc.mu.Lock()
+	scc.value = value
+	scc.mu.Unlock()
 }
 
 // using the experimental Query Result and the control QueryResult and the statistic
@@ -147,7 +149,7 @@ func (scc *ScorecardCell) deriveScalarInputData(queryResult BuilderScalarResult,
 			ctlData = append(ctlData, PreCalcRecord{Stat: stat, Avtime: record.Avtime})
 		}
 	}
-	for _, record = range queryResult.CtlData {
+	for _, record = range queryResult.ExpData {
 		stat, err = CalculateStatScalar(record.SquareDiffSum, record.NSum, record.ObsModelDiffSum, record.ModelSum, record.ObsSum, record.AbsSum, statisticType)
 		if err == nil {
 			// include this one
@@ -215,13 +217,13 @@ func (scc *ScorecardCell) ComputeSignificance() error {
 	if errs := validate.Var(derivedData.CtlPop, "required"); errs != nil {
 		log.Print(errs)
 		var v int = ErrorValue
-		scc.ValuePtr = &v
+		scc.SetValue(v)
 		return fmt.Errorf("TwoSampleTTestBuilder ComputeSignificance %q", errs)
 	}
 	if errs := validate.Var(derivedData.ExpPop, "required"); errs != nil {
 		log.Print(errs)
 		var v int = ErrorValue
-		scc.ValuePtr = &v
+		scc.SetValue(v)
 		return fmt.Errorf("TwoSampleTTestBuilder ComputeSignificance %q", errs)
 	}
 	//&TTestResult{N1: n1, N2: n2, T: t, DoF: dof, AltHypothesis: alt, P: p}
@@ -231,32 +233,29 @@ func (scc *ScorecardCell) ComputeSignificance() error {
 		if strings.Contains(fmt.Sprint(err), "zero variance") {
 			// we are not considering identical sets to be errors
 			// set pval to 1 and value to 0
-			scc.Pvalue = 1
+			scc.pvalue = 1
 			var v int = 0
-			scc.ValuePtr = &v
+			scc.SetValue(v)
 			return nil
 		} else {
 			log.Print(err)
-			scc.Pvalue = ErrorValue
+			scc.pvalue = ErrorValue
 			var v int = ErrorValue
-			scc.ValuePtr = &v
+			scc.SetValue(v)
 			return fmt.Errorf("TwoSampleTTestBuilder ComputeSignificance %q", err)
 		}
 	} else {
-		// what are the means of the populations
+		// what are the means of the populations?
 		meanCtl := stats.Mean(derivedData.CtlPop)
 		meanExp := stats.Mean(derivedData.ExpPop)
 		difference := (meanCtl - meanExp)
-		scc.Pvalue = ret.P
-		// have to dereference valuePtr - just because
-		var v int
-		v, err = scc.deriveValue(difference, ret.P)
+		scc.pvalue = ret.P
+		v, err := scc.deriveValue(difference, ret.P)
 		if err != nil {
 			log.Print(err)
-			// scc.Value = &v
 			return fmt.Errorf("TwoSampleTTestBuilder ComputeSignificance - deriveValue error:  %q", err)
 		}
-		scc.ValuePtr = &v
+		scc.SetValue(v)
 	}
 	return nil // no errors
 }
@@ -265,12 +264,12 @@ func (scc *ScorecardCell) ComputeSignificance() error {
 func (scc *ScorecardCell) GetValue() int {
 	// NOTE: a reference to a non-interface method with a value receiver using
 	// a pointer will automatically dereference that pointer
-	return *scc.ValuePtr
+	return scc.value
 }
 
 func NewTwoSampleTTestBuilder() *ScorecardCell {
 	validate = validator.New()
-	return &ScorecardCell{}
+	return &ScorecardCell{mu: sync.Mutex{}}
 }
 
 func getGoodnessPolarity(statisticType string) (polarity GoodnessPolarity, err error) {
@@ -326,8 +325,6 @@ func getGoodnessPolarity(statisticType string) (polarity GoodnessPolarity, err e
 func (scc *ScorecardCell) Build(qrPtr interface{}, statisticType string, minorThreshold float64, majorThreshold float64) (value int, err error) {
 	// DerivePreCalcInputData(ctlQR PreCalcRecords, expQR PreCalcRecords, statisticType string)
 	// build the input data elements and
-	// for all the input elements fire off a thread to do the compute
-
 	goodnessPolarity, err := getGoodnessPolarity(statisticType)
 	if err != nil {
 		return ErrorValue, fmt.Errorf("mysql_director Build SetGoodnessPolarity error  %q", err)
@@ -336,6 +333,17 @@ func (scc *ScorecardCell) Build(qrPtr interface{}, statisticType string, minorTh
 	if err != nil {
 		return ErrorValue, fmt.Errorf("mysql_director Build SetGoodnessPolarity error  %q", err)
 	}
+
+	err = scc.SetMinorThreshold(Threshold(minorThreshold))
+	if err != nil {
+		return ErrorValue, fmt.Errorf("mysql_director Build SetMinorThreshold error  %q", err)
+	}
+
+	err = scc.SetMajorThreshold(Threshold(majorThreshold))
+	if err != nil {
+		return ErrorValue, fmt.Errorf("mysql_director Build SetMajorThreshold error  %q", err)
+	}
+
 	err = scc.DeriveInputData(qrPtr, statisticType)
 	if err != nil {
 		return ErrorValue, fmt.Errorf("mysql_director - build - SetInputData - error message :  %q", err)

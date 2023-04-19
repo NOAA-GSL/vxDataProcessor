@@ -13,7 +13,7 @@
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
- # ignore history files
+# ignore history files
 .history
 
 # Project-specific files
@@ -34,3 +34,4 @@ wolphin.session.sql
 # Mac cruft
 .DS_Store
 
+bin/*

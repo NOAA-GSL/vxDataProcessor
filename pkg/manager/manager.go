@@ -55,6 +55,7 @@ import (
 	"github.com/NOAA-GSL/vxDataProcessor/pkg/client"
 	"github.com/NOAA-GSL/vxDataProcessor/pkg/director"
 	"github.com/couchbase/gocb/v2"
+	"golang.org/x/sync/errgroup"
 )
 
 func loadEnvironment() (mysqlCredentials, cbCredentials director.DbCredentials, err error) {
@@ -292,6 +293,7 @@ func processRegion(
 	minorThreshold float64,
 	majorThreshold float64,
 	documentScorecardAppURL string,
+	cellCountPtr *int,
 ) error {
 	if strings.ToUpper(appName) == "CB" {
 		log.Print("launch CB director - which we don't have yet")
@@ -302,7 +304,7 @@ func processRegion(
 			err = fmt.Errorf("manager Run error getting director: %q", err)
 			return err
 		}
-		*region, err = mysqlDirector.Run(*region, queryRegion)
+		*region, err = mysqlDirector.Run(*region, queryRegion, cellCountPtr)
 		if err != nil {
 			err = fmt.Errorf("manager Run error running director: %q", err)
 			return err
@@ -328,6 +330,7 @@ func processRegion(
 
 func (mngr Manager) Run() (err error) {
 	// load the environment
+	cellCount := 0
 	// initially unknown
 	mysqlCredentials, cbCredentials, err := loadEnvironment()
 	if err != nil {
@@ -367,6 +370,8 @@ func (mngr Manager) Run() (err error) {
 	blockKeys := director.Keys(queryBlocks)
 	sort.Strings(blockKeys)
 	numBlocks := len(blockKeys)
+	// create an errgroup for running all the block/regions in go routines
+	errGroup := new(errgroup.Group)
 	for i := 0; i < numBlocks; i++ {
 		blockName := blockKeys[i]
 		var block interface{}
@@ -374,7 +379,7 @@ func (mngr Manager) Run() (err error) {
 		if err != nil {
 			return fmt.Errorf("manager Run error getting block result %q", err)
 		}
-		scorecardAppURL := block.(map[string]interface{})["blockApplication"].(string)
+		scorecardAppUrl := block.(map[string]interface{})["blockApplication"].(string)
 		queryBlock := queryBlocks[blockKeys[i]].(map[string]interface{})
 		var appName string
 		for i := 0; i < numCurves; i++ {
@@ -407,23 +412,30 @@ func (mngr Manager) Run() (err error) {
 			if err != nil {
 				return fmt.Errorf("error getting region SubDocument %q", err)
 			}
-			err = processRegion(mngr,
-				appName,
-				queryRegionName,
-				queryRegion,
-				blockRegionName,
-				&region,
-				regionPath,
-				mysqlCredentials,
-				dateRange,
-				minorThreshold,
-				majorThreshold,
-				scorecardAppURL)
-			if err != nil {
-				return fmt.Errorf("error processing scorecard Run %q", err)
-			}
+			// process the region/block in the errgroup
+			errGroup.Go(func() error {
+				err = processRegion(mngr,
+					appName,
+					queryRegionName,
+					queryRegion,
+					blockRegionName,
+					&region,
+					regionPath,
+					mysqlCredentials,
+					dateRange,
+					minorThreshold,
+					majorThreshold,
+					scorecardAppUrl,
+					&cellCount)
+				return err
+			})
 		}
 	}
+	// Wait for all processRegions to complete, capture their error values
+	if err := errGroup.Wait(); err != nil {
+		return fmt.Errorf("error processing scorecard Run %q", err)
+	}
+	fmt.Printf("This run processed: %v cells", cellCount)
 	return nil
 }
 

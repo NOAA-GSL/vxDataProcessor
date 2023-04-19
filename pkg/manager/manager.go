@@ -334,6 +334,7 @@ func (mngr Manager) Run() (err error) {
 	var minorThreshold float64
 	var majorThreshold float64
 	cellCount := 0
+	start := time.Now()
 	// initially unknown
 	mysqlCredentials, cbCredentials, err = loadEnvironment()
 	if err != nil {
@@ -435,10 +436,43 @@ func (mngr Manager) Run() (err error) {
 		}
 	}
 	// Wait for all processRegions to complete, capture their error values
-	if err := errGroup.Wait(); err != nil {
+	err = errGroup.Wait()
+	if err != nil {
+		// set error in the status field
+		err = mngr.SetStatus("error")
 		return fmt.Errorf("error processing scorecard Run %q", err)
 	}
-	fmt.Printf("This run processed: %v cells", cellCount)
+	// set status to ready
+	err = mngr.SetStatus("ready")
+	if err != nil {
+		return fmt.Errorf("error setting status to ready %q", err)
+	}
+	// set processedAt to now
+	err = mngr.SetProcessedAt()
+	if err != nil {
+		return fmt.Errorf("error setting processedAt %q", err)
+	}
+	elapsed := time.Since(start)
+	log.Printf("This run processed: %v cells in %v", cellCount, elapsed)
+	return nil
+}
+
+func (mngr Manager) SetStatus(status string) (err error) {
+	stmnt := "UPDATE vxdata._default.SCORECARD SET status = \"ready\" where meta().id=\"" + mngr.documentID + "\";"
+	_, err = mngr.cb.Cluster.Query(stmnt, &gocb.QueryOptions{Adhoc: true})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (mngr Manager) SetProcessedAt() (err error) {
+	timeStamp := time.Now().UTC().Format(time.UnixDate)
+	stmnt := "UPDATE vxdata._default.SCORECARD SET processedAt = \"" + timeStamp + "\" where meta().id=\"" + mngr.documentID + "\";"
+	_, err = mngr.cb.Cluster.Query(stmnt, &gocb.QueryOptions{Adhoc: true})
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

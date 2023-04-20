@@ -458,7 +458,7 @@ func (mngr Manager) Run() (err error) {
 }
 
 func (mngr Manager) SetStatus(status string) (err error) {
-	stmnt := "UPDATE vxdata._default.SCORECARD SET status = \"ready\" where meta().id=\"" + mngr.documentID + "\";"
+	stmnt := "UPDATE vxdata._default.SCORECARD SET status = \"" + status + "\" where meta().id=\"" + mngr.documentID + "\";"
 	_, err = mngr.cb.Cluster.Query(stmnt, &gocb.QueryOptions{Adhoc: true})
 	if err != nil {
 		return err

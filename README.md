@@ -34,6 +34,49 @@ brew install golangci-lint # If not installed already
 golangci-lint run
 ```
 
+There is a cmdline cli that can be used to debug the processor or run the data processor from the terminal.
+To build the cmdline cli for mac use the following command...
+
+```bash
+GOOS=darwin GOARCH=amd64 go build -o bin/mac-process cmd/cli/process.go
+```
+
+To build the cli for linux use ...
+
+```bash
+GOOS=linux GOARCH=amd64 go build -o bin/mac-process cmd/cli/process.go
+```
+
+The cli is invoked with ...
+
+```bash
+bin/mac-process "SC:anonymous--submitted:20230419150943--2block:0:03/19/2023_20_00_-_04/18/2023_13_00"
+```
+
+where the parameter is the scorecard id.
+
+To debug the scorecard in vscode you need the following entry in your .vscode/launch.json.
+
+```json
+"version": "0.2.0",
+    "configurations": [
+        {
+            "name": "process",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/cmd/cli/process.go",
+            "env": {},
+            "args": ["SC:anonymous--submitted:20230419150943--2block:0:03/19/2023_20_00_-_04/18/2023_13_00"]
+
+        }
+    ]
+```
+
+The "args" value needs to be set to the id of the scorecard document that you want to build. Once you have this launch.json
+and have configured an existing scorecard id in the "args" you can run the data processor from the "Run and Debug" panel by choosing "scorecard".
+
+
 ## Disclaimer
 
 This repository is a scientific product and is not official communication of the

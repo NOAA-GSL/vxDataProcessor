@@ -26,6 +26,10 @@ is "good" because we want to minimize the error or the bias in the experiment.
 For CSI "Critical Success Index" it would be the opposite because CSI ranges from 0
 which is poor to 1 which is good. A return value of 0 is neutral / insignificant.
 
+For p-value indicators: the smaller the p-value the more likely the null hypothesis, so
+the stronger is the evidence against the null hypothesis, therefore the larger the indicator.
+Therefore a small indicator represents weaker evidence against the null hypothesis and
+a large indicator represents stronger evidence against the null hypothesis.
 A P-value <= 0.01 (for a 99% major threshold) results in a 2. For 0.01 < P-value <= 0.05
 (for a 95% minor threshold) the result is a 1. A P-value greater than the minor threshold
 will cause a return of 0.

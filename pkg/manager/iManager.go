@@ -39,6 +39,8 @@ type Manager struct {
 
 type ManagerBuilder interface {
 	Run() error
+	SetStatus(status string)
+	SetProcessedAt() error
 }
 
 func GetManager(documentID string) (*Manager, error) {

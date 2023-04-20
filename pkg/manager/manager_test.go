@@ -50,10 +50,10 @@ func getTestDoc(mngr *Manager) (map[string]interface{}, error) {
 	return scorecardCB, nil
 }
 
-func upsertTestDoc(mngr *Manager) error {
+func upsertTestDoc(mngr *Manager, test_doc_file string, test_doc_id string) error {
 	loadEnvironmentFile()
 	// read the test document from the test file
-	testScorcardFile := "./testdata/test_scorecard.json"
+	testScorcardFile := test_doc_file
 	if _, err := os.Stat(testScorcardFile); err != nil {
 		return fmt.Errorf("upsertTestDoc error reading test scorecard file %v", err)
 	}
@@ -64,7 +64,7 @@ func upsertTestDoc(mngr *Manager) error {
 		return fmt.Errorf("upsertTestDoc error unmarshalling test scorecard file %v", err)
 	}
 	// upsert the test scorecard document
-	_, err = mngr.cb.Collection.Upsert("SCTEST:test_scorecard", scorecard, nil)
+	_, err = mngr.cb.Collection.Upsert(test_doc_id, scorecard, nil)
 	if err != nil {
 		return fmt.Errorf("upsertTestDoc error upserting test scorecard file %v", err)
 	}
@@ -95,7 +95,7 @@ func TestDirector_test_connection(t *testing.T) {
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestDirector_test_connection Build GetConnection error ", err))
 	}
-	err = upsertTestDoc(mngr)
+	err = upsertTestDoc(mngr, "./testdata/test_scorecard.json", documentID)
 	if err != nil {
 		t.Fatal(fmt.Sprint("mysql_test_director error upserting test scorecard", err))
 	}
@@ -199,7 +199,7 @@ func Test_getQueryBlocks(t *testing.T) {
 	if err != nil {
 		t.Fatal(fmt.Errorf("manager loadEnvironment error getConnection %q", err))
 	}
-	err = upsertTestDoc(mngr)
+	err = upsertTestDoc(mngr, "./testdata/test_scorecard.json", documentID)
 	if err != nil {
 		t.Fatal(fmt.Sprint("mysql_test_director error upserting test scorecard", err))
 	}
@@ -261,7 +261,7 @@ func Test_getSliceResultBlocks(t *testing.T) {
 	if err != nil {
 		t.Fatal(fmt.Errorf("manager loadEnvironment error getConnection %q", err))
 	}
-	err = upsertTestDoc(mngr)
+	err = upsertTestDoc(mngr, "./testdata/test_scorecard.json", documentID)
 	if err != nil {
 		t.Fatal(fmt.Sprint("mysql_test_director error upserting test scorecard", err))
 	}
@@ -324,7 +324,45 @@ func Test_runManager(t *testing.T) {
 	if err != nil {
 		t.Fatal(fmt.Errorf("manager loadEnvironment error getConnection %q", err))
 	}
-	err = upsertTestDoc(mngr)
+	err = upsertTestDoc(mngr, "./testdata/test_scorecard.json", documentID)
+	if err != nil {
+		t.Fatal(fmt.Sprint("manager upsertTestDoc error upserting test scorecard", err))
+	}
+	// get a manager
+	manager, err := newScorecardManager(documentID)
+	if err != nil {
+		t.Fatal(fmt.Sprint("manager test NewScorecardManager error getting a manager", err))
+	}
+	err = manager.Run()
+	if err != nil {
+		t.Fatal(fmt.Sprint("manager test run error ", err))
+	}
+	elapsed := time.Since(start)
+	fmt.Printf("The test took combined %s", elapsed)
+}
+
+func Test_flipped_runManager(t *testing.T) {
+	// setup a test document
+	documentID := "SCTEST:test_flipped_scorecard"
+	t.Setenv("PROC_TESTING_ACCEPT_SCTEST_DOCIDS", "")
+	var mngr *Manager
+	var err error
+	start := time.Now()
+	loadEnvironmentFile()
+	mngr, err = GetManager(documentID)
+	if err != nil {
+		t.Fatal(fmt.Errorf("manager loadEnvironment error GetManager %q", err))
+	}
+	var cbCredentials director.DbCredentials
+	_, cbCredentials, err = loadEnvironment()
+	if err != nil {
+		t.Fatal(fmt.Errorf("manager loadEnvironment error loadEnvironment %q", err))
+	}
+	err = getConnection(mngr, cbCredentials)
+	if err != nil {
+		t.Fatal(fmt.Errorf("manager loadEnvironment error getConnection %q", err))
+	}
+	err = upsertTestDoc(mngr, "./testdata/test_flipped_scorecard.json", documentID)
 	if err != nil {
 		t.Fatal(fmt.Sprint("manager upsertTestDoc error upserting test scorecard", err))
 	}

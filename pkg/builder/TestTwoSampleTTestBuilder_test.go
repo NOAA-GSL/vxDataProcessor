@@ -3,7 +3,6 @@ package builder
 import (
 	"fmt"
 	"testing"
-	"time"
 )
 
 var (
@@ -31,7 +30,7 @@ func TestTwoSampleTTestBuilder_test_identical(t *testing.T) {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_identical - SetInputData - error message : ", err))
 	}
 
-	epoch := time.Now().Unix()
+	epoch := int64(1682112031)
 	var ctlData PreCalcRecords
 	for i := 0; i < 10; i++ {
 		rec := PreCalcRecord{
@@ -82,7 +81,7 @@ func TestTwoSampleTTestBuilder_test_BIAS_2(t *testing.T) {
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_2 - SetInputData - error message : ", err))
 	}
-	epoch := time.Now().Unix()
+	epoch := int64(1682112031)
 	var ctlData PreCalcRecords
 	for i := 0; i < 10; i++ {
 		rec := PreCalcRecord{
@@ -135,7 +134,7 @@ func TestTwoSampleTTestBuilder_test_neagtive_2(t *testing.T) {
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_2 - SetInputData - error message : ", err))
 	}
-	epoch := time.Now().Unix()
+	epoch := int64(1682112031)
 	var ctlData PreCalcRecords
 	for i := 0; i < 10; i++ {
 		rec := PreCalcRecord{
@@ -187,7 +186,7 @@ func TestTwoSampleTTestBuilder_test_1(t *testing.T) {
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_1 - SetInputData - error message : ", err))
 	}
-	epoch := time.Now().Unix()
+	epoch := int64(1682112031)
 	normData := [10]int{86, 74, 79, 94, 73, 92, 66, 77, 74, 78}
 	var ctlData PreCalcRecords
 	for i := 0; i < 10; i++ {
@@ -242,7 +241,7 @@ func TestTwoSampleTTestBuilder_test_0(t *testing.T) {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_0 - SetInputData - error message : ", err))
 	}
 
-	epoch := time.Now().Unix()
+	epoch := int64(1682112031)
 	normData := [10]int{86, 74, 79, 94, 73, 92, 66, 77, 74, 78}
 	var ctlData PreCalcRecords
 	for i := 0; i < 10; i++ {
@@ -297,7 +296,7 @@ func TestTwoSampleTTestBuilder_different_lengths(t *testing.T) {
 		t.Fatal(fmt.Sprint("SampleTTestBuilder_diff - SetInputData - error message : ", err))
 	}
 
-	epoch := time.Now().Unix()
+	epoch := int64(1682112031)
 	var ctlData PreCalcRecords
 	for i := 0; i < 10; i++ {
 		rec := PreCalcRecord{
@@ -345,7 +344,7 @@ func TestTwoSampleTTestBuilder_test__match_ctl_short_1(t *testing.T) {
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_1 - SetInputData - error message : ", err))
 	}
-	epoch := time.Now().Unix()
+	epoch := int64(1682112031)
 	normData := [10]int{86, 74, 79, 94, 73, 92, 66, 77, 74, 78}
 	var ctlData PreCalcRecords
 	for i := 0; i < 10; i++ {
@@ -403,7 +402,7 @@ func TestTwoSampleTTestBuilder_test__match_exp_short_1(t *testing.T) {
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_1 - SetInputData - error message : ", err))
 	}
-	epoch := time.Now().Unix()
+	epoch := int64(1682112031)
 	normData := [10]int{86, 74, 79, 94, 73, 92, 66, 77, 74, 78}
 	var ctlData PreCalcRecords
 	for i := 0; i < 10; i++ {
@@ -461,7 +460,7 @@ func TestTwoSampleTTestBuilder_test__missing_one_population(t *testing.T) {
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test__missing_one_population - SetInputData - error message : ", err))
 	}
-	epoch := time.Now().Unix()
+	epoch := int64(1682112031)
 	normData := [10]int{86, 74, 79, 94, 73, 92, 66, 77, 74, 78}
 	var ctlData PreCalcRecords
 	for i := 0; i < 10; i++ {

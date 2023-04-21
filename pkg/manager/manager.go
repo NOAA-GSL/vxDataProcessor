@@ -499,8 +499,8 @@ func (mngr Manager) SetStatus(status string) (err error) {
 }
 
 func (mngr Manager) SetProcessedAt() (err error) {
-	timeStamp := time.Now().UTC().Format(time.UnixDate)
-	stmnt := "UPDATE vxdata._default.SCORECARD SET processedAt = \"" + timeStamp + "\" where meta().id=\"" + mngr.documentID + "\";"
+	timeStamp := strconv.FormatInt(time.Now().Unix(), 10)
+	stmnt := fmt.Sprintf("UPDATE vxdata._default.SCORECARD SET processedAt = %v where meta().id='%s';", timeStamp, mngr.documentID)
 	_, err = mngr.cb.Cluster.Query(stmnt, &gocb.QueryOptions{Adhoc: true})
 	if err != nil {
 		return err

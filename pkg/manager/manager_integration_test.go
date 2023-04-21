@@ -378,3 +378,41 @@ func Test_flipped_runManager(t *testing.T) {
 	elapsed := time.Since(start)
 	fmt.Printf("The test took combined %s", elapsed)
 }
+
+func Test_90day_rufs_a_runManager(t *testing.T) {
+	// setup a test document
+	documentID := "SCTEST:test_90day_rufs_a_scorecard"
+	t.Setenv("PROC_TESTING_ACCEPT_SCTEST_DOCIDS", "")
+	var mngr *Manager
+	var err error
+	start := time.Now()
+	loadEnvironmentFile()
+	mngr, err = GetManager(documentID)
+	if err != nil {
+		t.Fatal(fmt.Errorf("manager loadEnvironment error GetManager %w", err))
+	}
+	var cbCredentials director.DbCredentials
+	_, cbCredentials, err = loadEnvironment()
+	if err != nil {
+		t.Fatal(fmt.Errorf("manager loadEnvironment error loadEnvironment %w", err))
+	}
+	err = getConnection(mngr, cbCredentials)
+	if err != nil {
+		t.Fatal(fmt.Errorf("manager loadEnvironment error getConnection %w", err))
+	}
+	err = upsertTestDoc(mngr, "./testdata/test_90day_rufs_a_scorecard.json", documentID)
+	if err != nil {
+		t.Fatal(fmt.Sprint("manager upsertTestDoc error upserting test scorecard", err))
+	}
+	// get a manager
+	manager, err := newScorecardManager(documentID)
+	if err != nil {
+		t.Fatal(fmt.Sprint("manager test NewScorecardManager error getting a manager", err))
+	}
+	err = manager.Run()
+	if err != nil {
+		t.Fatal(fmt.Sprint("manager test run error ", err))
+	}
+	elapsed := time.Since(start)
+	fmt.Printf("The test took combined %s", elapsed)
+}

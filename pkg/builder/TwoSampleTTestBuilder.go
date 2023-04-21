@@ -210,7 +210,9 @@ func (scc *ScorecardCell) DeriveInputData(qrPtr interface{}, statisticType strin
 func (scc *ScorecardCell) ComputeSignificance() error {
 	// scc should have already been populated
 	if scc.Data.CtlPop == nil || scc.Data.ExpPop == nil {
-		return fmt.Errorf("TwoSampleTTestBuilder ComputeSignificance - no data")
+		// if there is no data then set the value to fillValue and move on
+		scc.SetValue(ErrorValue)
+		return nil // no errors
 	}
 	// alternate hypothesis is locationDiffers - i.e. null hypothesis is equality.
 	var derivedData DerivedDataElement = scc.Data

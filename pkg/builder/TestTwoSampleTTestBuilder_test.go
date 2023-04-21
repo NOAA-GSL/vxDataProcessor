@@ -3,7 +3,6 @@ package builder
 import (
 	"fmt"
 	"testing"
-	"time"
 )
 
 var (
@@ -31,7 +30,7 @@ func TestTwoSampleTTestBuilder_test_identical(t *testing.T) {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_identical - SetInputData - error message : ", err))
 	}
 
-	epoch := time.Now().Unix()
+	epoch := int64(1682112031)
 	var ctlData PreCalcRecords
 	for i := 0; i < 10; i++ {
 		rec := PreCalcRecord{
@@ -82,7 +81,7 @@ func TestTwoSampleTTestBuilder_test_BIAS_2(t *testing.T) {
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_2 - SetInputData - error message : ", err))
 	}
-	epoch := time.Now().Unix()
+	epoch := int64(1682112031)
 	var ctlData PreCalcRecords
 	for i := 0; i < 10; i++ {
 		rec := PreCalcRecord{
@@ -135,7 +134,7 @@ func TestTwoSampleTTestBuilder_test_neagtive_2(t *testing.T) {
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_2 - SetInputData - error message : ", err))
 	}
-	epoch := time.Now().Unix()
+	epoch := int64(1682112031)
 	var ctlData PreCalcRecords
 	for i := 0; i < 10; i++ {
 		rec := PreCalcRecord{
@@ -187,7 +186,7 @@ func TestTwoSampleTTestBuilder_test_1(t *testing.T) {
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_1 - SetInputData - error message : ", err))
 	}
-	epoch := time.Now().Unix()
+	epoch := int64(1682112031)
 	normData := [10]int{86, 74, 79, 94, 73, 92, 66, 77, 74, 78}
 	var ctlData PreCalcRecords
 	for i := 0; i < 10; i++ {
@@ -242,7 +241,7 @@ func TestTwoSampleTTestBuilder_test_0(t *testing.T) {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_0 - SetInputData - error message : ", err))
 	}
 
-	epoch := time.Now().Unix()
+	epoch := int64(1682112031)
 	normData := [10]int{86, 74, 79, 94, 73, 92, 66, 77, 74, 78}
 	var ctlData PreCalcRecords
 	for i := 0; i < 10; i++ {
@@ -297,7 +296,7 @@ func TestTwoSampleTTestBuilder_different_lengths(t *testing.T) {
 		t.Fatal(fmt.Sprint("SampleTTestBuilder_diff - SetInputData - error message : ", err))
 	}
 
-	epoch := time.Now().Unix()
+	epoch := int64(1682112031)
 	var ctlData PreCalcRecords
 	for i := 0; i < 10; i++ {
 		rec := PreCalcRecord{
@@ -345,7 +344,7 @@ func TestTwoSampleTTestBuilder_test__match_ctl_short_1(t *testing.T) {
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_1 - SetInputData - error message : ", err))
 	}
-	epoch := time.Now().Unix()
+	epoch := int64(1682112031)
 	normData := [10]int{86, 74, 79, 94, 73, 92, 66, 77, 74, 78}
 	var ctlData PreCalcRecords
 	for i := 0; i < 10; i++ {
@@ -403,7 +402,7 @@ func TestTwoSampleTTestBuilder_test__match_exp_short_1(t *testing.T) {
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_1 - SetInputData - error message : ", err))
 	}
-	epoch := time.Now().Unix()
+	epoch := int64(1682112031)
 	normData := [10]int{86, 74, 79, 94, 73, 92, 66, 77, 74, 78}
 	var ctlData PreCalcRecords
 	for i := 0; i < 10; i++ {
@@ -440,6 +439,52 @@ func TestTwoSampleTTestBuilder_test__match_exp_short_1(t *testing.T) {
 	}
 	fmt.Println("Pval is", cellPtr.pvalue, "value is ", cellPtr.value)
 	if cellPtr.value != 2 {
+		t.Fatal("test_1 wrong value :", cellPtr.value)
+	}
+}
+
+// this test has inputs that should return a value of 0 exp missing all data)
+func TestTwoSampleTTestBuilder_test__missing_one_population(t *testing.T) {
+	err := cellPtr.SetGoodnessPolarity(gp)
+	if err != nil {
+		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test__missing_one_population - SetGoodnessPolarity - error message : ", err))
+	}
+	err = cellPtr.SetMinorThreshold(minorThreshold)
+	if err != nil {
+		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test__missing_one_population - SetMinorThreshold - error message : ", err))
+	}
+	err = cellPtr.SetMajorThreshold(majorThreshold)
+	if err != nil {
+		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test__missing_one_population - SetMajorThreshold - error message : ", err))
+	}
+	if err != nil {
+		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test__missing_one_population - SetInputData - error message : ", err))
+	}
+	epoch := int64(1682112031)
+	normData := [10]int{86, 74, 79, 94, 73, 92, 66, 77, 74, 78}
+	var ctlData PreCalcRecords
+	for i := 0; i < 10; i++ {
+		rec := PreCalcRecord{
+			Stat:   float64(normData[i]),
+			Avtime: int64(i) + epoch,
+		}
+		ctlData = append(ctlData, rec)
+	}
+	var expData PreCalcRecords
+	var queryResult BuilderPreCalcResult
+	queryResult.CtlData = ctlData
+	queryResult.ExpData = expData
+	var statistic string = "TSS (True Skill Score)"
+	err = cellPtr.DeriveInputData(queryResult, statistic)
+	if err != nil {
+		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test__missing_one_population - ComputeSignificance - error message : ", err))
+	}
+	err = cellPtr.ComputeSignificance()
+	if err != nil {
+		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test__missing_one_population - ComputeSignificance - error message : ", err))
+	}
+	fmt.Println("Pval is", cellPtr.pvalue, "value is ", cellPtr.value)
+	if cellPtr.value != ErrorValue {
 		t.Fatal("test_1 wrong value :", cellPtr.value)
 	}
 }

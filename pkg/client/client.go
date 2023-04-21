@@ -2,6 +2,7 @@ package client
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -13,12 +14,12 @@ func NotifyScorecard(baseURL, docID string) error {
 	scorecardURL := fmt.Sprintf("%v/refreshScorecard/%v", baseURL, url.PathEscape(docID))
 	req, err := http.NewRequest(http.MethodPost, scorecardURL, bytes.NewBuffer(([]byte{})))
 	if err != nil {
-		return fmt.Errorf("client: could not create request: %s", err)
+		return fmt.Errorf("client: could not create request: %w", err)
 	}
 
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("client: error making http request: %s", err)
+		return fmt.Errorf("client: error making http request: %w", err)
 	}
 	defer res.Body.Close()
 

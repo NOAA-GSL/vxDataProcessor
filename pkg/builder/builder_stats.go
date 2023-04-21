@@ -26,23 +26,23 @@ func CalculateStatCTC(hit float32, fa float32, miss float32, cn float32, statist
 	validate = validator.New()
 	if err = validate.Var(hit, "gte=0"); err != nil {
 		value = 0
-		return value, fmt.Errorf("builder_stats calculateStatCTC %q", err)
+		return value, fmt.Errorf("builder_stats calculateStatCTC %w", err)
 	}
 	if err = validate.Var(fa, "gte=0"); err != nil {
 		value = 0
-		return value, fmt.Errorf("builder_stats calculateStatCTC %q", err)
+		return value, fmt.Errorf("builder_stats calculateStatCTC %w", err)
 	}
 	if err = validate.Var(cn, "gte=0"); err != nil {
 		value = 0
-		return value, fmt.Errorf("builder_stats calculateStatCTC %q", err)
+		return value, fmt.Errorf("builder_stats calculateStatCTC %w", err)
 	}
 	if err = validate.Var(miss, "gte=0"); err != nil {
 		value = 0
-		return value, fmt.Errorf("builder_stats calculateStatCTC %q", err)
+		return value, fmt.Errorf("builder_stats calculateStatCTC %w", err)
 	}
 	if err = validate.Var(statistic, "gte=0"); err != nil {
 		value = 0
-		return value, fmt.Errorf("builder_stats calculateStatCTC %q", err)
+		return value, fmt.Errorf("builder_stats calculateStatCTC %w", err)
 	}
 
 	switch statistic {
@@ -110,7 +110,7 @@ func GetMatchedDataSet(dataSet DataSet) (DataSet, error) {
 	var err error = nil
 	defer func() {
 		if r := recover(); r != nil {
-			err = fmt.Errorf("builder_stat calculateStatCTC recovered panic:%q", err)
+			err = fmt.Errorf("builder_stat calculateStatCTC recovered panic:%w", err)
 		}
 	}()
 	if lenCtl == 0 || lenExp == 0 {

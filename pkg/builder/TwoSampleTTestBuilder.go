@@ -62,7 +62,7 @@ func (scc *ScorecardCell) SetGoodnessPolarity(polarity GoodnessPolarity) error {
 	errs := validate.Var(polarity, "required,oneof=-1 1")
 	if errs != nil {
 		log.Print(errs)
-		return fmt.Errorf("TwoSampleTTestBuilder SetGoodnessPolarity %q", errs)
+		return fmt.Errorf("TwoSampleTTestBuilder SetGoodnessPolarity %w", errs)
 	}
 	scc.goodnessPolarity = polarity
 	return nil // no errors
@@ -222,13 +222,13 @@ func (scc *ScorecardCell) ComputeSignificance() error {
 		log.Print(errs)
 		var v int = ErrorValue
 		scc.SetValue(v)
-		return fmt.Errorf("TwoSampleTTestBuilder ComputeSignificance %q", errs)
+		return fmt.Errorf("TwoSampleTTestBuilder ComputeSignificance %w", errs)
 	}
 	if errs := validate.Var(derivedData.ExpPop, "required"); errs != nil {
 		log.Print(errs)
 		var v int = ErrorValue
 		scc.SetValue(v)
-		return fmt.Errorf("TwoSampleTTestBuilder ComputeSignificance %q", errs)
+		return fmt.Errorf("TwoSampleTTestBuilder ComputeSignificance %w", errs)
 	}
 	//&TTestResult{N1: n1, N2: n2, T: t, DoF: dof, AltHypothesis: alt, P: p}
 	// PairedTTest performs a two-sample paired t-test on samples x1 and x2.
@@ -246,7 +246,7 @@ func (scc *ScorecardCell) ComputeSignificance() error {
 			scc.pvalue = ErrorValue
 			var v int = ErrorValue
 			scc.SetValue(v)
-			return fmt.Errorf("TwoSampleTTestBuilder ComputeSignificance %q", err)
+			return fmt.Errorf("TwoSampleTTestBuilder ComputeSignificance %w", err)
 		}
 	} else {
 		// what are the means of the populations?
@@ -257,7 +257,7 @@ func (scc *ScorecardCell) ComputeSignificance() error {
 		v, err := scc.deriveValue(difference, ret.P)
 		if err != nil {
 			log.Print(err)
-			return fmt.Errorf("TwoSampleTTestBuilder ComputeSignificance - deriveValue error:  %q", err)
+			return fmt.Errorf("TwoSampleTTestBuilder ComputeSignificance - deriveValue error:  %w", err)
 		}
 		scc.SetValue(v)
 	}
@@ -331,31 +331,31 @@ func (scc *ScorecardCell) Build(qrPtr interface{}, statisticType string, minorTh
 	// build the input data elements and
 	goodnessPolarity, err := getGoodnessPolarity(statisticType)
 	if err != nil {
-		return ErrorValue, fmt.Errorf("mysql_director Build SetGoodnessPolarity error  %q", err)
+		return ErrorValue, fmt.Errorf("mysql_director Build SetGoodnessPolarity error  %w", err)
 	}
 	err = scc.SetGoodnessPolarity(goodnessPolarity)
 	if err != nil {
-		return ErrorValue, fmt.Errorf("mysql_director Build SetGoodnessPolarity error  %q", err)
+		return ErrorValue, fmt.Errorf("mysql_director Build SetGoodnessPolarity error  %w", err)
 	}
 
 	err = scc.SetMinorThreshold(Threshold(minorThreshold))
 	if err != nil {
-		return ErrorValue, fmt.Errorf("mysql_director Build SetMinorThreshold error  %q", err)
+		return ErrorValue, fmt.Errorf("mysql_director Build SetMinorThreshold error  %w", err)
 	}
 
 	err = scc.SetMajorThreshold(Threshold(majorThreshold))
 	if err != nil {
-		return ErrorValue, fmt.Errorf("mysql_director Build SetMajorThreshold error  %q", err)
+		return ErrorValue, fmt.Errorf("mysql_director Build SetMajorThreshold error  %w", err)
 	}
 
 	err = scc.DeriveInputData(qrPtr, statisticType)
 	if err != nil {
-		return ErrorValue, fmt.Errorf("mysql_director - build - SetInputData - error message :  %q", err)
+		return ErrorValue, fmt.Errorf("mysql_director - build - SetInputData - error message :  %w", err)
 	}
 	// computes the significance for the data derived in DeriveInputData and stored in cellPtr.data
 	err = scc.ComputeSignificance()
 	if err != nil {
-		return ErrorValue, fmt.Errorf("mysql_director - build - ComputeSignificance - error message :  %q", err)
+		return ErrorValue, fmt.Errorf("mysql_director - build - ComputeSignificance - error message :  %w", err)
 	}
 	// insert the elements into the result
 	return scc.GetValue(), nil

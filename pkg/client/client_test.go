@@ -74,3 +74,26 @@ func TestClient_PathEscaped(t *testing.T) {
 		t.Errorf("Unexpected error %v", err)
 	}
 }
+
+func TestClient_NotifyScorecardStatus(t *testing.T) {
+	DocID := "SC:anonymous--submitted:20230322220711--2block:0:02/19/2023_20_00_-_03/21/2023_20_00"
+	escapedDocID := url.PathEscape(DocID)
+	expectedURL := fmt.Sprintf("/setStatusScorecard/%v", escapedDocID)
+	svr := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// r.URL.Path automatically unescapes URL-encoded paths so we need to use the RawPath here.
+		if r.URL.RawPath != expectedURL {
+			t.Errorf("Expected request to %s, got %s", expectedURL, r.URL.Path)
+		}
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer svr.Close()
+
+	err := NotifyScorecardStatus(svr.URL, DocID, "frog", nil)
+	if err != nil {
+		t.Errorf("Unexpected error %v", err)
+	}
+	err = NotifyScorecardStatus(svr.URL, DocID, "frog", fmt.Errorf("error"))
+	if err != nil {
+		t.Errorf("Unexpected error %v", err)
+	}
+}

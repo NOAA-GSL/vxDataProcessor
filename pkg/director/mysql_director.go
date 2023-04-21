@@ -54,12 +54,12 @@ func getMySqlConnection(mysqlCredentials DbCredentials) (*sql.DB, error) {
 	var db *sql.DB
 	db, err := sql.Open(driver, dataSource)
 	if err != nil {
-		return nil, fmt.Errorf("mysql_director getMySqlConnection sql open error %q", err)
+		return nil, fmt.Errorf("mysql_director getMySqlConnection sql open error %w", err)
 	}
 	ctx, cancelfunc := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancelfunc()
 	if err := db.PingContext(ctx); err != nil {
-		return nil, fmt.Errorf("mysql_director Build sql open/ping error: %q", err)
+		return nil, fmt.Errorf("mysql_director Build sql open/ping error: %w", err)
 	}
 	return db, nil
 }
@@ -69,7 +69,7 @@ var mysqlDirector = Director{}
 func NewMysqlDirector(mysqlCredentials DbCredentials, dateRange DateRange, minorThreshold float64, majorThreshold float64) (*Director, error) {
 	db, err := getMySqlConnection(mysqlCredentials)
 	if err != nil {
-		return nil, fmt.Errorf("mysql_director NewMysqlDirector error: %q", err)
+		return nil, fmt.Errorf("mysql_director NewMysqlDirector error: %w", err)
 	} else {
 		mysqlDirector.db = db
 		mysqlDirector.mysqlCredentials = mysqlCredentials
@@ -86,7 +86,7 @@ func queryDataPreCalc(stmnt string) (queryResult builder.PreCalcRecords, err err
 	var rows *sql.Rows
 	rows, err = mysqlDirector.db.Query(stmnt)
 	if err != nil {
-		err = fmt.Errorf("mysql_director queryData Query failed: %q", err)
+		err = fmt.Errorf("mysql_director queryData Query failed: %w", err)
 		return queryResult, err
 	}
 	defer rows.Close()
@@ -94,7 +94,7 @@ func queryDataPreCalc(stmnt string) (queryResult builder.PreCalcRecords, err err
 	for rows.Next() {
 		err = rows.Scan(&record.Avtime, &record.Stat)
 		if err != nil {
-			err = fmt.Errorf("mysqlDirector.Query error reading PreCalcRecord row %q", err)
+			err = fmt.Errorf("mysqlDirector.Query error reading PreCalcRecord row %w", err)
 			return queryResult, err
 		} else {
 			queryResult = append(queryResult, record)
@@ -107,7 +107,7 @@ func queryDataCTC(stmnt string) (queryResult builder.CTCRecords, err error) {
 	var rows *sql.Rows
 	rows, err = mysqlDirector.db.Query(stmnt)
 	if err != nil {
-		err = fmt.Errorf("mysql_director queryData Query failed: %q", err)
+		err = fmt.Errorf("mysql_director queryData Query failed: %w", err)
 		return queryResult, err
 	}
 	defer rows.Close()
@@ -115,7 +115,7 @@ func queryDataCTC(stmnt string) (queryResult builder.CTCRecords, err error) {
 	for rows.Next() {
 		err = rows.Scan(&record.Avtime, &record.Hit, &record.Miss, &record.Fa, &record.Cn)
 		if err != nil {
-			err = fmt.Errorf("mysqlDirector.Query error reading CTCRecord row %q", err)
+			err = fmt.Errorf("mysqlDirector.Query error reading CTCRecord row %w", err)
 			return queryResult, err
 		} else {
 			queryResult = append(queryResult, record)
@@ -129,7 +129,7 @@ func queryDataScalar(stmnt string) (queryResult builder.ScalarRecords, err error
 	var rows *sql.Rows
 	rows, err = mysqlDirector.db.Query(stmnt)
 	if err != nil {
-		err = fmt.Errorf("mysql_director queryData Query failed: %q", err)
+		err = fmt.Errorf("mysql_director queryData Query failed: %w", err)
 		return queryResult, err
 	}
 	defer rows.Close()
@@ -137,7 +137,7 @@ func queryDataScalar(stmnt string) (queryResult builder.ScalarRecords, err error
 	for rows.Next() {
 		err = rows.Scan(&record.Avtime, &record.SquareDiffSum, &record.NSum, &record.ObsModelDiffSum, &record.ModelSum, &record.ObsSum, &record.AbsSum)
 		if err != nil {
-			err = fmt.Errorf("mysqlDirector.Query error reading ScalarRecord row %q", err)
+			err = fmt.Errorf("mysqlDirector.Query error reading ScalarRecord row %w", err)
 			return queryResult, err
 		} else {
 			queryResult = append(queryResult, record)
@@ -271,7 +271,7 @@ func processSub(region interface{}, queryElem interface{}, wgPtr *sync.WaitGroup
 			}
 		} else {
 			// unknown data type
-			return builder.ErrorValue, fmt.Errorf("mysql_director queryDataPreCalc error %q", err)
+			return builder.ErrorValue, fmt.Errorf("mysql_director queryDataPreCalc error %w", err)
 		}
 
 		// for all the input elements
@@ -298,7 +298,7 @@ func processSub(region interface{}, queryElem interface{}, wgPtr *sync.WaitGroup
 			}()
 			ret := <-c
 			if ret.err != nil {
-				return builder.ErrorValue, fmt.Errorf("mysql_director processSub error from builder %q", ret.err)
+				return builder.ErrorValue, fmt.Errorf("mysql_director processSub error from builder %w", ret.err)
 			} else {
 				return ret.val, nil
 			}
@@ -337,7 +337,7 @@ func (director *Director) Run(region interface{}, queryMap map[string]interface{
 	region, err := processSub(region, queryMap, &wg, cellCountPtr)
 	wg.Wait()
 	if err != nil {
-		return region, fmt.Errorf("mysql_director error in Run %q", err)
+		return region, fmt.Errorf("mysql_director error in Run %w", err)
 	}
 	// manager will upsert the document
 	return region, nil

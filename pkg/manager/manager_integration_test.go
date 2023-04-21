@@ -39,13 +39,13 @@ func getTestDoc(mngr *Manager) (map[string]interface{}, error) {
 	var scorecardDataIn *gocb.GetResult
 	scorecardDataIn, err := mngr.cb.Collection.Get("SCTEST:test_scorecard", nil)
 	if err != nil {
-		return nil, fmt.Errorf("mysql_test_director error getting SCTEST:test_scorecard %q", err)
+		return nil, fmt.Errorf("mysql_test_director error getting SCTEST:test_scorecard %w", err)
 	}
 	// get the unmarshalled document (the Content) from the result
 	var scorecardCB map[string]interface{}
 	err = scorecardDataIn.Content(&scorecardCB)
 	if err != nil {
-		return nil, fmt.Errorf("mysql_test_director error getting SCTEST:test_scorecard Content %v", err)
+		return nil, fmt.Errorf("mysql_test_director error getting SCTEST:test_scorecard Content %w", err)
 	}
 	return scorecardCB, nil
 }
@@ -55,18 +55,18 @@ func upsertTestDoc(mngr *Manager, test_doc_file string, test_doc_id string) erro
 	// read the test document from the test file
 	testScorcardFile := test_doc_file
 	if _, err := os.Stat(testScorcardFile); err != nil {
-		return fmt.Errorf("upsertTestDoc error reading test scorecard file %v", err)
+		return fmt.Errorf("upsertTestDoc error reading test scorecard file %w", err)
 	}
 	scorecardBytes, _ := os.ReadFile(testScorcardFile)
 	var scorecard map[string]interface{}
 	err := json.Unmarshal(scorecardBytes, &scorecard)
 	if err != nil {
-		return fmt.Errorf("upsertTestDoc error unmarshalling test scorecard file %v", err)
+		return fmt.Errorf("upsertTestDoc error unmarshalling test scorecard file %w", err)
 	}
 	// upsert the test scorecard document
 	_, err = mngr.cb.Collection.Upsert(test_doc_id, scorecard, nil)
 	if err != nil {
-		return fmt.Errorf("upsertTestDoc error upserting test scorecard file %v", err)
+		return fmt.Errorf("upsertTestDoc error upserting test scorecard file %w", err)
 	}
 	return nil
 }
@@ -188,16 +188,16 @@ func Test_getQueryBlocks(t *testing.T) {
 	loadEnvironmentFile()
 	mngr, err = GetManager(documentID)
 	if err != nil {
-		t.Fatal(fmt.Errorf("manager loadEnvironment error GetManager %q", err))
+		t.Fatal(fmt.Errorf("manager loadEnvironment error GetManager %w", err))
 	}
 	var cbCredentials director.DbCredentials
 	_, cbCredentials, err = loadEnvironment()
 	if err != nil {
-		t.Fatal(fmt.Errorf("manager loadEnvironment error loadEnvironment %q", err))
+		t.Fatal(fmt.Errorf("manager loadEnvironment error loadEnvironment %w", err))
 	}
 	err = getConnection(mngr, cbCredentials)
 	if err != nil {
-		t.Fatal(fmt.Errorf("manager loadEnvironment error getConnection %q", err))
+		t.Fatal(fmt.Errorf("manager loadEnvironment error getConnection %w", err))
 	}
 	err = upsertTestDoc(mngr, "./testdata/test_scorecard.json", documentID)
 	if err != nil {
@@ -250,16 +250,16 @@ func Test_getSliceResultBlocks(t *testing.T) {
 	loadEnvironmentFile()
 	mngr, err = GetManager(documentID)
 	if err != nil {
-		t.Fatal(fmt.Errorf("manager loadEnvironment error GetManager %q", err))
+		t.Fatal(fmt.Errorf("manager loadEnvironment error GetManager %w", err))
 	}
 	var cbCredentials director.DbCredentials
 	_, cbCredentials, err = loadEnvironment()
 	if err != nil {
-		t.Fatal(fmt.Errorf("manager loadEnvironment error loadEnvironment %q", err))
+		t.Fatal(fmt.Errorf("manager loadEnvironment error loadEnvironment %w", err))
 	}
 	err = getConnection(mngr, cbCredentials)
 	if err != nil {
-		t.Fatal(fmt.Errorf("manager loadEnvironment error getConnection %q", err))
+		t.Fatal(fmt.Errorf("manager loadEnvironment error getConnection %w", err))
 	}
 	err = upsertTestDoc(mngr, "./testdata/test_scorecard.json", documentID)
 	if err != nil {
@@ -313,16 +313,16 @@ func Test_runManager(t *testing.T) {
 	loadEnvironmentFile()
 	mngr, err = GetManager(documentID)
 	if err != nil {
-		t.Fatal(fmt.Errorf("manager loadEnvironment error GetManager %q", err))
+		t.Fatal(fmt.Errorf("manager loadEnvironment error GetManager %w", err))
 	}
 	var cbCredentials director.DbCredentials
 	_, cbCredentials, err = loadEnvironment()
 	if err != nil {
-		t.Fatal(fmt.Errorf("manager loadEnvironment error loadEnvironment %q", err))
+		t.Fatal(fmt.Errorf("manager loadEnvironment error loadEnvironment %w", err))
 	}
 	err = getConnection(mngr, cbCredentials)
 	if err != nil {
-		t.Fatal(fmt.Errorf("manager loadEnvironment error getConnection %q", err))
+		t.Fatal(fmt.Errorf("manager loadEnvironment error getConnection %w", err))
 	}
 	err = upsertTestDoc(mngr, "./testdata/test_scorecard.json", documentID)
 	if err != nil {
@@ -351,16 +351,16 @@ func Test_flipped_runManager(t *testing.T) {
 	loadEnvironmentFile()
 	mngr, err = GetManager(documentID)
 	if err != nil {
-		t.Fatal(fmt.Errorf("manager loadEnvironment error GetManager %q", err))
+		t.Fatal(fmt.Errorf("manager loadEnvironment error GetManager %w", err))
 	}
 	var cbCredentials director.DbCredentials
 	_, cbCredentials, err = loadEnvironment()
 	if err != nil {
-		t.Fatal(fmt.Errorf("manager loadEnvironment error loadEnvironment %q", err))
+		t.Fatal(fmt.Errorf("manager loadEnvironment error loadEnvironment %w", err))
 	}
 	err = getConnection(mngr, cbCredentials)
 	if err != nil {
-		t.Fatal(fmt.Errorf("manager loadEnvironment error getConnection %q", err))
+		t.Fatal(fmt.Errorf("manager loadEnvironment error getConnection %w", err))
 	}
 	err = upsertTestDoc(mngr, "./testdata/test_flipped_scorecard.json", documentID)
 	if err != nil {

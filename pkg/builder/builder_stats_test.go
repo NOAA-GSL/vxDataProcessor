@@ -1161,9 +1161,9 @@ func Test_calculateStatCTC(t *testing.T) {
 			var delta float64 = 0.006
 			got, err := CalculateStatCTC(tt.args.hit, tt.args.fa, tt.args.miss, tt.args.cn, tt.args.statistic)
 			if tt.wantErr {
-				assert.Errorf(t, err, "calculateStatCTC() should have returned error but did not - got %v", got)
+				assert.Errorf(t, err, "calculateStatCTC() should have returned error but did not - got %w", got)
 			} else {
-				assert.NoErrorf(t, err, "calculateStatCTC() returned error %s", err)
+				assert.NoErrorf(t, err, "calculateStatCTC() returned error %w", err)
 				assert.InDelta(t, tt.want, got, delta, "calculateStatCTC() excessive difference")
 			}
 		})

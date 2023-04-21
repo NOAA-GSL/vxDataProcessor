@@ -39,14 +39,14 @@ linters:
     - durationcheck
 
     # Forces to not skip error check.
-    - errcheck 
+    - errcheck
 
     # Checks `Err-` prefix for var and `-Error` suffix for error type.
     - errname
 
     # Suggests to use `%w` for error-wrapping.
     # TODO - enable
-    # - errorlint
+    - errorlint
 
     # Checks for pointers to enclosing loop variables.
     - exportloopref

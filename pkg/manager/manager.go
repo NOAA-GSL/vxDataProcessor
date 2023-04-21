@@ -159,6 +159,16 @@ func getSubDocument(mngr Manager, path string, subDocPtr *interface{}) error {
 	return nil
 }
 
+// retrieve the results.blocks section of the document by subdoc get
+func getBlocks(mngr Manager) (map[string]interface{}, error) {
+	var blocks interface{}
+	err := getSubDocument(mngr, "results.blocks", &blocks)
+	if err != nil {
+		return nil, fmt.Errorf("manager getBlocks error %w", err)
+	}
+	return blocks.(map[string]interface{}), err
+}
+
 // retrieve the queryMap.blocks section of the document by subdoc get
 func getQueryBlocks(mngr Manager) (map[string]interface{}, error) {
 	var blocks interface{}
@@ -340,47 +350,59 @@ func (mngr Manager) Run() (err error) {
 		return fmt.Errorf("manager Run GetConnection error: %w", err)
 	}
 	// from here on we should be able to set an error status in the document, if we need to
+	resultsBlocks, err := getBlocks(mngr)
+	if err != nil {
+		_ = mngr.SetStatus("error")
+		return fmt.Errorf("manager Run error getting resultsBlocks: %w", err)
+	}
+	blockKeys := director.Keys(resultsBlocks)
+	sort.Strings(blockKeys)
+	// get the appUrl from the first block - they should all be the same
+	scorecardAppUrl := resultsBlocks[blockKeys[0]].(map[string]interface{})["blockApplication"].(string)
+	// from this point on, we can notify the scorecard app with the status and error
 	queryBlocks, err := getQueryBlocks(mngr)
 	if err != nil {
+		_ = mngr.SetStatus("error")
 		err := fmt.Errorf("manager Run error getting queryBlocks: %w", err)
-		err = fmt.Errorf("manager Run error getting queryBlocks: %q", err)
+		_ = client.NotifyScorecardStatus(scorecardAppUrl, mngr.documentID, "error", err)
 		return err
 	}
 	plotParams, err := getPlotParams(mngr)
 	if err != nil {
 		err := fmt.Errorf("manager Run error getting plotParamCurves: %w", err)
+		_ = client.NotifyScorecardStatus(scorecardAppUrl, mngr.documentID, "error", err)
+		_ = mngr.SetStatus("error")
 		return err
 	}
 	minorThreshold, majorThreshold, err := getThresholds(plotParams)
 	if err != nil {
 		err := fmt.Errorf("manager Run error getting thresholds: %w", err)
+		_ = client.NotifyScorecardStatus(scorecardAppUrl, mngr.documentID, "error", err)
+		_ = mngr.SetStatus("error")
 		return err
 	}
 	curves, err := getPlotParamCurves(mngr)
 	if err != nil {
 		err := fmt.Errorf("manager Run error getting plotParamCurves: %w", err)
+		_ = client.NotifyScorecardStatus(scorecardAppUrl, mngr.documentID, "error", err)
+		_ = mngr.SetStatus("error")
 		return err
 	}
 	dateRange, err := getDateRange(mngr)
 	if err != nil {
 		err := fmt.Errorf("manager Run error getting daterange: %w", err)
+		_ = client.NotifyScorecardStatus(scorecardAppUrl, mngr.documentID, "error", err)
+		_ = mngr.SetStatus("error")
 		return err
 	}
 	numCurves := len(curves)
 	// blocks and queryBlocks have the same keys
-	blockKeys := director.Keys(queryBlocks)
-	sort.Strings(blockKeys)
 	numBlocks := len(blockKeys)
 	// create an errgroup for running all the block/regions in go routines
 	errGroup := new(errgroup.Group)
 	for i := 0; i < numBlocks; i++ {
 		blockName := blockKeys[i]
-		var block interface{}
-		err = getSubDocument(mngr, "results.blocks."+blockName, &block)
-		if err != nil {
-			return fmt.Errorf("manager Run error getting block result %q", err)
-		}
-		scorecardAppUrl := block.(map[string]interface{})["blockApplication"].(string)
+		block := resultsBlocks[blockName]
 		queryBlock := queryBlocks[blockKeys[i]].(map[string]interface{})
 		var appName string
 		for i := 0; i < numCurves; i++ {
@@ -399,9 +421,15 @@ func (mngr Manager) Run() (err error) {
 		numQueryRegions := len(queryRegionNames)
 		if numBlockRegions != numQueryRegions {
 			err := fmt.Errorf("manager Run Number of block regions %v does not equal the number of query regions %v", numBlockRegions, numQueryRegions)
+			_ = client.NotifyScorecardStatus(scorecardAppUrl, mngr.documentID, "error", err)
+			_ = mngr.SetStatus("error")
+			return err
 		}
 		if !reflect.DeepEqual(blockRegionNames, queryRegionNames) {
 			err := fmt.Errorf("manager block regions list %v does not equal query regions list %v", blockRegionNames, queryRegionNames)
+			_ = client.NotifyScorecardStatus(scorecardAppUrl, mngr.documentID, "error", err)
+			_ = mngr.SetStatus("error")
+			return err
 		}
 		for i := 0; i < numBlockRegions; i++ {
 			queryRegionName := queryRegionNames[i]
@@ -412,6 +440,9 @@ func (mngr Manager) Run() (err error) {
 			err = getSubDocument(mngr, regionPath, &region)
 			if err != nil {
 				err := fmt.Errorf("error getting region SubDocument %w", err)
+				_ = client.NotifyScorecardStatus(scorecardAppUrl, mngr.documentID, "error", err)
+				_ = mngr.SetStatus("error")
+				return err
 			}
 			// process the region/block in the errgroup
 			errGroup.Go(func() error {
@@ -437,14 +468,24 @@ func (mngr Manager) Run() (err error) {
 	if err != nil {
 		// set error in the status field
 		err := fmt.Errorf("error processing scorecard Run %w", err)
+		// set error status in document
+		_ = mngr.SetStatus("error")
+		_ = client.NotifyScorecardStatus(scorecardAppUrl, mngr.documentID, "error", err)
+		return err
 	}
 	// set processedAt to now
 	err = mngr.SetProcessedAt()
 	if err != nil {
 		err := fmt.Errorf("error setting processedAt %w", err)
+		_ = client.NotifyScorecardStatus(scorecardAppUrl, mngr.documentID, "error", err)
+		err = mngr.SetStatus("error")
+		return err
 	}
 	elapsed := time.Since(start)
 	log.Printf("This run processed: %v cells in %v", cellCount, elapsed)
+	_ = client.NotifyScorecardStatus(scorecardAppUrl, mngr.documentID, "ready", err)
+	// set status to ready
+	err = mngr.SetStatus("ready")
 	return nil
 }
 

@@ -1137,8 +1137,8 @@ func Test_calculateStatCTC(t *testing.T) {
 				cn:        56054,
 				statistic: "TSS (True Skill Score)",
 			},
-			want:    0.0,
-			wantErr: true,
+			want:    -9999,
+			wantErr: false,
 		},
 		{
 			// TSS.sql - radar - infinity

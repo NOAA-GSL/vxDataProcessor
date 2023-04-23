@@ -170,6 +170,9 @@ func processSub(region interface{}, queryElem interface{}, wgPtr *sync.WaitGroup
 		}
 	}
 	if thisIsALeaf { // now we have a struct
+		// log statement uncomment for debugging
+		// log.Printf("mysql_director processSub leaf keys are %q", keys)
+
 		// get the queries
 		var ctlQueryStatement string = queryElem.(map[string]interface{})["controlQueryTemplate"].(string)
 		var expQueryStatement string = queryElem.(map[string]interface{})["experimentalQueryTemplate"].(string)
@@ -183,7 +186,7 @@ func processSub(region interface{}, queryElem interface{}, wgPtr *sync.WaitGroup
 		queryError := false
 
 		// what kind of data?
-		if strings.Contains(ctlQueryStatement, "hits") {
+		if strings.Contains(ctlQueryStatement, "hit") {
 			// get the data
 			ctlQueryResult, err := queryDataCTC(ctlQueryStatement)
 			if len(ctlQueryResult) == 0 {
@@ -196,7 +199,6 @@ func processSub(region interface{}, queryElem interface{}, wgPtr *sync.WaitGroup
 					log.Printf("mysql_director queryDataCTC ctlQueryStatement error %q", err)
 				}
 			} else {
-				log.Printf("querying exp CTC data - statement %q", expQueryStatement)
 				expQueryResult, err := queryDataCTC(expQueryStatement)
 				if len(expQueryResult) == 0 {
 					// no data is ok, but no need to go on either
@@ -271,7 +273,7 @@ func processSub(region interface{}, queryElem interface{}, wgPtr *sync.WaitGroup
 			}
 		} else {
 			// unknown data type
-			return builder.ErrorValue, fmt.Errorf("mysql_director queryDataPreCalc error %w", err)
+			return builder.ErrorValue, fmt.Errorf("mysql_director processSub error unknown data type - ctlQueryStatement %s - %w", ctlQueryStatement, err)
 		}
 
 		// for all the input elements
@@ -304,6 +306,8 @@ func processSub(region interface{}, queryElem interface{}, wgPtr *sync.WaitGroup
 			}
 		}
 	} else {
+		// log statement uncomment for debugging
+		// log.Printf("mysql_director processSub branch keys are %q", keys)
 		// this is a branch (not a leaf) so we keep traversing
 		// check to see if this is a statistic elem, so we can set the statisticType
 		var keys []string = Keys((region).(map[string]interface{}))

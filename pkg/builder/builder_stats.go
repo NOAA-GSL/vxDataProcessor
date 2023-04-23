@@ -71,10 +71,12 @@ func CalculateStatCTC(hit float32, fa float32, miss float32, cn float32, statist
 		return 0, err
 	}
 	if math.IsNaN(float64(value)) {
-		err = fmt.Errorf("builder_stats.calculateStatCTC value is NaN")
+		//  value is NaN - is error value but not error condition
+		value = ErrorValue
 	}
 	if math.IsInf(float64(value), 0) {
-		err = fmt.Errorf("builder_stats.calculateStatCTC value is Infinity")
+		// value is Infinity  - is error value but not error condition
+		value = ErrorValue
 	}
 	return value, err
 }

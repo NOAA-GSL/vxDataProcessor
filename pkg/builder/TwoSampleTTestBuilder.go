@@ -323,6 +323,8 @@ func getGoodnessPolarity(statisticType string) (polarity GoodnessPolarity, err e
 		return -1, nil
 	case "ETS (Equitable Threat Score)":
 		return -1, nil
+	case "ACC":
+		return -1, nil
 	default:
 		return -1, fmt.Errorf("TwoSampleTTestBuilder getGoodnessPolarity unknown statistic %q", statisticType)
 	}

@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/aclements/go-moremath v0.0.0-20210112150236-f10218a38794
-	github.com/couchbase/gocb/v2 v2.6.2
+	github.com/couchbase/gocb/v2 v2.6.3
 	github.com/gin-gonic/gin v1.9.0
 	github.com/go-playground/validator/v10 v10.12.0
 	github.com/go-sql-driver/mysql v1.7.0
@@ -19,7 +19,7 @@ require (
 	github.com/bytedance/sonic v1.8.0 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/chenzhuoyu/base64x v0.0.0-20221115062448-fe3a3abad311 // indirect
-	github.com/couchbase/gocbcore/v10 v10.2.2 // indirect
+	github.com/couchbase/gocbcore/v10 v10.2.3 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect

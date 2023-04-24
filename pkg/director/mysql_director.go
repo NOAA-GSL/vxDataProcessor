@@ -36,7 +36,10 @@ import (
 
 var dateRange DateRange
 
-const noTableFound = "Error 1146 (42S02)"
+const (
+	noTableFound   = "Error 1146 (42S02)"
+	convertingNull = "converting NULL"
+)
 
 func Keys[K comparable, V any](m map[K]V) []K {
 	keys := make([]K, 0, len(m))
@@ -189,25 +192,25 @@ func processSub(region interface{}, queryElem interface{}, wgPtr *sync.WaitGroup
 		if strings.Contains(ctlQueryStatement, "hit") {
 			// get the data
 			ctlQueryResult, err := queryDataCTC(ctlQueryStatement)
-			if len(ctlQueryResult) == 0 {
+			if len(ctlQueryResult) == 0 && err == nil {
 				// no data is ok, but no need to go on either
-				return builder.ErrorValue, err
+				return builder.ErrorValue, nil
 			}
 			if err != nil {
 				queryError = true
-				if !strings.Contains(err.Error(), noTableFound) {
+				if !strings.Contains(err.Error(), noTableFound) && !strings.Contains(err.Error(), convertingNull) {
 					log.Printf("mysql_director queryDataCTC ctlQueryStatement error %q", err)
 				}
 			} else {
 				expQueryResult, err := queryDataCTC(expQueryStatement)
-				if len(expQueryResult) == 0 {
+				if len(expQueryResult) == 0 && err == nil {
 					// no data is ok, but no need to go on either
-					return builder.ErrorValue, err
+					return builder.ErrorValue, nil
 				}
 				// handle error
 				if err != nil {
 					queryError = true
-					if !strings.Contains(err.Error(), noTableFound) {
+					if !strings.Contains(err.Error(), noTableFound) && !strings.Contains(err.Error(), convertingNull) {
 						log.Printf("mysql_director queryDataCTC expQueryStatement error %q", err)
 					}
 				} else {
@@ -217,26 +220,26 @@ func processSub(region interface{}, queryElem interface{}, wgPtr *sync.WaitGroup
 		} else if strings.Contains(ctlQueryStatement, "square_diff_sum") {
 			// get the data
 			ctlQueryResult, err := queryDataScalar(ctlQueryStatement)
-			if len(ctlQueryResult) == 0 {
+			if len(ctlQueryResult) == 0 && err == nil {
 				// no data is ok, but no need to go on either
-				return builder.ErrorValue, err
+				return builder.ErrorValue, nil
 			}
 			// handle error
 			if err != nil {
 				queryError = true
-				if !strings.Contains(err.Error(), noTableFound) {
+				if !strings.Contains(err.Error(), noTableFound) && !strings.Contains(err.Error(), convertingNull) {
 					log.Printf("mysql_director queryDataScalar ctlQueryStatement error %q", err)
 				}
 			} else {
 				expQueryResult, err := queryDataScalar(expQueryStatement)
-				if len(expQueryResult) == 0 {
+				if len(expQueryResult) == 0 && err == nil {
 					// no data is ok, but no need to go on either
-					return builder.ErrorValue, err
+					return builder.ErrorValue, nil
 				}
 				// handle error
 				if err != nil {
 					queryError = true
-					if !strings.Contains(err.Error(), noTableFound) {
+					if !strings.Contains(err.Error(), noTableFound) && !strings.Contains(err.Error(), convertingNull) {
 						log.Printf("mysql_director queryDataScalar expQueryStatement error %q", err)
 					}
 				} else {
@@ -246,25 +249,25 @@ func processSub(region interface{}, queryElem interface{}, wgPtr *sync.WaitGroup
 		} else if strings.Contains(ctlQueryStatement, "stat") {
 			// get the data
 			ctlQueryResult, err := queryDataPreCalc(ctlQueryStatement)
-			if len(ctlQueryResult) == 0 {
+			if len(ctlQueryResult) == 0 && err == nil {
 				// no data is ok, but no need to go on either
-				return builder.ErrorValue, err
+				return builder.ErrorValue, nil
 			}
 			// handle error
 			if err != nil {
 				queryError = true
-				if !strings.Contains(err.Error(), noTableFound) {
+				if !strings.Contains(err.Error(), noTableFound) && !strings.Contains(err.Error(), convertingNull) {
 					log.Printf("mysql_director queryDataPreCalc ctlQueryStatement error %q", err)
 				}
 			} else {
 				expQueryResult, err := queryDataPreCalc(expQueryStatement)
-				if len(expQueryResult) == 0 {
+				if len(expQueryResult) == 0 && err == nil {
 					// no data is ok, but no need to go on either
-					return builder.ErrorValue, err
+					return builder.ErrorValue, nil
 				}
 				if err != nil {
 					queryError = true
-					if !strings.Contains(err.Error(), noTableFound) {
+					if !strings.Contains(err.Error(), noTableFound) && !strings.Contains(err.Error(), convertingNull) {
 						log.Printf("mysql_director queryDataPreCalc expQueryStatement error %q", err)
 					}
 				} else {

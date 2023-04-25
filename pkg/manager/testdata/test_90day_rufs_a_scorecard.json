@@ -71,7 +71,7 @@
         "relative-date-range-value": "1",
         "scorecard-color-theme": "RedGreen",
         "scorecard-ends-on": "4/21/2023",
-        "scorecard-name": "randy.pierce@noaa.gov--submitted:20230421191451--1block",
+        "scorecard-name": "anonymous--submitted:20230421191451--1block",
         "scorecard-percent-stdv": "Percent",
         "scorecard-recurrence-interval": "Weekly",
         "scorecard-schedule-mode": "Once",
@@ -80,7 +80,7 @@
         "these-days-of-the-week": "",
         "these-hours-of-the-day": "",
         "these-months": "",
-        "userName": "randy.pierce@noaa.gov"
+        "userName": "anonymous"
     },
     "processedAt": 0,
     "queryMap": {
@@ -3313,7 +3313,7 @@
                 ]
             }
         },
-        "title": "randy.pierce@noaa.gov:randy.pierce@noaa.gov--submitted:20230421191451--1block:1682104491:0:01/21/2023 00:00 - 04/21/2023 00:00"
+        "title": "anonymous:anonymous--submitted:20230421191451--1block:1682104491:0:01/21/2023 00:00 - 04/21/2023 00:00"
     },
     "schedule": "Once",
     "significanceColors": {
@@ -3326,9 +3326,9 @@
         "major-threshold-by-percent": "99",
         "minor-threshold-by-percent": "95"
     },
-    "status": "error",
+    "status": "ready",
     "submitted": 1682104491,
     "type": "SC",
-    "userName": "randy.pierce@noaa.gov",
+    "userName": "anonymous",
     "version": "Version:V01"
 }

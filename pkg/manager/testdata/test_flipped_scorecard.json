@@ -2,7 +2,7 @@
 
     "dateRange": "03/18/2023 20:00 - 04/17/2023 18:00",
     "id": "SCTEST:test_flipped_scorecard",
-    "name": "anonymous--submitted:20230418171407--2block",
+    "name": "SCTEST:test_flipped_scorecard",
     "plotParams": {
         "completeness": "0",
         "curves": [{

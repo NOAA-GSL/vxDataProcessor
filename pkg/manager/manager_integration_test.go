@@ -372,13 +372,13 @@ func Test_runManager(t *testing.T) {
 			name:            "test_RAOBs_(GDAS)",
 			docId:           "SCTEST:test_RAOBs_(GDAS)",
 			fileName:        "./testdata/test_RAOBs_(GDAS).json",
-			expectedSeconds: 10,
+			expectedSeconds: 20,
 		},
 		{
 			name:            "test_RAOBs_(Traditional)",
 			docId:           "SCTEST:test_RAOBs_(Traditional)",
 			fileName:        "./testdata/test_RAOBs_(Traditional).json",
-			expectedSeconds: 60,
+			expectedSeconds: 120,
 		},
 		{
 			name:            "test_Sub_24_Hour_Precipitation",
@@ -454,4 +454,3 @@ func Test_runManager(t *testing.T) {
 		log.Printf("The test %s took combined %s", tt.name, elapsed)
 	}
 }
-

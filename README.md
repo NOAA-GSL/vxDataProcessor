@@ -76,6 +76,80 @@ To debug the scorecard in vscode you need the following entry in your .vscode/la
 The "args" value needs to be set to the id of the scorecard document that you want to build. Once you have this launch.json
 and have configured an existing scorecard id in the "args" you can run the data processor from the "Run and Debug" panel by choosing "scorecard".
 
+TIP - Once you run the score card you can subsequently run it again by clicking the F5 key.
+
+## Integration tests
+
+### Environment
+
+It helps to have the following set in your vscode settings.json file.
+
+```json
+"go.testTimeout": "10m",
+"go.testTags": "integration",
+"go.lintOnSave": "workspace",
+"go.lintTool": "golangci-lint",
+"go.lintFlags": ["--fast"],
+"go.buildFlags": ["-tags=integration"],
+"go.testEnvVars": {
+: "/Users/randy.pierce/vxDataProcessor/.env"
+},
+"gopls": {
+"formatting.gofumpt": true
+}
+```
+
+### environment file
+
+You need an environment file like below, although you need to get the real credentials as these are fake.
+In this example the DEBUG_SCORECARD_APP_URL is pointing to a local instance of the scorecard app.
+If you are running and debugging the dataprocessor and not the scorecard app you probably want to point
+this to the production scorecard app UR:L. If you fail to properly designate the scorecard app URL
+in your environment the manger.Run function will error trying to notify the scorecard app of the
+resulting status of the run.
+
+```bash
+CB_HOST=adb-cb2.gsd.esrl.noaa.gov,adb-cb3.gsd.esrl.noaa.gov,adb-cb4.gsd.esrl.noaa.gov
+CB_USER=readonlyuser
+CB_PASSWORD=readonlyuserpassword
+CB_BUCKET=vxdata
+CB_SCOPE=_default
+CB_COLLECTION=METAR
+MYSQL_HOST='wolphin.fsl.noaa.gov:3306'
+MYSQL_USER='mysqlreadonlyuser'
+MYSQL_PASSWORD='mysqlreadonlyuserpassword'
+DEBUG_SCORECARD_APP_URL=http://localhost:3000
+```
+
+### running integration tests in vscode
+
+There are quite a few integration tests in the project. Most of them are in the manager/manager_integration_test.go.
+To run these you really need to set an environment like above. The PROC_ENV_PATH points to a .env file (use your path).
+You can run or debug an individual test in the context of the editor while editing a test file such as
+pkg/manager/manager_integration_test.go by clicking the slightly faded "run test" or "debug test" that is located just
+above the test function name. You can also use the test exlporer "flask" icon to selectively run some or all of the tests.
+
+### running integration tests from the command line
+
+You can run tests from the command line by cd'ing into a pkg  and running go test -run ...using a command like this.
+
+```bash
+cd ...vxDataProcessor/pkg/manager
+go test -timeout 10m -tags integration -run ./...
+```
+
+or
+
+```bash
+cd .../vxdataProcessor/pkg/builder
+go test -run ./...
+```
+
+the command with -v gives much more output
+
+```bash
+go test -v -run ./...
+```
 
 ## Disclaimer
 

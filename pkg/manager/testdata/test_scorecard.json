@@ -1,7 +1,7 @@
 {
     "dateRange": "03/13/2023 20:00 - 04/12/2023 13:00",
     "id": "SCTEST:test_scorecard",
-    "name": "anonymous--submitted:20230413165744--2block",
+    "name": "SCTEST:test_scorecard",
     "plotParams": {
         "completeness": "0",
         "curves": [{

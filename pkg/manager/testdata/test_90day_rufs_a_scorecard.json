@@ -3326,7 +3326,7 @@
         "major-threshold-by-percent": "99",
         "minor-threshold-by-percent": "95"
     },
-    "status": "error",
+    "status": "ready",
     "submitted": 1682104491,
     "type": "SC",
     "userName": "randy.pierce@noaa.gov",

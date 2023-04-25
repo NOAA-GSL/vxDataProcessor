@@ -1,0 +1,363 @@
+{
+  "dateRange": "11/06/2018 00:00 - 12/06/2018 00:00",
+  "id": "SCTEST:test_Anomaly_Correlation",
+  "name": "SCTEST:test_Anomaly_Correlation",
+  "plotParams": {
+    "completeness": "0",
+    "curves": [{
+      "application": "Anomaly Correlation",
+      "color": "rgb(255,0,0)",
+      "control-data-source": "GFS",
+      "data-source": "FV3GFS",
+      "forecast-length": [
+        "0",
+        "12",
+        "24"
+      ],
+      "label": "Block0",
+      "level": [
+        "500",
+        "1000"
+      ],
+      "region": [
+        "Global (all lat/lon)"
+      ],
+      "statistic": [
+        "ACC"
+      ],
+      "threshold": [
+        "threshold_NA"
+      ],
+      "valid-time": "unused",
+      "variable": [
+        "HGT",
+        "PRMSL",
+        "TMP",
+        "UGRD",
+        "VGRD"
+      ]
+    }],
+    "dates": "11/06/2018 00:00 - 12/06/2018 00:00",
+    "major-source-color": "#00ff00",
+    "major-threshold-by-percent": "99",
+    "major-threshold-by-stdv": "3",
+    "major-truth-color": "#ff0000",
+    "minor-source-color": "#00ff00",
+    "minor-threshold-by-percent": "95",
+    "minor-threshold-by-stdv": "2",
+    "minor-truth-color": "#ff0000",
+    "noGapsCheck": false,
+    "outliers": "all",
+    "plotAction": "scorecard",
+    "plotTypes": {
+      "Scorecard": true
+    },
+    "relative-date-range-type": "Hours",
+    "relative-date-range-value": "1",
+    "scorecard-color-theme": "RedGreen",
+    "scorecard-ends-on": "4/24/2023",
+    "scorecard-name": "randy.pierce@noaa.gov--submitted:20230424163838--1block",
+    "scorecard-percent-stdv": "Percent",
+    "scorecard-recurrence-interval": "Weekly",
+    "scorecard-schedule-mode": "Once",
+    "submitEpoch": 1682354318,
+    "these-days-of-the-month": "",
+    "these-days-of-the-week": "",
+    "these-hours-of-the-day": "",
+    "these-months": "",
+    "userName": "randy.pierce@noaa.gov"
+  },
+  "processedAt": 1682354658,
+  "queryMap": {
+    "blocks": {
+      "Block0": {
+        "data": {
+          "Global (all lat/lon)": {
+            "ACC": {
+              "HGT": {
+                "threshold_NA": {
+                  "500": {
+                    "0": {
+                      "controlQueryTemplate": "SELECT unix_timestamp(m0.valid_date) + 3600 * m0.valid_hour AS avtime,        AVG(m0.wacorr/100) AS stat    FROM anom_corr2.GFSDC_anomcorr_7 AS m0    WHERE 1=1        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour >= {{fromSecs}}        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour <= {{toSecs}}        AND m0.valid_hour IN(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)        AND m0.variable = 'HGT'        AND m0.fcst_len = 0        AND m0.level = 500    GROUP BY avtime    ORDER BY avtime;",
+                      "experimentalQueryTemplate": "SELECT unix_timestamp(m0.valid_date) + 3600 * m0.valid_hour AS avtime,        AVG(m0.wacorr/100) AS stat    FROM anom_corr2.FV3GFS_anomcorr_7 AS m0    WHERE 1=1        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour >= {{fromSecs}}        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour <= {{toSecs}}        AND m0.valid_hour IN(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)        AND m0.variable = 'HGT'        AND m0.fcst_len = 0        AND m0.level = 500    GROUP BY avtime    ORDER BY avtime;"
+                    },
+                    "12": {
+                      "controlQueryTemplate": "SELECT unix_timestamp(m0.valid_date) + 3600 * m0.valid_hour AS avtime,        AVG(m0.wacorr/100) AS stat    FROM anom_corr2.GFSDC_anomcorr_7 AS m0    WHERE 1=1        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour >= {{fromSecs}}        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour <= {{toSecs}}        AND m0.valid_hour IN(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)        AND m0.variable = 'HGT'        AND m0.fcst_len = 12        AND m0.level = 500    GROUP BY avtime    ORDER BY avtime;",
+                      "experimentalQueryTemplate": "SELECT unix_timestamp(m0.valid_date) + 3600 * m0.valid_hour AS avtime,        AVG(m0.wacorr/100) AS stat    FROM anom_corr2.FV3GFS_anomcorr_7 AS m0    WHERE 1=1        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour >= {{fromSecs}}        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour <= {{toSecs}}        AND m0.valid_hour IN(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)        AND m0.variable = 'HGT'        AND m0.fcst_len = 12        AND m0.level = 500    GROUP BY avtime    ORDER BY avtime;"
+                    },
+                    "24": {
+                      "controlQueryTemplate": "SELECT unix_timestamp(m0.valid_date) + 3600 * m0.valid_hour AS avtime,        AVG(m0.wacorr/100) AS stat    FROM anom_corr2.GFSDC_anomcorr_7 AS m0    WHERE 1=1        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour >= {{fromSecs}}        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour <= {{toSecs}}        AND m0.valid_hour IN(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)        AND m0.variable = 'HGT'        AND m0.fcst_len = 24        AND m0.level = 500    GROUP BY avtime    ORDER BY avtime;",
+                      "experimentalQueryTemplate": "SELECT unix_timestamp(m0.valid_date) + 3600 * m0.valid_hour AS avtime,        AVG(m0.wacorr/100) AS stat    FROM anom_corr2.FV3GFS_anomcorr_7 AS m0    WHERE 1=1        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour >= {{fromSecs}}        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour <= {{toSecs}}        AND m0.valid_hour IN(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)        AND m0.variable = 'HGT'        AND m0.fcst_len = 24        AND m0.level = 500    GROUP BY avtime    ORDER BY avtime;"
+                    }
+                  },
+                  "1000": {
+                    "0": {
+                      "controlQueryTemplate": "SELECT unix_timestamp(m0.valid_date) + 3600 * m0.valid_hour AS avtime,        AVG(m0.wacorr/100) AS stat    FROM anom_corr2.GFSDC_anomcorr_7 AS m0    WHERE 1=1        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour >= {{fromSecs}}        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour <= {{toSecs}}        AND m0.valid_hour IN(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)        AND m0.variable = 'HGT'        AND m0.fcst_len = 0        AND m0.level = 1000    GROUP BY avtime    ORDER BY avtime;",
+                      "experimentalQueryTemplate": "SELECT unix_timestamp(m0.valid_date) + 3600 * m0.valid_hour AS avtime,        AVG(m0.wacorr/100) AS stat    FROM anom_corr2.FV3GFS_anomcorr_7 AS m0    WHERE 1=1        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour >= {{fromSecs}}        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour <= {{toSecs}}        AND m0.valid_hour IN(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)        AND m0.variable = 'HGT'        AND m0.fcst_len = 0        AND m0.level = 1000    GROUP BY avtime    ORDER BY avtime;"
+                    },
+                    "12": {
+                      "controlQueryTemplate": "SELECT unix_timestamp(m0.valid_date) + 3600 * m0.valid_hour AS avtime,        AVG(m0.wacorr/100) AS stat    FROM anom_corr2.GFSDC_anomcorr_7 AS m0    WHERE 1=1        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour >= {{fromSecs}}        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour <= {{toSecs}}        AND m0.valid_hour IN(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)        AND m0.variable = 'HGT'        AND m0.fcst_len = 12        AND m0.level = 1000    GROUP BY avtime    ORDER BY avtime;",
+                      "experimentalQueryTemplate": "SELECT unix_timestamp(m0.valid_date) + 3600 * m0.valid_hour AS avtime,        AVG(m0.wacorr/100) AS stat    FROM anom_corr2.FV3GFS_anomcorr_7 AS m0    WHERE 1=1        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour >= {{fromSecs}}        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour <= {{toSecs}}        AND m0.valid_hour IN(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)        AND m0.variable = 'HGT'        AND m0.fcst_len = 12        AND m0.level = 1000    GROUP BY avtime    ORDER BY avtime;"
+                    },
+                    "24": {
+                      "controlQueryTemplate": "SELECT unix_timestamp(m0.valid_date) + 3600 * m0.valid_hour AS avtime,        AVG(m0.wacorr/100) AS stat    FROM anom_corr2.GFSDC_anomcorr_7 AS m0    WHERE 1=1        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour >= {{fromSecs}}        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour <= {{toSecs}}        AND m0.valid_hour IN(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)        AND m0.variable = 'HGT'        AND m0.fcst_len = 24        AND m0.level = 1000    GROUP BY avtime    ORDER BY avtime;",
+                      "experimentalQueryTemplate": "SELECT unix_timestamp(m0.valid_date) + 3600 * m0.valid_hour AS avtime,        AVG(m0.wacorr/100) AS stat    FROM anom_corr2.FV3GFS_anomcorr_7 AS m0    WHERE 1=1        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour >= {{fromSecs}}        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour <= {{toSecs}}        AND m0.valid_hour IN(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)        AND m0.variable = 'HGT'        AND m0.fcst_len = 24        AND m0.level = 1000    GROUP BY avtime    ORDER BY avtime;"
+                    }
+                  }
+                }
+              },
+              "PRMSL": {
+                "threshold_NA": {
+                  "500": {
+                    "0": {
+                      "controlQueryTemplate": "SELECT unix_timestamp(m0.valid_date) + 3600 * m0.valid_hour AS avtime,        AVG(m0.wacorr/100) AS stat    FROM anom_corr2.GFSDC_anomcorr_7 AS m0    WHERE 1=1        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour >= {{fromSecs}}        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour <= {{toSecs}}        AND m0.valid_hour IN(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)        AND m0.variable = 'PRMSL'        AND m0.fcst_len = 0        AND m0.level = 500    GROUP BY avtime    ORDER BY avtime;",
+                      "experimentalQueryTemplate": "SELECT unix_timestamp(m0.valid_date) + 3600 * m0.valid_hour AS avtime,        AVG(m0.wacorr/100) AS stat    FROM anom_corr2.FV3GFS_anomcorr_7 AS m0    WHERE 1=1        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour >= {{fromSecs}}        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour <= {{toSecs}}        AND m0.valid_hour IN(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)        AND m0.variable = 'PRMSL'        AND m0.fcst_len = 0        AND m0.level = 500    GROUP BY avtime    ORDER BY avtime;"
+                    },
+                    "12": {
+                      "controlQueryTemplate": "SELECT unix_timestamp(m0.valid_date) + 3600 * m0.valid_hour AS avtime,        AVG(m0.wacorr/100) AS stat    FROM anom_corr2.GFSDC_anomcorr_7 AS m0    WHERE 1=1        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour >= {{fromSecs}}        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour <= {{toSecs}}        AND m0.valid_hour IN(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)        AND m0.variable = 'PRMSL'        AND m0.fcst_len = 12        AND m0.level = 500    GROUP BY avtime    ORDER BY avtime;",
+                      "experimentalQueryTemplate": "SELECT unix_timestamp(m0.valid_date) + 3600 * m0.valid_hour AS avtime,        AVG(m0.wacorr/100) AS stat    FROM anom_corr2.FV3GFS_anomcorr_7 AS m0    WHERE 1=1        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour >= {{fromSecs}}        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour <= {{toSecs}}        AND m0.valid_hour IN(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)        AND m0.variable = 'PRMSL'        AND m0.fcst_len = 12        AND m0.level = 500    GROUP BY avtime    ORDER BY avtime;"
+                    },
+                    "24": {
+                      "controlQueryTemplate": "SELECT unix_timestamp(m0.valid_date) + 3600 * m0.valid_hour AS avtime,        AVG(m0.wacorr/100) AS stat    FROM anom_corr2.GFSDC_anomcorr_7 AS m0    WHERE 1=1        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour >= {{fromSecs}}        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour <= {{toSecs}}        AND m0.valid_hour IN(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)        AND m0.variable = 'PRMSL'        AND m0.fcst_len = 24        AND m0.level = 500    GROUP BY avtime    ORDER BY avtime;",
+                      "experimentalQueryTemplate": "SELECT unix_timestamp(m0.valid_date) + 3600 * m0.valid_hour AS avtime,        AVG(m0.wacorr/100) AS stat    FROM anom_corr2.FV3GFS_anomcorr_7 AS m0    WHERE 1=1        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour >= {{fromSecs}}        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour <= {{toSecs}}        AND m0.valid_hour IN(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)        AND m0.variable = 'PRMSL'        AND m0.fcst_len = 24        AND m0.level = 500    GROUP BY avtime    ORDER BY avtime;"
+                    }
+                  },
+                  "1000": {
+                    "0": {
+                      "controlQueryTemplate": "SELECT unix_timestamp(m0.valid_date) + 3600 * m0.valid_hour AS avtime,        AVG(m0.wacorr/100) AS stat    FROM anom_corr2.GFSDC_anomcorr_7 AS m0    WHERE 1=1        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour >= {{fromSecs}}        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour <= {{toSecs}}        AND m0.valid_hour IN(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)        AND m0.variable = 'PRMSL'        AND m0.fcst_len = 0        AND m0.level = 1000    GROUP BY avtime    ORDER BY avtime;",
+                      "experimentalQueryTemplate": "SELECT unix_timestamp(m0.valid_date) + 3600 * m0.valid_hour AS avtime,        AVG(m0.wacorr/100) AS stat    FROM anom_corr2.FV3GFS_anomcorr_7 AS m0    WHERE 1=1        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour >= {{fromSecs}}        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour <= {{toSecs}}        AND m0.valid_hour IN(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)        AND m0.variable = 'PRMSL'        AND m0.fcst_len = 0        AND m0.level = 1000    GROUP BY avtime    ORDER BY avtime;"
+                    },
+                    "12": {
+                      "controlQueryTemplate": "SELECT unix_timestamp(m0.valid_date) + 3600 * m0.valid_hour AS avtime,        AVG(m0.wacorr/100) AS stat    FROM anom_corr2.GFSDC_anomcorr_7 AS m0    WHERE 1=1        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour >= {{fromSecs}}        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour <= {{toSecs}}        AND m0.valid_hour IN(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)        AND m0.variable = 'PRMSL'        AND m0.fcst_len = 12        AND m0.level = 1000    GROUP BY avtime    ORDER BY avtime;",
+                      "experimentalQueryTemplate": "SELECT unix_timestamp(m0.valid_date) + 3600 * m0.valid_hour AS avtime,        AVG(m0.wacorr/100) AS stat    FROM anom_corr2.FV3GFS_anomcorr_7 AS m0    WHERE 1=1        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour >= {{fromSecs}}        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour <= {{toSecs}}        AND m0.valid_hour IN(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)        AND m0.variable = 'PRMSL'        AND m0.fcst_len = 12        AND m0.level = 1000    GROUP BY avtime    ORDER BY avtime;"
+                    },
+                    "24": {
+                      "controlQueryTemplate": "SELECT unix_timestamp(m0.valid_date) + 3600 * m0.valid_hour AS avtime,        AVG(m0.wacorr/100) AS stat    FROM anom_corr2.GFSDC_anomcorr_7 AS m0    WHERE 1=1        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour >= {{fromSecs}}        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour <= {{toSecs}}        AND m0.valid_hour IN(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)        AND m0.variable = 'PRMSL'        AND m0.fcst_len = 24        AND m0.level = 1000    GROUP BY avtime    ORDER BY avtime;",
+                      "experimentalQueryTemplate": "SELECT unix_timestamp(m0.valid_date) + 3600 * m0.valid_hour AS avtime,        AVG(m0.wacorr/100) AS stat    FROM anom_corr2.FV3GFS_anomcorr_7 AS m0    WHERE 1=1        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour >= {{fromSecs}}        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour <= {{toSecs}}        AND m0.valid_hour IN(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)        AND m0.variable = 'PRMSL'        AND m0.fcst_len = 24        AND m0.level = 1000    GROUP BY avtime    ORDER BY avtime;"
+                    }
+                  }
+                }
+              },
+              "TMP": {
+                "threshold_NA": {
+                  "500": {
+                    "0": {
+                      "controlQueryTemplate": "SELECT unix_timestamp(m0.valid_date) + 3600 * m0.valid_hour AS avtime,        AVG(m0.wacorr/100) AS stat    FROM anom_corr2.GFSDC_anomcorr_7 AS m0    WHERE 1=1        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour >= {{fromSecs}}        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour <= {{toSecs}}        AND m0.valid_hour IN(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)        AND m0.variable = 'TMP'        AND m0.fcst_len = 0        AND m0.level = 500    GROUP BY avtime    ORDER BY avtime;",
+                      "experimentalQueryTemplate": "SELECT unix_timestamp(m0.valid_date) + 3600 * m0.valid_hour AS avtime,        AVG(m0.wacorr/100) AS stat    FROM anom_corr2.FV3GFS_anomcorr_7 AS m0    WHERE 1=1        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour >= {{fromSecs}}        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour <= {{toSecs}}        AND m0.valid_hour IN(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)        AND m0.variable = 'TMP'        AND m0.fcst_len = 0        AND m0.level = 500    GROUP BY avtime    ORDER BY avtime;"
+                    },
+                    "12": {
+                      "controlQueryTemplate": "SELECT unix_timestamp(m0.valid_date) + 3600 * m0.valid_hour AS avtime,        AVG(m0.wacorr/100) AS stat    FROM anom_corr2.GFSDC_anomcorr_7 AS m0    WHERE 1=1        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour >= {{fromSecs}}        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour <= {{toSecs}}        AND m0.valid_hour IN(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)        AND m0.variable = 'TMP'        AND m0.fcst_len = 12        AND m0.level = 500    GROUP BY avtime    ORDER BY avtime;",
+                      "experimentalQueryTemplate": "SELECT unix_timestamp(m0.valid_date) + 3600 * m0.valid_hour AS avtime,        AVG(m0.wacorr/100) AS stat    FROM anom_corr2.FV3GFS_anomcorr_7 AS m0    WHERE 1=1        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour >= {{fromSecs}}        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour <= {{toSecs}}        AND m0.valid_hour IN(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)        AND m0.variable = 'TMP'        AND m0.fcst_len = 12        AND m0.level = 500    GROUP BY avtime    ORDER BY avtime;"
+                    },
+                    "24": {
+                      "controlQueryTemplate": "SELECT unix_timestamp(m0.valid_date) + 3600 * m0.valid_hour AS avtime,        AVG(m0.wacorr/100) AS stat    FROM anom_corr2.GFSDC_anomcorr_7 AS m0    WHERE 1=1        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour >= {{fromSecs}}        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour <= {{toSecs}}        AND m0.valid_hour IN(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)        AND m0.variable = 'TMP'        AND m0.fcst_len = 24        AND m0.level = 500    GROUP BY avtime    ORDER BY avtime;",
+                      "experimentalQueryTemplate": "SELECT unix_timestamp(m0.valid_date) + 3600 * m0.valid_hour AS avtime,        AVG(m0.wacorr/100) AS stat    FROM anom_corr2.FV3GFS_anomcorr_7 AS m0    WHERE 1=1        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour >= {{fromSecs}}        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour <= {{toSecs}}        AND m0.valid_hour IN(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)        AND m0.variable = 'TMP'        AND m0.fcst_len = 24        AND m0.level = 500    GROUP BY avtime    ORDER BY avtime;"
+                    }
+                  },
+                  "1000": {
+                    "0": {
+                      "controlQueryTemplate": "SELECT unix_timestamp(m0.valid_date) + 3600 * m0.valid_hour AS avtime,        AVG(m0.wacorr/100) AS stat    FROM anom_corr2.GFSDC_anomcorr_7 AS m0    WHERE 1=1        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour >= {{fromSecs}}        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour <= {{toSecs}}        AND m0.valid_hour IN(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)        AND m0.variable = 'TMP'        AND m0.fcst_len = 0        AND m0.level = 1000    GROUP BY avtime    ORDER BY avtime;",
+                      "experimentalQueryTemplate": "SELECT unix_timestamp(m0.valid_date) + 3600 * m0.valid_hour AS avtime,        AVG(m0.wacorr/100) AS stat    FROM anom_corr2.FV3GFS_anomcorr_7 AS m0    WHERE 1=1        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour >= {{fromSecs}}        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour <= {{toSecs}}        AND m0.valid_hour IN(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)        AND m0.variable = 'TMP'        AND m0.fcst_len = 0        AND m0.level = 1000    GROUP BY avtime    ORDER BY avtime;"
+                    },
+                    "12": {
+                      "controlQueryTemplate": "SELECT unix_timestamp(m0.valid_date) + 3600 * m0.valid_hour AS avtime,        AVG(m0.wacorr/100) AS stat    FROM anom_corr2.GFSDC_anomcorr_7 AS m0    WHERE 1=1        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour >= {{fromSecs}}        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour <= {{toSecs}}        AND m0.valid_hour IN(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)        AND m0.variable = 'TMP'        AND m0.fcst_len = 12        AND m0.level = 1000    GROUP BY avtime    ORDER BY avtime;",
+                      "experimentalQueryTemplate": "SELECT unix_timestamp(m0.valid_date) + 3600 * m0.valid_hour AS avtime,        AVG(m0.wacorr/100) AS stat    FROM anom_corr2.FV3GFS_anomcorr_7 AS m0    WHERE 1=1        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour >= {{fromSecs}}        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour <= {{toSecs}}        AND m0.valid_hour IN(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)        AND m0.variable = 'TMP'        AND m0.fcst_len = 12        AND m0.level = 1000    GROUP BY avtime    ORDER BY avtime;"
+                    },
+                    "24": {
+                      "controlQueryTemplate": "SELECT unix_timestamp(m0.valid_date) + 3600 * m0.valid_hour AS avtime,        AVG(m0.wacorr/100) AS stat    FROM anom_corr2.GFSDC_anomcorr_7 AS m0    WHERE 1=1        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour >= {{fromSecs}}        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour <= {{toSecs}}        AND m0.valid_hour IN(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)        AND m0.variable = 'TMP'        AND m0.fcst_len = 24        AND m0.level = 1000    GROUP BY avtime    ORDER BY avtime;",
+                      "experimentalQueryTemplate": "SELECT unix_timestamp(m0.valid_date) + 3600 * m0.valid_hour AS avtime,        AVG(m0.wacorr/100) AS stat    FROM anom_corr2.FV3GFS_anomcorr_7 AS m0    WHERE 1=1        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour >= {{fromSecs}}        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour <= {{toSecs}}        AND m0.valid_hour IN(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)        AND m0.variable = 'TMP'        AND m0.fcst_len = 24        AND m0.level = 1000    GROUP BY avtime    ORDER BY avtime;"
+                    }
+                  }
+                }
+              },
+              "UGRD": {
+                "threshold_NA": {
+                  "500": {
+                    "0": {
+                      "controlQueryTemplate": "SELECT unix_timestamp(m0.valid_date) + 3600 * m0.valid_hour AS avtime,        AVG(m0.wacorr/100) AS stat    FROM anom_corr2.GFSDC_anomcorr_7 AS m0    WHERE 1=1        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour >= {{fromSecs}}        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour <= {{toSecs}}        AND m0.valid_hour IN(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)        AND m0.variable = 'UGRD'        AND m0.fcst_len = 0        AND m0.level = 500    GROUP BY avtime    ORDER BY avtime;",
+                      "experimentalQueryTemplate": "SELECT unix_timestamp(m0.valid_date) + 3600 * m0.valid_hour AS avtime,        AVG(m0.wacorr/100) AS stat    FROM anom_corr2.FV3GFS_anomcorr_7 AS m0    WHERE 1=1        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour >= {{fromSecs}}        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour <= {{toSecs}}        AND m0.valid_hour IN(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)        AND m0.variable = 'UGRD'        AND m0.fcst_len = 0        AND m0.level = 500    GROUP BY avtime    ORDER BY avtime;"
+                    },
+                    "12": {
+                      "controlQueryTemplate": "SELECT unix_timestamp(m0.valid_date) + 3600 * m0.valid_hour AS avtime,        AVG(m0.wacorr/100) AS stat    FROM anom_corr2.GFSDC_anomcorr_7 AS m0    WHERE 1=1        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour >= {{fromSecs}}        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour <= {{toSecs}}        AND m0.valid_hour IN(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)        AND m0.variable = 'UGRD'        AND m0.fcst_len = 12        AND m0.level = 500    GROUP BY avtime    ORDER BY avtime;",
+                      "experimentalQueryTemplate": "SELECT unix_timestamp(m0.valid_date) + 3600 * m0.valid_hour AS avtime,        AVG(m0.wacorr/100) AS stat    FROM anom_corr2.FV3GFS_anomcorr_7 AS m0    WHERE 1=1        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour >= {{fromSecs}}        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour <= {{toSecs}}        AND m0.valid_hour IN(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)        AND m0.variable = 'UGRD'        AND m0.fcst_len = 12        AND m0.level = 500    GROUP BY avtime    ORDER BY avtime;"
+                    },
+                    "24": {
+                      "controlQueryTemplate": "SELECT unix_timestamp(m0.valid_date) + 3600 * m0.valid_hour AS avtime,        AVG(m0.wacorr/100) AS stat    FROM anom_corr2.GFSDC_anomcorr_7 AS m0    WHERE 1=1        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour >= {{fromSecs}}        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour <= {{toSecs}}        AND m0.valid_hour IN(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)        AND m0.variable = 'UGRD'        AND m0.fcst_len = 24        AND m0.level = 500    GROUP BY avtime    ORDER BY avtime;",
+                      "experimentalQueryTemplate": "SELECT unix_timestamp(m0.valid_date) + 3600 * m0.valid_hour AS avtime,        AVG(m0.wacorr/100) AS stat    FROM anom_corr2.FV3GFS_anomcorr_7 AS m0    WHERE 1=1        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour >= {{fromSecs}}        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour <= {{toSecs}}        AND m0.valid_hour IN(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)        AND m0.variable = 'UGRD'        AND m0.fcst_len = 24        AND m0.level = 500    GROUP BY avtime    ORDER BY avtime;"
+                    }
+                  },
+                  "1000": {
+                    "0": {
+                      "controlQueryTemplate": "SELECT unix_timestamp(m0.valid_date) + 3600 * m0.valid_hour AS avtime,        AVG(m0.wacorr/100) AS stat    FROM anom_corr2.GFSDC_anomcorr_7 AS m0    WHERE 1=1        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour >= {{fromSecs}}        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour <= {{toSecs}}        AND m0.valid_hour IN(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)        AND m0.variable = 'UGRD'        AND m0.fcst_len = 0        AND m0.level = 1000    GROUP BY avtime    ORDER BY avtime;",
+                      "experimentalQueryTemplate": "SELECT unix_timestamp(m0.valid_date) + 3600 * m0.valid_hour AS avtime,        AVG(m0.wacorr/100) AS stat    FROM anom_corr2.FV3GFS_anomcorr_7 AS m0    WHERE 1=1        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour >= {{fromSecs}}        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour <= {{toSecs}}        AND m0.valid_hour IN(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)        AND m0.variable = 'UGRD'        AND m0.fcst_len = 0        AND m0.level = 1000    GROUP BY avtime    ORDER BY avtime;"
+                    },
+                    "12": {
+                      "controlQueryTemplate": "SELECT unix_timestamp(m0.valid_date) + 3600 * m0.valid_hour AS avtime,        AVG(m0.wacorr/100) AS stat    FROM anom_corr2.GFSDC_anomcorr_7 AS m0    WHERE 1=1        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour >= {{fromSecs}}        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour <= {{toSecs}}        AND m0.valid_hour IN(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)        AND m0.variable = 'UGRD'        AND m0.fcst_len = 12        AND m0.level = 1000    GROUP BY avtime    ORDER BY avtime;",
+                      "experimentalQueryTemplate": "SELECT unix_timestamp(m0.valid_date) + 3600 * m0.valid_hour AS avtime,        AVG(m0.wacorr/100) AS stat    FROM anom_corr2.FV3GFS_anomcorr_7 AS m0    WHERE 1=1        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour >= {{fromSecs}}        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour <= {{toSecs}}        AND m0.valid_hour IN(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)        AND m0.variable = 'UGRD'        AND m0.fcst_len = 12        AND m0.level = 1000    GROUP BY avtime    ORDER BY avtime;"
+                    },
+                    "24": {
+                      "controlQueryTemplate": "SELECT unix_timestamp(m0.valid_date) + 3600 * m0.valid_hour AS avtime,        AVG(m0.wacorr/100) AS stat    FROM anom_corr2.GFSDC_anomcorr_7 AS m0    WHERE 1=1        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour >= {{fromSecs}}        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour <= {{toSecs}}        AND m0.valid_hour IN(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)        AND m0.variable = 'UGRD'        AND m0.fcst_len = 24        AND m0.level = 1000    GROUP BY avtime    ORDER BY avtime;",
+                      "experimentalQueryTemplate": "SELECT unix_timestamp(m0.valid_date) + 3600 * m0.valid_hour AS avtime,        AVG(m0.wacorr/100) AS stat    FROM anom_corr2.FV3GFS_anomcorr_7 AS m0    WHERE 1=1        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour >= {{fromSecs}}        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour <= {{toSecs}}        AND m0.valid_hour IN(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)        AND m0.variable = 'UGRD'        AND m0.fcst_len = 24        AND m0.level = 1000    GROUP BY avtime    ORDER BY avtime;"
+                    }
+                  }
+                }
+              },
+              "VGRD": {
+                "threshold_NA": {
+                  "500": {
+                    "0": {
+                      "controlQueryTemplate": "SELECT unix_timestamp(m0.valid_date) + 3600 * m0.valid_hour AS avtime,        AVG(m0.wacorr/100) AS stat    FROM anom_corr2.GFSDC_anomcorr_7 AS m0    WHERE 1=1        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour >= {{fromSecs}}        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour <= {{toSecs}}        AND m0.valid_hour IN(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)        AND m0.variable = 'VGRD'        AND m0.fcst_len = 0        AND m0.level = 500    GROUP BY avtime    ORDER BY avtime;",
+                      "experimentalQueryTemplate": "SELECT unix_timestamp(m0.valid_date) + 3600 * m0.valid_hour AS avtime,        AVG(m0.wacorr/100) AS stat    FROM anom_corr2.FV3GFS_anomcorr_7 AS m0    WHERE 1=1        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour >= {{fromSecs}}        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour <= {{toSecs}}        AND m0.valid_hour IN(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)        AND m0.variable = 'VGRD'        AND m0.fcst_len = 0        AND m0.level = 500    GROUP BY avtime    ORDER BY avtime;"
+                    },
+                    "12": {
+                      "controlQueryTemplate": "SELECT unix_timestamp(m0.valid_date) + 3600 * m0.valid_hour AS avtime,        AVG(m0.wacorr/100) AS stat    FROM anom_corr2.GFSDC_anomcorr_7 AS m0    WHERE 1=1        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour >= {{fromSecs}}        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour <= {{toSecs}}        AND m0.valid_hour IN(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)        AND m0.variable = 'VGRD'        AND m0.fcst_len = 12        AND m0.level = 500    GROUP BY avtime    ORDER BY avtime;",
+                      "experimentalQueryTemplate": "SELECT unix_timestamp(m0.valid_date) + 3600 * m0.valid_hour AS avtime,        AVG(m0.wacorr/100) AS stat    FROM anom_corr2.FV3GFS_anomcorr_7 AS m0    WHERE 1=1        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour >= {{fromSecs}}        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour <= {{toSecs}}        AND m0.valid_hour IN(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)        AND m0.variable = 'VGRD'        AND m0.fcst_len = 12        AND m0.level = 500    GROUP BY avtime    ORDER BY avtime;"
+                    },
+                    "24": {
+                      "controlQueryTemplate": "SELECT unix_timestamp(m0.valid_date) + 3600 * m0.valid_hour AS avtime,        AVG(m0.wacorr/100) AS stat    FROM anom_corr2.GFSDC_anomcorr_7 AS m0    WHERE 1=1        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour >= {{fromSecs}}        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour <= {{toSecs}}        AND m0.valid_hour IN(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)        AND m0.variable = 'VGRD'        AND m0.fcst_len = 24        AND m0.level = 500    GROUP BY avtime    ORDER BY avtime;",
+                      "experimentalQueryTemplate": "SELECT unix_timestamp(m0.valid_date) + 3600 * m0.valid_hour AS avtime,        AVG(m0.wacorr/100) AS stat    FROM anom_corr2.FV3GFS_anomcorr_7 AS m0    WHERE 1=1        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour >= {{fromSecs}}        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour <= {{toSecs}}        AND m0.valid_hour IN(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)        AND m0.variable = 'VGRD'        AND m0.fcst_len = 24        AND m0.level = 500    GROUP BY avtime    ORDER BY avtime;"
+                    }
+                  },
+                  "1000": {
+                    "0": {
+                      "controlQueryTemplate": "SELECT unix_timestamp(m0.valid_date) + 3600 * m0.valid_hour AS avtime,        AVG(m0.wacorr/100) AS stat    FROM anom_corr2.GFSDC_anomcorr_7 AS m0    WHERE 1=1        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour >= {{fromSecs}}        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour <= {{toSecs}}        AND m0.valid_hour IN(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)        AND m0.variable = 'VGRD'        AND m0.fcst_len = 0        AND m0.level = 1000    GROUP BY avtime    ORDER BY avtime;",
+                      "experimentalQueryTemplate": "SELECT unix_timestamp(m0.valid_date) + 3600 * m0.valid_hour AS avtime,        AVG(m0.wacorr/100) AS stat    FROM anom_corr2.FV3GFS_anomcorr_7 AS m0    WHERE 1=1        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour >= {{fromSecs}}        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour <= {{toSecs}}        AND m0.valid_hour IN(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)        AND m0.variable = 'VGRD'        AND m0.fcst_len = 0        AND m0.level = 1000    GROUP BY avtime    ORDER BY avtime;"
+                    },
+                    "12": {
+                      "controlQueryTemplate": "SELECT unix_timestamp(m0.valid_date) + 3600 * m0.valid_hour AS avtime,        AVG(m0.wacorr/100) AS stat    FROM anom_corr2.GFSDC_anomcorr_7 AS m0    WHERE 1=1        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour >= {{fromSecs}}        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour <= {{toSecs}}        AND m0.valid_hour IN(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)        AND m0.variable = 'VGRD'        AND m0.fcst_len = 12        AND m0.level = 1000    GROUP BY avtime    ORDER BY avtime;",
+                      "experimentalQueryTemplate": "SELECT unix_timestamp(m0.valid_date) + 3600 * m0.valid_hour AS avtime,        AVG(m0.wacorr/100) AS stat    FROM anom_corr2.FV3GFS_anomcorr_7 AS m0    WHERE 1=1        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour >= {{fromSecs}}        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour <= {{toSecs}}        AND m0.valid_hour IN(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)        AND m0.variable = 'VGRD'        AND m0.fcst_len = 12        AND m0.level = 1000    GROUP BY avtime    ORDER BY avtime;"
+                    },
+                    "24": {
+                      "controlQueryTemplate": "SELECT unix_timestamp(m0.valid_date) + 3600 * m0.valid_hour AS avtime,        AVG(m0.wacorr/100) AS stat    FROM anom_corr2.GFSDC_anomcorr_7 AS m0    WHERE 1=1        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour >= {{fromSecs}}        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour <= {{toSecs}}        AND m0.valid_hour IN(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)        AND m0.variable = 'VGRD'        AND m0.fcst_len = 24        AND m0.level = 1000    GROUP BY avtime    ORDER BY avtime;",
+                      "experimentalQueryTemplate": "SELECT unix_timestamp(m0.valid_date) + 3600 * m0.valid_hour AS avtime,        AVG(m0.wacorr/100) AS stat    FROM anom_corr2.FV3GFS_anomcorr_7 AS m0    WHERE 1=1        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour >= {{fromSecs}}        AND unix_timestamp(m0.valid_date)+3600*m0.valid_hour <= {{toSecs}}        AND m0.valid_hour IN(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)        AND m0.variable = 'VGRD'        AND m0.fcst_len = 24        AND m0.level = 1000    GROUP BY avtime    ORDER BY avtime;"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "results": {
+    "blocks": {
+      "Block0": {
+        "blockApplication": "https://mats-docker-dev.gsd.esrl.noaa.gov/scorecard",
+        "blockParameters": [
+          "application",
+          "scale",
+          "truth",
+          "forecast-type",
+          "valid-time"
+        ],
+        "blockTitle": {
+          "controlDataSource": "GFS",
+          "dataSource": "FV3GFS",
+          "label": "Block0"
+        },
+        "data": {
+          "Global (all lat/lon)": {
+            "ACC": {
+              "HGT": {
+                "threshold_NA": {
+                  "500": {
+                    "0": 0,
+                    "12": 2,
+                    "24": -2
+                  },
+                  "1000": {
+                    "0": -2,
+                    "12": -2,
+                    "24": -2
+                  }
+                }
+              },
+              "PRMSL": {
+                "threshold_NA": {
+                  "500": {
+                    "0": -9999,
+                    "12": -9999,
+                    "24": -9999
+                  },
+                  "1000": {
+                    "0": -9999,
+                    "12": -9999,
+                    "24": -9999
+                  }
+                }
+              },
+              "TMP": {
+                "threshold_NA": {
+                  "500": {
+                    "0": -2,
+                    "12": -2,
+                    "24": -2
+                  },
+                  "1000": {
+                    "0": -9999,
+                    "12": -9999,
+                    "24": -9999
+                  }
+                }
+              },
+              "UGRD": {
+                "threshold_NA": {
+                  "500": {
+                    "0": -2,
+                    "12": -2,
+                    "24": -2
+                  },
+                  "1000": {
+                    "0": -9999,
+                    "12": -9999,
+                    "24": -9999
+                  }
+                }
+              },
+              "VGRD": {
+                "threshold_NA": {
+                  "500": {
+                    "0": -2,
+                    "12": -2,
+                    "24": -2
+                  },
+                  "1000": {
+                    "0": -9999,
+                    "12": -9999,
+                    "24": -9999
+                  }
+                }
+              }
+            }
+          }
+        },
+        "fcstlens": [
+          "0",
+          "12",
+          "24"
+        ],
+        "regions": [
+          "Global (all lat/lon)"
+        ]
+      }
+    },
+    "title": "randy.pierce@noaa.gov:randy.pierce@noaa.gov--submitted:20230424163838--1block:1682354318:0:11/06/2018 00:00 - 12/06/2018 00:00"
+  },
+  "schedule": "Once",
+  "significanceColors": {
+    "major-source-color": "#00ff00",
+    "major-truth-color": "#ff0000",
+    "minor-source-color": "#00ff00",
+    "minor-truth-color": "#ff0000"
+  },
+  "significanceThresholds": {
+    "major-threshold-by-percent": "99",
+    "minor-threshold-by-percent": "95"
+  },
+  "status": "ready",
+  "submitted": 1682354318,
+  "type": "SC",
+  "userName": "randy.pierce@noaa.gov",
+  "version": "Version:V01"
+}

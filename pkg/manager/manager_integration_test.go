@@ -304,115 +304,154 @@ func Test_getSliceResultBlocks(t *testing.T) {
 }
 
 func Test_runManager(t *testing.T) {
-	// setup a test document
-	documentID := "SCTEST:test_scorecard"
 	t.Setenv("PROC_TESTING_ACCEPT_SCTEST_DOCIDS", "")
 	var mngr *Manager
 	var err error
-	start := time.Now()
 	loadEnvironmentFile()
-	mngr, err = GetManager(documentID)
-	if err != nil {
-		t.Fatal(fmt.Errorf("manager loadEnvironment error GetManager %w", err))
+	tests := []struct {
+		name            string
+		docId           string
+		fileName        string
+		expectedSeconds int
+	}{
+		// {
+		// 	name:            "test_1_Hour_Precipitation",
+		// 	docId:           "SCTEST:test_1_Hour_Precipitation",
+		// 	fileName:        "./testdata/test_1_Hour_Precipitation.json",
+		// 	expectedSeconds: 60,
+		// },
+		{
+			name:            "test_24_Hour_Precipitation",
+			docId:           "SCTEST:test_24_Hour_Precipitation",
+			fileName:        "./testdata/test_24_Hour_Precipitation.json",
+			expectedSeconds: 5,
+		},
+		{
+			name:            "test_90day_rufs_a_scorecard",
+			docId:           "SCTEST:test_90day_rufs_a_scorecard",
+			fileName:        "./testdata/test_90day_rufs_a_scorecard.json",
+			expectedSeconds: 100,
+		},
+		{
+			name:            "test_AMDAR",
+			docId:           "SCTEST:test_AMDAR",
+			fileName:        "./testdata/test_AMDAR.json",
+			expectedSeconds: 60,
+		},
+		{
+			name:            "test_Anomaly_Correlation",
+			docId:           "SCTEST:test_Anomaly_Correlation",
+			fileName:        "./testdata/test_Anomaly_Correlation.json",
+			expectedSeconds: 5,
+		},
+		{
+			name:            "test_Ceiling",
+			docId:           "SCTEST:test_Ceiling",
+			fileName:        "./testdata/test_Ceiling.json",
+			expectedSeconds: 10,
+		},
+		{
+			name:            "test_Composite_Reflectivity",
+			docId:           "SCTEST:test_Composite_Reflectivity",
+			fileName:        "./testdata/test_Composite_Reflectivity.json",
+			expectedSeconds: 10,
+		},
+		{
+			name:            "test_Echo_Top",
+			docId:           "SCTEST:test_Echo_Top",
+			fileName:        "./testdata/test_Echo_Top.json",
+			expectedSeconds: 15,
+		},
+		{
+			name:            "test_Gauge_Precipitation",
+			docId:           "SCTEST:test_Gauge_Precipitation",
+			fileName:        "./testdata/test_Gauge_Precipitation.json",
+			expectedSeconds: 15,
+		},
+		{
+			name:            "test_RAOBs_(GDAS)",
+			docId:           "SCTEST:test_RAOBs_(GDAS)",
+			fileName:        "./testdata/test_RAOBs_(GDAS).json",
+			expectedSeconds: 10,
+		},
+		{
+			name:            "test_RAOBs_(Traditional)",
+			docId:           "SCTEST:test_RAOBs_(Traditional)",
+			fileName:        "./testdata/test_RAOBs_(Traditional).json",
+			expectedSeconds: 60,
+		},
+		{
+			name:            "test_Sub_24_Hour_Precipitation",
+			docId:           "SCTEST:test_Sub_24_Hour_Precipitation",
+			fileName:        "./testdata/test_Sub_24_Hour_Precipitation.json",
+			expectedSeconds: 5,
+		},
+		{
+			name:            "test_Surface",
+			docId:           "SCTEST:test_Surface",
+			fileName:        "./testdata/test_Surface.json",
+			expectedSeconds: 20,
+		},
+		{
+			name:            "test_Surface_Land_Use",
+			docId:           "SCTEST:test_Surface_Land_Use",
+			fileName:        "./testdata/test_Surface_Land_Use.json",
+			expectedSeconds: 40,
+		},
+		{
+			name:            "test_Vertically_Integrated_Liquid",
+			docId:           "SCTEST:test_Vertically_Integrated_Liquid",
+			fileName:        "./testdata/test_Vertically_Integrated_Liquid.json",
+			expectedSeconds: 15,
+		},
+		{
+			name:            "test_Visibility",
+			docId:           "SCTEST:test_Visibility",
+			fileName:        "./testdata/test_Visibility.json",
+			expectedSeconds: 10,
+		},
+		{
+			name:            "test_flipped_scorecard",
+			docId:           "SCTEST:test_flipped_scorecard",
+			fileName:        "./testdata/test_flipped_scorecard.json",
+			expectedSeconds: 60,
+		},
 	}
 	var cbCredentials director.DbCredentials
 	_, cbCredentials, err = loadEnvironment()
 	if err != nil {
 		t.Fatal(fmt.Errorf("manager loadEnvironment error loadEnvironment %w", err))
 	}
-	err = getConnection(mngr, cbCredentials)
-	if err != nil {
-		t.Fatal(fmt.Errorf("manager loadEnvironment error getConnection %w", err))
+
+	for _, tt := range tests {
+		log.Printf("Starting test %s", tt.name)
+		start := time.Now()
+		mngr, err = GetManager(tt.docId)
+		if err != nil {
+			t.Fatal(fmt.Errorf("manager - getManager for %s error  %w", tt.name, err))
+		}
+		err = getConnection(mngr, cbCredentials)
+		if err != nil {
+			t.Fatal(fmt.Errorf("manager loadEnvironmenttest %s error getConnection %w", tt.name, err))
+		}
+		err = upsertTestDoc(mngr, tt.fileName, tt.docId)
+		if err != nil {
+			t.Fatal(fmt.Errorf("manager upsertTestDoc test %s error upserting test scorecard %w", tt.name, err))
+		}
+		// get a manager
+		manager, err := newScorecardManager(tt.docId)
+		if err != nil {
+			t.Fatal(fmt.Errorf("manager test %s NewScorecardManager error getting a manager %w", tt.name, err))
+		}
+		err = manager.Run()
+		if err != nil {
+			t.Fatal(fmt.Errorf("manager test %s Run error %w", tt.name, err))
+		}
+		elapsed := time.Since(start)
+		if tt.expectedSeconds < int(elapsed.Seconds()) {
+			t.Fatalf("manager test %s expected %d seconds but took %d seconds", tt.name, tt.expectedSeconds, int(elapsed.Seconds()))
+		}
+		log.Printf("The test %s took combined %s", tt.name, elapsed)
 	}
-	err = upsertTestDoc(mngr, "./testdata/test_scorecard.json", documentID)
-	if err != nil {
-		t.Fatal(fmt.Sprint("manager upsertTestDoc error upserting test scorecard", err))
-	}
-	// get a manager
-	manager, err := newScorecardManager(documentID)
-	if err != nil {
-		t.Fatal(fmt.Sprint("manager test NewScorecardManager error getting a manager", err))
-	}
-	err = manager.Run()
-	if err != nil {
-		t.Fatal(fmt.Sprint("manager test run error ", err))
-	}
-	elapsed := time.Since(start)
-	fmt.Printf("The test took combined %s", elapsed)
 }
 
-func Test_flipped_runManager(t *testing.T) {
-	// setup a test document
-	documentID := "SCTEST:test_flipped_scorecard"
-	t.Setenv("PROC_TESTING_ACCEPT_SCTEST_DOCIDS", "")
-	var mngr *Manager
-	var err error
-	start := time.Now()
-	loadEnvironmentFile()
-	mngr, err = GetManager(documentID)
-	if err != nil {
-		t.Fatal(fmt.Errorf("manager loadEnvironment error GetManager %w", err))
-	}
-	var cbCredentials director.DbCredentials
-	_, cbCredentials, err = loadEnvironment()
-	if err != nil {
-		t.Fatal(fmt.Errorf("manager loadEnvironment error loadEnvironment %w", err))
-	}
-	err = getConnection(mngr, cbCredentials)
-	if err != nil {
-		t.Fatal(fmt.Errorf("manager loadEnvironment error getConnection %w", err))
-	}
-	err = upsertTestDoc(mngr, "./testdata/test_flipped_scorecard.json", documentID)
-	if err != nil {
-		t.Fatal(fmt.Sprint("manager upsertTestDoc error upserting test scorecard", err))
-	}
-	// get a manager
-	manager, err := newScorecardManager(documentID)
-	if err != nil {
-		t.Fatal(fmt.Sprint("manager test NewScorecardManager error getting a manager", err))
-	}
-	err = manager.Run()
-	if err != nil {
-		t.Fatal(fmt.Sprint("manager test run error ", err))
-	}
-	elapsed := time.Since(start)
-	fmt.Printf("The test took combined %s", elapsed)
-}
-
-func Test_90day_rufs_a_runManager(t *testing.T) {
-	// setup a test document
-	documentID := "SCTEST:test_90day_rufs_a_scorecard"
-	t.Setenv("PROC_TESTING_ACCEPT_SCTEST_DOCIDS", "")
-	var mngr *Manager
-	var err error
-	start := time.Now()
-	loadEnvironmentFile()
-	mngr, err = GetManager(documentID)
-	if err != nil {
-		t.Fatal(fmt.Errorf("manager loadEnvironment error GetManager %w", err))
-	}
-	var cbCredentials director.DbCredentials
-	_, cbCredentials, err = loadEnvironment()
-	if err != nil {
-		t.Fatal(fmt.Errorf("manager loadEnvironment error loadEnvironment %w", err))
-	}
-	err = getConnection(mngr, cbCredentials)
-	if err != nil {
-		t.Fatal(fmt.Errorf("manager loadEnvironment error getConnection %w", err))
-	}
-	err = upsertTestDoc(mngr, "./testdata/test_90day_rufs_a_scorecard.json", documentID)
-	if err != nil {
-		t.Fatal(fmt.Sprint("manager upsertTestDoc error upserting test scorecard", err))
-	}
-	// get a manager
-	manager, err := newScorecardManager(documentID)
-	if err != nil {
-		t.Fatal(fmt.Sprint("manager test NewScorecardManager error getting a manager", err))
-	}
-	err = manager.Run()
-	if err != nil {
-		t.Fatal(fmt.Sprint("manager test run error ", err))
-	}
-	elapsed := time.Since(start)
-	fmt.Printf("The test took combined %s", elapsed)
-}

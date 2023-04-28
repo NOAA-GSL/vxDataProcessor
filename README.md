@@ -128,7 +128,7 @@ To run these you really need to set an environment like above. The PROC_ENV_PATH
 You can run or debug an individual test in the context of the editor while editing a test file such as
 pkg/manager/manager_integration_test.go by clicking the slightly faded "run test" or "debug test" that is located just
 above the test function name. You can also use the test exlporer "flask" icon to selectively run some or all of the tests.
-
+There are currently tests for each type of application that ascorecard can currently produce.
 ### running integration tests from the command line
 
 You can run tests from the command line by cd'ing into a pkg  and running go test -run ...using a command like this.

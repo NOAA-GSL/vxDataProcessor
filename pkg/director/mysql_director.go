@@ -26,6 +26,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -56,6 +57,9 @@ func getMySqlConnection(mysqlCredentials DbCredentials) (*sql.DB, error) {
 	dataSource := fmt.Sprintf("%s:%s@tcp(%s)/", mysqlCredentials.User, mysqlCredentials.Password, mysqlCredentials.Host)
 	var db *sql.DB
 	db, err := sql.Open(driver, dataSource)
+	db.SetConnMaxLifetime(time.Minute * 3)
+	db.SetMaxOpenConns(20)
+	db.SetMaxIdleConns(10)
 	if err != nil {
 		return nil, fmt.Errorf("mysql_director getMySqlConnection sql open error %w", err)
 	}
@@ -162,7 +166,7 @@ type errval struct {
 }
 
 // Recursively process a region/Block until all the leaves (which are cells) have been traversed and processed
-func processSub(region interface{}, queryElem interface{}, wgPtr *sync.WaitGroup, cellCountPtr *int) (interface{}, error) {
+func processSub(queryRegionName string, region interface{}, queryElem interface{}, wgPtr *sync.WaitGroup, cellCountPtr *int, keychain *[]string) (interface{}, error) {
 	var err error
 	keys := Keys(queryElem.(map[string]interface{}))
 	thisIsALeaf = false
@@ -290,25 +294,52 @@ func processSub(region interface{}, queryElem interface{}, wgPtr *sync.WaitGroup
 			}
 			return builder.ErrorValue, err
 		} else {
-			// increment the waitgroup counter
-			wgPtr.Add(1)
-			// run builder in parallel
-			c := make(chan errval)
-			go func() {
-				defer wgPtr.Done()
+			// don't really care what SINGLETHREADEDDIRECTOR env var is set to, just if it is set
+			_, singleThreaded := os.LookupEnv("SINGLETHREADEDDIRECTOR")
+			if !singleThreaded {
+				wgPtr.Add(1)
+				// run builder in parallel
+				c := make(chan errval)
+				go func(regionName string) {
+					defer wgPtr.Done()
+					*cellCountPtr++
+					scc := builder.NewTwoSampleTTestBuilder()
+					_ = scc.SetKeyChain(*keychain) // ignore error
+					value, err := (scc.Build(queryResult, statisticType, mysqlDirector.minorThreshold, mysqlDirector.majorThreshold))
+					// remove this leaf key from the keychain
+					if len(*keychain) > 0 {
+						kc := *keychain
+						kc = kc[:len(kc)-1]
+						*keychain = kc
+					}
+					c <- errval{err: err, val: value}
+				}(queryRegionName)
+				ret := <-c
+				if ret.err != nil {
+					return builder.ErrorValue, fmt.Errorf("mysql_director processSub error from builder %w", ret.err)
+				}
+				return ret.val, nil
+			} else {
+				// singleThreaded
 				*cellCountPtr++
 				scc := builder.NewTwoSampleTTestBuilder()
+				_ = scc.SetKeyChain(*keychain) // ignore error
 				value, err := (scc.Build(queryResult, statisticType, mysqlDirector.minorThreshold, mysqlDirector.majorThreshold))
-				c <- errval{err: err, val: value}
-			}()
-			ret := <-c
-			if ret.err != nil {
-				return builder.ErrorValue, fmt.Errorf("mysql_director processSub error from builder %w", ret.err)
-			} else {
+				// remove this leaf key from the keychain
+				if len(*keychain) > 0 {
+					kc := *keychain
+					kc = kc[:len(kc)-1]
+					*keychain = kc
+				}
+				ret := errval{err: err, val: value}
+				if ret.err != nil {
+					return builder.ErrorValue, fmt.Errorf("mysql_director processSub error from builder %w", ret.err)
+				}
 				return ret.val, nil
 			}
 		}
 	} else {
+		// this is a branch (not a leaf) so we keep traversing
 		// log statement uncomment for debugging
 		// log.Printf("mysql_director processSub branch keys are %q", keys)
 		// this is a branch (not a leaf) so we keep traversing
@@ -321,8 +352,18 @@ func processSub(region interface{}, queryElem interface{}, wgPtr *sync.WaitGroup
 					break
 				}
 			}
+			*keychain = append(*keychain, elemKey)
 			queryElem := queryElem.(map[string]interface{})[elemKey]
-			region.(map[string]interface{})[elemKey], err = processSub(region.(map[string]interface{})[elemKey], queryElem, wgPtr, cellCountPtr)
+			// update the region with the result of the recursive call - this inserts the value into the document
+			// eventually we will want to put the other scc values(pvalue, stat, keychain) into the scorecard cell as well
+			region.(map[string]interface{})[elemKey], err = processSub(queryRegionName, region.(map[string]interface{})[elemKey], queryElem, wgPtr, cellCountPtr, keychain)
+			// remove this branch key from the keychain
+			if len(*keychain) > 0 {
+				kc := *keychain
+				kc = kc[:len(kc)-1]
+				*keychain = kc
+			}
+
 			if err != nil {
 				return builder.ErrorValue, err
 			}
@@ -331,18 +372,28 @@ func processSub(region interface{}, queryElem interface{}, wgPtr *sync.WaitGroup
 	return region, nil
 }
 
+func (director *Director) CloseDB() {
+	director.db.Close()
+}
+
 // build a section of a scorecard - this is a region of a block (think vertical slice on the scorecard)
-func (director *Director) Run(region interface{}, queryMap map[string]interface{}, cellCountPtr *int) (interface{}, error) {
+func (director *Director) Run(queryRegionName string, region interface{}, queryMap map[string]interface{}, cellCountPtr *int) (interface{}, error) {
 	// This is recursive. Recurse down to the cell levl then traverse back up processing
 	// all the cells on the way
 	// get all the statistic strings (they are the keys of the regionMap)
 	statistics = Keys((region).(map[string]interface{})) // declared at the top
 	dateRange = director.dateRange
-	// declare a waitgroup so that we can wait for all the stats to finish running
+	// declare a waitgroup so that we can wait for all the stats to finish running - only use it if !singlethreaded
 	var wg sync.WaitGroup
 	// process the regionMap (all the values will be filled in)
-	region, err := processSub(region, queryMap, &wg, cellCountPtr)
-	wg.Wait()
+	var keychain []string = make([]string, 0)
+	keychain = append(keychain, queryRegionName)
+	region, err := processSub(queryRegionName, region, queryMap, &wg, cellCountPtr, &keychain)
+	// don't really care what SINGLETHREADEDDIRECTOR env var is set to, just if it is set
+	_, singleThreaded := os.LookupEnv("SINGLETHREADEDDIRECTOR")
+	if !singleThreaded {
+		wg.Wait()
+	}
 	if err != nil {
 		return region, fmt.Errorf("mysql_director error in Run %w", err)
 	}

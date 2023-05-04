@@ -58,6 +58,8 @@ import (
 // This information is determined outside of this builder (the builder doesn't know
 // what parameter combination is being tested) so the builder must be told
 // what the "goodnes polarity" is +1 or -1.
+var myMu = &sync.Mutex{}
+
 func (scc *ScorecardCell) SetGoodnessPolarity(polarity GoodnessPolarity) error {
 	errs := validate.Var(polarity, "required,oneof=-1 1")
 	if errs != nil {
@@ -77,6 +79,12 @@ func (scc *ScorecardCell) SetMajorThreshold(threshold Threshold) error {
 // set the major p-value threshold
 func (scc *ScorecardCell) SetMinorThreshold(threshold Threshold) error {
 	scc.minorThreshold = threshold
+	return nil // no errors
+}
+
+// set the keychain
+func (scc *ScorecardCell) SetKeyChain(keychain []string) error {
+	scc.keychain = keychain
 	return nil // no errors
 }
 
@@ -124,6 +132,7 @@ func (scc *ScorecardCell) deriveCTCInputData(queryResult BuilderCTCResult, stati
 			// include this one
 			ctlData = append(ctlData, PreCalcRecord{Stat: float64(stat), Avtime: record.Avtime})
 		}
+		scc.stat = float64(stat)
 	}
 	for i := 0; i < len(queryResult.ExpData); i++ {
 		record = queryResult.ExpData[i]
@@ -234,7 +243,9 @@ func (scc *ScorecardCell) ComputeSignificance() error {
 	}
 	//&TTestResult{N1: n1, N2: n2, T: t, DoF: dof, AltHypothesis: alt, P: p}
 	// PairedTTest performs a two-sample paired t-test on samples x1 and x2.
+	myMu.Lock()
 	ret, err := stats.PairedTTest(derivedData.CtlPop, derivedData.ExpPop, μ0, alt)
+	myMu.Unlock()
 	if err != nil {
 		if strings.Contains(fmt.Sprint(err), "zero variance") {
 			// we are not considering identical sets to be errors
@@ -275,7 +286,8 @@ func (scc *ScorecardCell) GetValue() int {
 
 func NewTwoSampleTTestBuilder() *ScorecardCell {
 	validate = validator.New()
-	return &ScorecardCell{mu: sync.Mutex{}}
+	scc := ScorecardCell{mu: sync.Mutex{}, Data: DerivedDataElement{CtlPop: make([]float64, 0), ExpPop: make([]float64, 0)}, goodnessPolarity: 9999, majorThreshold: 9999, minorThreshold: 9999, stat: 9999, pvalue: 9999, keychain: make([]string, 0), value: 0}
+	return &scc
 }
 
 func getGoodnessPolarity(statisticType string) (polarity GoodnessPolarity, err error) {

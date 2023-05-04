@@ -50,6 +50,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/NOAA-GSL/vxDataProcessor/pkg/client"
@@ -127,7 +128,11 @@ func getConnection(mngr *Manager, cbCredentials director.DbCredentials) (err err
 	return nil
 }
 
+var mngrMu = &sync.Mutex{}
+
 func upsertSubDocument(mngr Manager, path string, subDoc interface{}) error {
+	mngrMu.Lock()
+	defer mngrMu.Unlock()
 	mops := []gocb.MutateInSpec{
 		gocb.UpsertSpec(path, subDoc, &gocb.UpsertSpecOptions{}),
 	}
@@ -145,6 +150,9 @@ func upsertSubDocument(mngr Manager, path string, subDoc interface{}) error {
 }
 
 func getSubDocument(mngr Manager, path string, subDocPtr *interface{}) error {
+	mngrMu.Lock()
+	defer mngrMu.Unlock()
+
 	ops := []gocb.LookupInSpec{
 		gocb.GetSpec(path, &gocb.GetSpecOptions{IsXattr: false}),
 	}
@@ -310,10 +318,11 @@ func processRegion(
 	} else {
 		// launch mysql director
 		mysqlDirector, err := director.GetDirector("MysqlDirector", mysqlCredentials, dateRange, minorThreshold, majorThreshold)
+		defer mysqlDirector.CloseDB()
 		if err != nil {
 			return fmt.Errorf("manager Run error getting director: %w", err)
 		}
-		*region, err = mysqlDirector.Run(*region, queryRegion, cellCountPtr)
+		*region, err = mysqlDirector.Run(queryRegionName, *region, queryRegion, cellCountPtr)
 		if err != nil {
 			return fmt.Errorf("manager Run error running director: %w", err)
 		}
@@ -349,6 +358,7 @@ func (mngr Manager) Run() (err error) {
 	if err != nil {
 		return fmt.Errorf("manager Run GetConnection error: %w", err)
 	}
+	defer mngr.cb.Cluster.Close(nil)
 	// from here on we should be able to set an error status in the document, if we need to
 	resultsBlocks, err := getBlocks(mngr)
 	if err != nil {
@@ -400,6 +410,11 @@ func (mngr Manager) Run() (err error) {
 	numBlocks := len(blockKeys)
 	// create an errgroup for running all the block/regions in go routines
 	errGroup := new(errgroup.Group)
+	// don't really care what SINGLETHREADEDMANAGER env var is set to, just if it is set
+	_, singleThreaded := os.LookupEnv("SINGLETHREADEDMANAGER")
+	if singleThreaded {
+		log.Print("manager is Running SINGLETHREADEDMANAGER")
+	}
 	for i := 0; i < numBlocks; i++ {
 		blockName := blockKeys[i]
 		block := resultsBlocks[blockName]
@@ -444,8 +459,25 @@ func (mngr Manager) Run() (err error) {
 				_ = mngr.SetStatus("error")
 				return err
 			}
-			// process the region/block in the errgroup
-			errGroup.Go(func() error {
+			if !singleThreaded {
+				// process the region/block in the errgroup
+				errGroup.Go(func() error {
+					err = processRegion(mngr,
+						appName,
+						queryRegionName,
+						queryRegion,
+						blockRegionName,
+						&region,
+						regionPath,
+						mysqlCredentials,
+						dateRange,
+						minorThreshold,
+						majorThreshold,
+						scorecardAppUrl,
+						&cellCount)
+					return err
+				})
+			} else {
 				err = processRegion(mngr,
 					appName,
 					queryRegionName,
@@ -459,19 +491,28 @@ func (mngr Manager) Run() (err error) {
 					majorThreshold,
 					scorecardAppUrl,
 					&cellCount)
-				return err
-			})
+				if err != nil {
+					// set error in the status field
+					err := fmt.Errorf("error processing scorecard single threaded Run %w", err)
+					// set error status in document
+					_ = mngr.SetStatus("error")
+					_ = client.NotifyScorecardStatus(scorecardAppUrl, mngr.documentID, "error", err)
+					return err
+				}
+			}
 		}
 	}
-	// Wait for all processRegions to complete, capture their error values
-	err = errGroup.Wait()
-	if err != nil {
-		// set error in the status field
-		err := fmt.Errorf("error processing scorecard Run %w", err)
-		// set error status in document
-		_ = mngr.SetStatus("error")
-		_ = client.NotifyScorecardStatus(scorecardAppUrl, mngr.documentID, "error", err)
-		return err
+	if !singleThreaded {
+		// Wait for all processRegions to complete, capture their error values
+		err = errGroup.Wait()
+		if err != nil {
+			// set error in the status field
+			err := fmt.Errorf("error processing scorecard multithreaded Run %w", err)
+			// set error status in document
+			_ = mngr.SetStatus("error")
+			_ = client.NotifyScorecardStatus(scorecardAppUrl, mngr.documentID, "error", err)
+			return err
+		}
 	}
 	// set processedAt to now
 	err = mngr.SetProcessedAt()

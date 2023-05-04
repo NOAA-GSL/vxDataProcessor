@@ -49,7 +49,8 @@ type Director struct {
 
 type DirectorBuilder interface {
 	// datasourceName like user:password@tcp(hostname:3306)/dbname
-	Run(regionMap ScorecardBlock, queryMap ScorecardBlock)
+	Run(queryRegionName string, regionMap ScorecardBlock, queryMap ScorecardBlock)
+	CloseDB()
 }
 
 type DateRange struct {

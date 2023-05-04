@@ -62,7 +62,9 @@ type (
 		goodnessPolarity GoodnessPolarity
 		majorThreshold   Threshold
 		minorThreshold   Threshold
+		stat             float64
 		pvalue           float64
+		keychain         []string
 		value            int
 	}
 )
@@ -111,11 +113,12 @@ type ScorecardCellBuilder interface {
 	SetGoodnessPolarity(GoodnessPolarity)
 	SetMajorThreshold(Threshold)
 	SetMinorThreshold(Threshold)
+	SetKeyChain([]string)
 	DeriveInputData(QueryResult interface{}, statisticType string)
 	ComputeSignificance()
 	GetValue()
 	SetValue(value int32)
-	Build(res interface{}, qr interface{}, statisticType string)
+	Build(qrPtr interface{}, statisticType string, minorThreshold float64, majorThreshold float64)
 }
 
 func GetBuilder(builderType string) *ScorecardCell {

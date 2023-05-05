@@ -411,9 +411,9 @@ func (mngr Manager) Run() (err error) {
 	// create an errgroup for running all the block/regions in go routines
 	errGroup := new(errgroup.Group)
 	// don't really care what SINGLETHREADEDMANAGER env var is set to, just if it is set
-	_, singleThreaded := os.LookupEnv("SINGLETHREADEDMANAGER")
-	if singleThreaded {
-		log.Print("manager is Running SINGLETHREADEDMANAGER")
+	_, singleThreadedManager := os.LookupEnv("SINGLETHREADEDMANGER")
+	if singleThreadedManager {
+		log.Print("manager is Running SINGLETHREADEDMANGER")
 	}
 	for i := 0; i < numBlocks; i++ {
 		blockName := blockKeys[i]
@@ -459,7 +459,7 @@ func (mngr Manager) Run() (err error) {
 				_ = mngr.SetStatus("error")
 				return err
 			}
-			if !singleThreaded {
+			if !singleThreadedManager {
 				// process the region/block in the errgroup
 				errGroup.Go(func() error {
 					err = processRegion(mngr,
@@ -502,7 +502,7 @@ func (mngr Manager) Run() (err error) {
 			}
 		}
 	}
-	if !singleThreaded {
+	if !singleThreadedManager {
 		// Wait for all processRegions to complete, capture their error values
 		err = errGroup.Wait()
 		if err != nil {

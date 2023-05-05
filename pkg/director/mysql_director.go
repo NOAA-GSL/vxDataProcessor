@@ -295,8 +295,8 @@ func processSub(queryRegionName string, region interface{}, queryElem interface{
 			return builder.ErrorValue, err
 		} else {
 			// don't really care what SINGLETHREADEDDIRECTOR env var is set to, just if it is set
-			_, singleThreaded := os.LookupEnv("SINGLETHREADEDDIRECTOR")
-			if !singleThreaded {
+			_, singleThreadedDirector := os.LookupEnv("SINGLETHREADEDDIRECTOR")
+			if !singleThreadedDirector {
 				wgPtr.Add(1)
 				// run builder in parallel
 				c := make(chan errval)
@@ -320,7 +320,7 @@ func processSub(queryRegionName string, region interface{}, queryElem interface{
 				}
 				return ret.val, nil
 			} else {
-				// singleThreaded
+				// singleThreadedDirector
 				*cellCountPtr++
 				scc := builder.NewTwoSampleTTestBuilder()
 				_ = scc.SetKeyChain(*keychain) // ignore error
@@ -390,8 +390,8 @@ func (director *Director) Run(queryRegionName string, region interface{}, queryM
 	keychain = append(keychain, queryRegionName)
 	region, err := processSub(queryRegionName, region, queryMap, &wg, cellCountPtr, &keychain)
 	// don't really care what SINGLETHREADEDDIRECTOR env var is set to, just if it is set
-	_, singleThreaded := os.LookupEnv("SINGLETHREADEDDIRECTOR")
-	if !singleThreaded {
+	_, singleThreadedDirector := os.LookupEnv("SINGLETHREADEDDIRECTOR")
+	if !singleThreadedDirector {
 		wg.Wait()
 	}
 	if err != nil {

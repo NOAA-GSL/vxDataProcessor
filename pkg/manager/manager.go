@@ -355,7 +355,7 @@ func (mngr Manager) Run() (err error) {
 		_ = mngr.SetStatus("error")
 		return fmt.Errorf("manager Run error getting resultsBlocks: %w", err)
 	}
-	blockKeys := director.Keys(resultsBlocks)
+	blockKeys := director.ExtractKeys(resultsBlocks)
 	sort.Strings(blockKeys)
 	// get the appUrl from the first block - they should all be the same
 	scorecardAppUrl := resultsBlocks[blockKeys[0]].(map[string]interface{})["blockApplication"].(string)
@@ -413,9 +413,9 @@ func (mngr Manager) Run() (err error) {
 			}
 		}
 		queryData := queryBlock["data"].(map[string]interface{})
-		blockRegionNames := director.Keys(block.(map[string]interface{})["data"].(map[string]interface{}))
+		blockRegionNames := director.ExtractKeys(block.(map[string]interface{})["data"].(map[string]interface{}))
 		sort.Strings(blockRegionNames)
-		queryRegionNames := director.Keys(queryData)
+		queryRegionNames := director.ExtractKeys(queryData)
 		sort.Strings(queryRegionNames)
 		numBlockRegions := len(blockRegionNames)
 		numQueryRegions := len(queryRegionNames)

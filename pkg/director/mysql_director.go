@@ -41,7 +41,8 @@ const (
 	convertingNull = "converting NULL"
 )
 
-func Keys[K comparable, V any](m map[K]V) []K {
+// ExtractKeys returns a slice containing the keys in the given map
+func ExtractKeys[K comparable, V any](m map[K]V) []K {
 	keys := make([]K, 0, len(m))
 	for k := range m {
 		keys = append(keys, k)
@@ -164,7 +165,7 @@ type errval struct {
 // Recursively process a region/Block until all the leaves (which are cells) have been traversed and processed
 func processSub(region interface{}, queryElem interface{}, wgPtr *sync.WaitGroup, cellCountPtr *int) (interface{}, error) {
 	var err error
-	keys := Keys(queryElem.(map[string]interface{}))
+	keys := ExtractKeys(queryElem.(map[string]interface{}))
 	thisIsALeaf = false
 	for _, k := range keys {
 		if k == "controlQueryTemplate" {
@@ -313,7 +314,7 @@ func processSub(region interface{}, queryElem interface{}, wgPtr *sync.WaitGroup
 		// log.Printf("mysql_director processSub branch keys are %q", keys)
 		// this is a branch (not a leaf) so we keep traversing
 		// check to see if this is a statistic elem, so we can set the statisticType
-		var keys []string = Keys((region).(map[string]interface{}))
+		var keys []string = ExtractKeys((region).(map[string]interface{}))
 		for _, elemKey := range keys {
 			for _, s := range statistics {
 				if elemKey == fmt.Sprint(s) {
@@ -336,7 +337,7 @@ func (director *Director) Run(region interface{}, queryMap map[string]interface{
 	// This is recursive. Recurse down to the cell levl then traverse back up processing
 	// all the cells on the way
 	// get all the statistic strings (they are the keys of the regionMap)
-	statistics = Keys((region).(map[string]interface{})) // declared at the top
+	statistics = ExtractKeys((region).(map[string]interface{})) // declared at the top
 	dateRange = director.dateRange
 	// declare a waitgroup so that we can wait for all the stats to finish running
 	var wg sync.WaitGroup

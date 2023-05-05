@@ -93,6 +93,7 @@ func TestDirector_test_connection(t *testing.T) {
 	documentID := "SCTEST:test_scorecard"
 	t.Setenv("PROC_TESTING_ACCEPT_SCTEST_DOCIDS", "")
 	mngr, _ := GetManager(documentID)
+	defer mngr.Close()
 	err = getConnection(mngr, cbCredentials)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestDirector_test_connection Build GetConnection error ", err))
@@ -191,6 +192,7 @@ func Test_getQueryBlocks(t *testing.T) {
 	var err error
 	loadEnvironmentFile()
 	mngr, err = GetManager(documentID)
+	defer mngr.Close()
 	if err != nil {
 		t.Fatal(fmt.Errorf("manager loadEnvironment error GetManager %w", err))
 	}
@@ -254,6 +256,7 @@ func Test_getSliceResultBlocks(t *testing.T) {
 	var err error
 	loadEnvironmentFile()
 	mngr, err = GetManager(documentID)
+	defer mngr.Close()
 	if err != nil {
 		t.Fatal(fmt.Errorf("manager loadEnvironment error GetManager %w", err))
 	}
@@ -311,7 +314,7 @@ func Test_getSliceResultBlocks(t *testing.T) {
 func Test_runManager(t *testing.T) {
 	defer goleak.VerifyNone(t)
 	t.Setenv("PROC_TESTING_ACCEPT_SCTEST_DOCIDS", "")
-	var mngr *Manager
+	var setupConnection *Manager
 	var err error
 	loadEnvironmentFile()
 	tests := []struct {
@@ -432,20 +435,23 @@ func Test_runManager(t *testing.T) {
 	for _, tt := range tests {
 		log.Printf("Starting test %s", tt.name)
 		start := time.Now()
-		mngr, err = GetManager(tt.docId)
+		// Test setup
+		setupConnection, err = GetManager(tt.docId)
 		if err != nil {
 			t.Fatal(fmt.Errorf("manager - getManager for %s error  %w", tt.name, err))
 		}
-		err = getConnection(mngr, cbCredentials)
+		err = getConnection(setupConnection, cbCredentials)
 		if err != nil {
 			t.Fatal(fmt.Errorf("manager loadEnvironmenttest %s error getConnection %w", tt.name, err))
 		}
-		err = upsertTestDoc(mngr, tt.fileName, tt.docId)
+		err = upsertTestDoc(setupConnection, tt.fileName, tt.docId)
 		if err != nil {
 			t.Fatal(fmt.Errorf("manager upsertTestDoc test %s error upserting test scorecard %w", tt.name, err))
 		}
-		// get a manager
-		manager, err := newScorecardManager(tt.docId)
+		setupConnection.Close() // Can't defer since we're in a for loop
+
+		// Test execution
+		manager, err := GetManager(tt.docId)
 		if err != nil {
 			t.Fatal(fmt.Errorf("manager test %s NewScorecardManager error getting a manager %w", tt.name, err))
 		}
@@ -457,6 +463,7 @@ func Test_runManager(t *testing.T) {
 		if tt.expectedSeconds < int(elapsed.Seconds()) {
 			t.Fatalf("manager test %s expected %d seconds but took %d seconds", tt.name, tt.expectedSeconds, int(elapsed.Seconds()))
 		}
+		manager.Close() // Can't defer since we're in a for loop
 		log.Printf("The test %s took combined %s", tt.name, elapsed)
 	}
 }

@@ -98,6 +98,12 @@ func loadEnvironment() (mysqlCredentials, cbCredentials director.DbCredentials, 
 	return mysqlCredentials, cbCredentials, nil
 }
 
+// Close is required after we are finished with a Manager. It usually recommended to
+// call it with defer.
+func (mngr *Manager) Close() error {
+	return mngr.cb.Cluster.Close(nil)
+}
+
 // get the couchbase connection
 // mysql connections are maintained in the mysql_director
 func getConnection(mngr *Manager, cbCredentials director.DbCredentials) (err error) {

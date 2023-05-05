@@ -16,6 +16,7 @@ import (
 	"github.com/NOAA-GSL/vxDataProcessor/pkg/director"
 	"github.com/couchbase/gocb/v2"
 	"github.com/joho/godotenv"
+	"go.uber.org/goleak"
 )
 
 func loadEnvironmentFile() {
@@ -72,6 +73,7 @@ func upsertTestDoc(mngr *Manager, test_doc_file string, test_doc_id string) erro
 }
 
 func TestDirector_test_connection(t *testing.T) {
+	defer goleak.VerifyNone(t)
 	var cbCredentials director.DbCredentials
 	var mysqlCredentials director.DbCredentials
 	var err error
@@ -110,6 +112,7 @@ func TestDirector_test_connection(t *testing.T) {
 }
 
 func Test_loadEnvironment(t *testing.T) {
+	defer goleak.VerifyNone(t)
 	tests := []struct {
 		name                 string
 		wantMysqlCredentials director.DbCredentials
@@ -180,6 +183,7 @@ func Test_loadEnvironment(t *testing.T) {
 }
 
 func Test_getQueryBlocks(t *testing.T) {
+	defer goleak.VerifyNone(t)
 	// setup a test document
 	documentID := "SCTEST:test_scorecard"
 	t.Setenv("PROC_TESTING_ACCEPT_SCTEST_DOCIDS", "")
@@ -228,7 +232,7 @@ func Test_getQueryBlocks(t *testing.T) {
 			if retData == nil {
 				t.Errorf("%v error = %v", tt.name, err)
 			}
-			got := director.Keys(retData)
+			got := director.ExtractKeys(retData)
 			sort.Strings(got)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("getQueryBlocks() error = %v, wantErr %v", err, tt.wantErr)
@@ -242,6 +246,7 @@ func Test_getQueryBlocks(t *testing.T) {
 }
 
 func Test_getSliceResultBlocks(t *testing.T) {
+	defer goleak.VerifyNone(t)
 	// setup a test document
 	documentID := "SCTEST:test_scorecard"
 	t.Setenv("PROC_TESTING_ACCEPT_SCTEST_DOCIDS", "")
@@ -290,7 +295,7 @@ func Test_getSliceResultBlocks(t *testing.T) {
 			if retData == nil {
 				t.Errorf("%v error = %v", tt.name, err)
 			}
-			got := director.Keys(retData[0])
+			got := director.ExtractKeys(retData[0])
 			sort.Strings(got)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("getPlotParamCurves() error = %v, wantErr %v", err, tt.wantErr)
@@ -304,6 +309,7 @@ func Test_getSliceResultBlocks(t *testing.T) {
 }
 
 func Test_runManager(t *testing.T) {
+	defer goleak.VerifyNone(t)
 	t.Setenv("PROC_TESTING_ACCEPT_SCTEST_DOCIDS", "")
 	var mngr *Manager
 	var err error

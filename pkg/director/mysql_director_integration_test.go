@@ -14,6 +14,7 @@ import (
 	"github.com/NOAA-GSL/vxDataProcessor/pkg/builder"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/joho/godotenv"
+	"go.uber.org/goleak"
 )
 
 func loadEnvironmentFile() {
@@ -32,6 +33,7 @@ func loadEnvironmentFile() {
 }
 
 func Test_getMySqlConnection(t *testing.T) {
+	defer goleak.VerifyNone(t)
 	type args struct {
 		mysqlCredentials DbCredentials
 	}
@@ -80,6 +82,7 @@ func Test_getMySqlConnection(t *testing.T) {
 
 // record.squareDiffSum record.NSum record.obsModelDiffSum record.modelSum record.obsSum record.absSum record.time
 func Test_mySqlQuery(t *testing.T) {
+	defer goleak.VerifyNone(t)
 	loadEnvironmentFile()
 	var mysqlCredentials DbCredentials
 	// refer to https://github.com/go-sql-driver/mysql/#dsn-data-source-name

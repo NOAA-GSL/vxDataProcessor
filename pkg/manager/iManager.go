@@ -21,7 +21,9 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"sync"
 
+	"github.com/NOAA-GSL/vxDataProcessor/pkg/director"
 	"github.com/couchbase/gocb/v2"
 )
 
@@ -33,6 +35,7 @@ type cbConnection struct {
 }
 
 type Manager struct {
+	mu         sync.Mutex
 	documentID string
 	cb         *cbConnection
 }
@@ -41,6 +44,33 @@ type ManagerBuilder interface {
 	Run() error
 	SetStatus(status string)
 	SetProcessedAt() error
+	Keys(m map[string]interface{}) []string
+	loadEnvironment() (mysqlCredentials, cbCredentials director.DbCredentials, err error)
+	getConnection(cbCredentials director.DbCredentials) (err error)
+	upsertSubDocument(path string, subDoc interface{}) error
+	getSubDocument(path string, subDocPtr *interface{}) error
+	getBlocks(map[string]interface{}, error)
+	getQueryBlocks(map[string]interface{}, error)
+	getPlotParams(map[string]interface{}, error)
+	getPlotParamCurves([]map[string]interface{}, error)
+	getDateRange(director.DateRange, error)
+	convertStdToPercent(std string) (percent float64, err error)
+	getThresholds(plotParams map[string]interface{}) (minorThreshold, majorThreshold float64, err error)
+	notifyMatsRefresh(scorecardAppURL, docID string) error
+	processRegion(
+		appName string,
+		queryRegionName string,
+		queryRegion map[string]interface{},
+		blockRegionName string,
+		region *interface{},
+		regionPath string,
+		mysqlCredentials director.DbCredentials,
+		dateRange director.DateRange,
+		minorThreshold float64,
+		majorThreshold float64,
+		documentScorecardAppURL string,
+		cellCountPtr *int,
+	) error
 }
 
 func GetManager(documentID string) (*Manager, error) {

@@ -58,7 +58,6 @@ import (
 // This information is determined outside of this builder (the builder doesn't know
 // what parameter combination is being tested) so the builder must be told
 // what the "goodnes polarity" is +1 or -1.
-var myMu = &sync.Mutex{}
 
 func (scc *ScorecardCell) SetGoodnessPolarity(polarity GoodnessPolarity) error {
 	errs := validate.Var(polarity, "required,oneof=-1 1")
@@ -111,9 +110,7 @@ func (scc *ScorecardCell) deriveValue(difference float64, pval float64) (int, er
 
 // set the value field - controlled by mutex
 func (scc *ScorecardCell) SetValue(value int) {
-	scc.mu.Lock()
 	scc.value = value
-	scc.mu.Unlock()
 }
 
 // using the experimental Query Result and the control QueryResult and the statistic
@@ -243,9 +240,7 @@ func (scc *ScorecardCell) ComputeSignificance() error {
 	}
 	//&TTestResult{N1: n1, N2: n2, T: t, DoF: dof, AltHypothesis: alt, P: p}
 	// PairedTTest performs a two-sample paired t-test on samples x1 and x2.
-	myMu.Lock()
 	ret, err := stats.PairedTTest(derivedData.CtlPop, derivedData.ExpPop, μ0, alt)
-	myMu.Unlock()
 	if err != nil {
 		if strings.Contains(fmt.Sprint(err), "zero variance") {
 			// we are not considering identical sets to be errors
@@ -290,7 +285,7 @@ func NewTwoSampleTTestBuilder() *ScorecardCell {
 	return &scc
 }
 
-func getGoodnessPolarity(statisticType string) (polarity GoodnessPolarity, err error) {
+func (scc *ScorecardCell) getGoodnessPolarity(statisticType string) (polarity GoodnessPolarity, err error) {
 	/*
 		"RMSE": "Want control to exceed experimental" 1
 		"Bias (Model - Obs)": "Want control to exceed experimental" 1
@@ -345,7 +340,7 @@ func getGoodnessPolarity(statisticType string) (polarity GoodnessPolarity, err e
 func (scc *ScorecardCell) Build(qrPtr interface{}, statisticType string, minorThreshold float64, majorThreshold float64) (value int, err error) {
 	// DerivePreCalcInputData(ctlQR PreCalcRecords, expQR PreCalcRecords, statisticType string)
 	// build the input data elements and
-	goodnessPolarity, err := getGoodnessPolarity(statisticType)
+	goodnessPolarity, err := scc.getGoodnessPolarity(statisticType)
 	if err != nil {
 		return ErrorValue, fmt.Errorf("mysql_director Build SetGoodnessPolarity error  %w", err)
 	}

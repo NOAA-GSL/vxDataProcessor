@@ -35,22 +35,20 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
-var dateRange DateRange
-
 const (
 	noTableFound   = "Error 1146 (42S02)"
 	convertingNull = "converting NULL"
 )
 
-func Keys[K comparable, V any](m map[K]V) []K {
-	keys := make([]K, 0, len(m))
+func (director *Director) Keys(m map[string]interface{}) []string {
+	keys := make([]string, 0, len(m))
 	for k := range m {
 		keys = append(keys, k)
 	}
 	return keys
 }
 
-func getMySqlConnection(mysqlCredentials DbCredentials) (*sql.DB, error) {
+func (director *Director) getMySqlConnection(mysqlCredentials DbCredentials) (*sql.DB, error) {
 	// get the connection
 	driver := "mysql"
 	//user:password@tcp(localhost:5555)
@@ -71,10 +69,9 @@ func getMySqlConnection(mysqlCredentials DbCredentials) (*sql.DB, error) {
 	return db, nil
 }
 
-var mysqlDirector = Director{}
-
 func NewMysqlDirector(mysqlCredentials DbCredentials, dateRange DateRange, minorThreshold float64, majorThreshold float64) (*Director, error) {
-	db, err := getMySqlConnection(mysqlCredentials)
+	mysqlDirector := Director{}
+	db, err := mysqlDirector.getMySqlConnection(mysqlCredentials)
 	if err != nil {
 		return nil, fmt.Errorf("mysql_director NewMysqlDirector error: %w", err)
 	} else {
@@ -89,9 +86,9 @@ func NewMysqlDirector(mysqlCredentials DbCredentials, dateRange DateRange, minor
 	return &mysqlDirector, nil
 }
 
-func queryDataPreCalc(stmnt string) (queryResult builder.PreCalcRecords, err error) {
+func (director *Director) queryDataPreCalc(stmnt string) (queryResult builder.PreCalcRecords, err error) {
 	var rows *sql.Rows
-	rows, err = mysqlDirector.db.Query(stmnt)
+	rows, err = director.db.Query(stmnt)
 	if err != nil {
 		err = fmt.Errorf("mysql_director queryData Query failed: %w", err)
 		return queryResult, err
@@ -110,9 +107,9 @@ func queryDataPreCalc(stmnt string) (queryResult builder.PreCalcRecords, err err
 	return queryResult, nil
 }
 
-func queryDataCTC(stmnt string) (queryResult builder.CTCRecords, err error) {
+func (director *Director) queryDataCTC(stmnt string) (queryResult builder.CTCRecords, err error) {
 	var rows *sql.Rows
-	rows, err = mysqlDirector.db.Query(stmnt)
+	rows, err = director.db.Query(stmnt)
 	if err != nil {
 		err = fmt.Errorf("mysql_director queryData Query failed: %w", err)
 		return queryResult, err
@@ -132,9 +129,9 @@ func queryDataCTC(stmnt string) (queryResult builder.CTCRecords, err error) {
 }
 
 // func queryDataScalar(stmnt string, queryResult builder.ScalarRecords) (err error) {
-func queryDataScalar(stmnt string) (queryResult builder.ScalarRecords, err error) {
+func (director *Director) queryDataScalar(stmnt string) (queryResult builder.ScalarRecords, err error) {
 	var rows *sql.Rows
-	rows, err = mysqlDirector.db.Query(stmnt)
+	rows, err = director.db.Query(stmnt)
 	if err != nil {
 		err = fmt.Errorf("mysql_director queryData Query failed: %w", err)
 		return queryResult, err
@@ -165,10 +162,12 @@ type errval struct {
 	val int
 }
 
+var singleThreadedDirector bool = false
+
 // Recursively process a region/Block until all the leaves (which are cells) have been traversed and processed
-func processSub(queryRegionName string, region interface{}, queryElem interface{}, wgPtr *sync.WaitGroup, cellCountPtr *int, keychain *[]string) (interface{}, error) {
+func (director *Director) processSub(queryRegionName string, region interface{}, queryElem interface{}, wgPtr *sync.WaitGroup, cellCountPtr *int, keychain *[]string, dateRange DateRange) (interface{}, error) {
 	var err error
-	keys := Keys(queryElem.(map[string]interface{}))
+	keys := director.Keys(queryElem.(map[string]interface{}))
 	thisIsALeaf = false
 	for _, k := range keys {
 		if k == "controlQueryTemplate" {
@@ -195,7 +194,7 @@ func processSub(queryRegionName string, region interface{}, queryElem interface{
 		// what kind of data?
 		if strings.Contains(ctlQueryStatement, "hit") {
 			// get the data
-			ctlQueryResult, err := queryDataCTC(ctlQueryStatement)
+			ctlQueryResult, err := director.queryDataCTC(ctlQueryStatement)
 			if len(ctlQueryResult) == 0 && err == nil {
 				// no data is ok, but no need to go on either
 				return builder.ErrorValue, nil
@@ -206,7 +205,7 @@ func processSub(queryRegionName string, region interface{}, queryElem interface{
 					log.Printf("mysql_director queryDataCTC ctlQueryStatement error %q", err)
 				}
 			} else {
-				expQueryResult, err := queryDataCTC(expQueryStatement)
+				expQueryResult, err := director.queryDataCTC(expQueryStatement)
 				if len(expQueryResult) == 0 && err == nil {
 					// no data is ok, but no need to go on either
 					return builder.ErrorValue, nil
@@ -223,7 +222,7 @@ func processSub(queryRegionName string, region interface{}, queryElem interface{
 			}
 		} else if strings.Contains(ctlQueryStatement, "square_diff_sum") {
 			// get the data
-			ctlQueryResult, err := queryDataScalar(ctlQueryStatement)
+			ctlQueryResult, err := director.queryDataScalar(ctlQueryStatement)
 			if len(ctlQueryResult) == 0 && err == nil {
 				// no data is ok, but no need to go on either
 				return builder.ErrorValue, nil
@@ -235,7 +234,7 @@ func processSub(queryRegionName string, region interface{}, queryElem interface{
 					log.Printf("mysql_director queryDataScalar ctlQueryStatement error %q", err)
 				}
 			} else {
-				expQueryResult, err := queryDataScalar(expQueryStatement)
+				expQueryResult, err := director.queryDataScalar(expQueryStatement)
 				if len(expQueryResult) == 0 && err == nil {
 					// no data is ok, but no need to go on either
 					return builder.ErrorValue, nil
@@ -252,7 +251,7 @@ func processSub(queryRegionName string, region interface{}, queryElem interface{
 			}
 		} else if strings.Contains(ctlQueryStatement, "stat") {
 			// get the data
-			ctlQueryResult, err := queryDataPreCalc(ctlQueryStatement)
+			ctlQueryResult, err := director.queryDataPreCalc(ctlQueryStatement)
 			if len(ctlQueryResult) == 0 && err == nil {
 				// no data is ok, but no need to go on either
 				return builder.ErrorValue, nil
@@ -264,7 +263,7 @@ func processSub(queryRegionName string, region interface{}, queryElem interface{
 					log.Printf("mysql_director queryDataPreCalc ctlQueryStatement error %q", err)
 				}
 			} else {
-				expQueryResult, err := queryDataPreCalc(expQueryStatement)
+				expQueryResult, err := director.queryDataPreCalc(expQueryStatement)
 				if len(expQueryResult) == 0 && err == nil {
 					// no data is ok, but no need to go on either
 					return builder.ErrorValue, nil
@@ -294,8 +293,6 @@ func processSub(queryRegionName string, region interface{}, queryElem interface{
 			}
 			return builder.ErrorValue, err
 		} else {
-			// don't really care what SINGLETHREADEDDIRECTOR env var is set to, just if it is set
-			_, singleThreadedDirector := os.LookupEnv("SINGLETHREADEDDIRECTOR")
 			if !singleThreadedDirector {
 				wgPtr.Add(1)
 				// run builder in parallel
@@ -305,7 +302,7 @@ func processSub(queryRegionName string, region interface{}, queryElem interface{
 					*cellCountPtr++
 					scc := builder.NewTwoSampleTTestBuilder()
 					_ = scc.SetKeyChain(*keychain) // ignore error
-					value, err := (scc.Build(queryResult, statisticType, mysqlDirector.minorThreshold, mysqlDirector.majorThreshold))
+					value, err := (scc.Build(queryResult, statisticType, director.minorThreshold, director.majorThreshold))
 					// remove this leaf key from the keychain
 					if len(*keychain) > 0 {
 						kc := *keychain
@@ -324,7 +321,7 @@ func processSub(queryRegionName string, region interface{}, queryElem interface{
 				*cellCountPtr++
 				scc := builder.NewTwoSampleTTestBuilder()
 				_ = scc.SetKeyChain(*keychain) // ignore error
-				value, err := (scc.Build(queryResult, statisticType, mysqlDirector.minorThreshold, mysqlDirector.majorThreshold))
+				value, err := (scc.Build(queryResult, statisticType, director.minorThreshold, director.majorThreshold))
 				// remove this leaf key from the keychain
 				if len(*keychain) > 0 {
 					kc := *keychain
@@ -344,7 +341,7 @@ func processSub(queryRegionName string, region interface{}, queryElem interface{
 		// log.Printf("mysql_director processSub branch keys are %q", keys)
 		// this is a branch (not a leaf) so we keep traversing
 		// check to see if this is a statistic elem, so we can set the statisticType
-		var keys []string = Keys((region).(map[string]interface{}))
+		var keys []string = director.Keys((region).(map[string]interface{}))
 		for _, elemKey := range keys {
 			for _, s := range statistics {
 				if elemKey == fmt.Sprint(s) {
@@ -356,7 +353,7 @@ func processSub(queryRegionName string, region interface{}, queryElem interface{
 			queryElem := queryElem.(map[string]interface{})[elemKey]
 			// update the region with the result of the recursive call - this inserts the value into the document
 			// eventually we will want to put the other scc values(pvalue, stat, keychain) into the scorecard cell as well
-			region.(map[string]interface{})[elemKey], err = processSub(queryRegionName, region.(map[string]interface{})[elemKey], queryElem, wgPtr, cellCountPtr, keychain)
+			region.(map[string]interface{})[elemKey], err = director.processSub(queryRegionName, region.(map[string]interface{})[elemKey], queryElem, wgPtr, cellCountPtr, keychain, dateRange)
 			// remove this branch key from the keychain
 			if len(*keychain) > 0 {
 				kc := *keychain
@@ -381,18 +378,21 @@ func (director *Director) Run(queryRegionName string, region interface{}, queryM
 	// This is recursive. Recurse down to the cell levl then traverse back up processing
 	// all the cells on the way
 	// get all the statistic strings (they are the keys of the regionMap)
-	statistics = Keys((region).(map[string]interface{})) // declared at the top
-	dateRange = director.dateRange
+
+	statistics = director.Keys((region).(map[string]interface{})) // declared at the top
+	dateRange := director.dateRange
 	// declare a waitgroup so that we can wait for all the stats to finish running - only use it if !singlethreaded
 	var wg sync.WaitGroup
 	// process the regionMap (all the values will be filled in)
 	var keychain []string = make([]string, 0)
 	keychain = append(keychain, queryRegionName)
-	region, err := processSub(queryRegionName, region, queryMap, &wg, cellCountPtr, &keychain)
+	region, err := director.processSub(queryRegionName, region, queryMap, &wg, cellCountPtr, &keychain, dateRange)
 	// don't really care what SINGLETHREADEDDIRECTOR env var is set to, just if it is set
-	_, singleThreadedDirector := os.LookupEnv("SINGLETHREADEDDIRECTOR")
+	_, singleThreadedDirector = os.LookupEnv("SINGLETHREADEDDIRECTOR")
 	if !singleThreadedDirector {
 		wg.Wait()
+	} else {
+		log.Printf("mysql_director running as SINGLETHREADEDDIRECTOR")
 	}
 	if err != nil {
 		return region, fmt.Errorf("mysql_director error in Run %w", err)

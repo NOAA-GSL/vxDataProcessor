@@ -63,9 +63,10 @@ func Test_getMySqlConnection(t *testing.T) {
 			wantErr: false,
 		},
 	}
+	director, _ := GetDirector("MysqlDirector", mysqlCredentials, DateRange{FromSecs: 1, ToSecs: 2}, 95, 99)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := getMySqlConnection(tt.args.mysqlCredentials)
+			got, err := director.getMySqlConnection(tt.args.mysqlCredentials)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("getMySqlConnection() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -95,7 +96,8 @@ func Test_mySqlQuery(t *testing.T) {
 	if mysqlCredentials.Password == "" {
 		t.Fatalf("Undefined MYSQL_PASSWORD in environment")
 	}
-	mysqlDB, err := getMySqlConnection(mysqlCredentials)
+	director, _ := GetDirector("MysqlDirector", mysqlCredentials, DateRange{FromSecs: 1, ToSecs: 2}, 95, 99)
+	mysqlDB, err := director.getMySqlConnection(mysqlCredentials)
 	if err != nil {
 		t.Fatalf("getMySqlConnection() error = %v", err)
 		return

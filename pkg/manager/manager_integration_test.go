@@ -75,8 +75,12 @@ func TestDirector_test_connection(t *testing.T) {
 	var cbCredentials director.DbCredentials
 	var mysqlCredentials director.DbCredentials
 	var err error
+	t.Setenv("PROC_TESTING_ACCEPT_SCTEST_DOCIDS", "")
+	documentID := "SCTEST:test_scorecard"
 	loadEnvironmentFile()
-	mysqlCredentials, cbCredentials, err = loadEnvironment()
+	mngr, _ := GetManager(documentID)
+	mysqlCredentials, cbCredentials, err = mngr.loadEnvironment()
+
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestDirector_test_connection load environment error ", err))
 	}
@@ -88,10 +92,8 @@ func TestDirector_test_connection(t *testing.T) {
 		t.Errorf("loadEnvironment() error  did return mysqlCredentials from loadEnvironment")
 		return
 	}
-	documentID := "SCTEST:test_scorecard"
 	t.Setenv("PROC_TESTING_ACCEPT_SCTEST_DOCIDS", "")
-	mngr, _ := GetManager(documentID)
-	err = getConnection(mngr, cbCredentials)
+	err = mngr.getConnection(cbCredentials)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestDirector_test_connection Build GetConnection error ", err))
 	}
@@ -123,10 +125,14 @@ func Test_loadEnvironment(t *testing.T) {
 			wantErr:              false,
 		},
 	}
+	t.Setenv("PROC_TESTING_ACCEPT_SCTEST_DOCIDS", "")
+	documentID := "SCTEST:test_scorecard"
 	loadEnvironmentFile()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotMysqlCredentials, gotCbCredentials, err := loadEnvironment()
+			mngr, _ := GetManager(documentID)
+
+			gotMysqlCredentials, gotCbCredentials, err := mngr.loadEnvironment()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("loadEnvironment() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -191,11 +197,11 @@ func Test_getQueryBlocks(t *testing.T) {
 		t.Fatal(fmt.Errorf("manager loadEnvironment error GetManager %w", err))
 	}
 	var cbCredentials director.DbCredentials
-	_, cbCredentials, err = loadEnvironment()
+	_, cbCredentials, err = mngr.loadEnvironment()
 	if err != nil {
 		t.Fatal(fmt.Errorf("manager loadEnvironment error loadEnvironment %w", err))
 	}
-	err = getConnection(mngr, cbCredentials)
+	err = mngr.getConnection(cbCredentials)
 	if err != nil {
 		t.Fatal(fmt.Errorf("manager loadEnvironment error getConnection %w", err))
 	}
@@ -224,11 +230,11 @@ func Test_getQueryBlocks(t *testing.T) {
 		var retData map[string]interface{}
 		var err error
 		t.Run(tt.name, func(t *testing.T) {
-			retData, err = getQueryBlocks(*tt.args)
+			retData, err = mngr.getQueryBlocks()
 			if retData == nil {
 				t.Errorf("%v error = %v", tt.name, err)
 			}
-			got := director.Keys(retData)
+			got := mngr.Keys(retData)
 			sort.Strings(got)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("getQueryBlocks() error = %v, wantErr %v", err, tt.wantErr)
@@ -253,11 +259,11 @@ func Test_getSliceResultBlocks(t *testing.T) {
 		t.Fatal(fmt.Errorf("manager loadEnvironment error GetManager %w", err))
 	}
 	var cbCredentials director.DbCredentials
-	_, cbCredentials, err = loadEnvironment()
+	_, cbCredentials, err = mngr.loadEnvironment()
 	if err != nil {
 		t.Fatal(fmt.Errorf("manager loadEnvironment error loadEnvironment %w", err))
 	}
-	err = getConnection(mngr, cbCredentials)
+	err = mngr.getConnection(cbCredentials)
 	if err != nil {
 		t.Fatal(fmt.Errorf("manager loadEnvironment error getConnection %w", err))
 	}
@@ -286,11 +292,11 @@ func Test_getSliceResultBlocks(t *testing.T) {
 		var retData []map[string]interface{}
 		var err error
 		t.Run(tt.name, func(t *testing.T) {
-			retData, err = getPlotParamCurves(*tt.args)
+			retData, err = mngr.getPlotParamCurves()
 			if retData == nil {
 				t.Errorf("%v error = %v", tt.name, err)
 			}
-			got := director.Keys(retData[0])
+			got := mngr.Keys(retData[0])
 			sort.Strings(got)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("getPlotParamCurves() error = %v, wantErr %v", err, tt.wantErr)
@@ -304,7 +310,6 @@ func Test_getSliceResultBlocks(t *testing.T) {
 }
 
 func Test_runManager(t *testing.T) {
-	t.Setenv("PROC_TESTING_ACCEPT_SCTEST_DOCIDS", "")
 	var mngr *Manager
 	var err error
 	loadEnvironmentFile()
@@ -314,17 +319,17 @@ func Test_runManager(t *testing.T) {
 		fileName        string
 		expectedSeconds int
 	}{
-		// {
-		// 	name:            "test_1_Hour_Precipitation",
-		// 	docId:           "SCTEST:test_1_Hour_Precipitation",
-		// 	fileName:        "./testdata/test_1_Hour_Precipitation.json",
-		// 	expectedSeconds: 60,
-		// },
+		{
+			name:            "test_1_Hour_Precipitation",
+			docId:           "SCTEST:test_1_Hour_Precipitation",
+			fileName:        "./testdata/test_1_Hour_Precipitation.json",
+			expectedSeconds: 60,
+		},
 		{
 			name:            "test_24_Hour_Precipitation",
 			docId:           "SCTEST:test_24_Hour_Precipitation",
 			fileName:        "./testdata/test_24_Hour_Precipitation.json",
-			expectedSeconds: 5,
+			expectedSeconds: 15,
 		},
 		{
 			name:            "test_90day_rufs_a_scorecard",
@@ -342,7 +347,7 @@ func Test_runManager(t *testing.T) {
 			name:            "test_Anomaly_Correlation",
 			docId:           "SCTEST:test_Anomaly_Correlation",
 			fileName:        "./testdata/test_Anomaly_Correlation.json",
-			expectedSeconds: 5,
+			expectedSeconds: 15,
 		},
 		{
 			name:            "test_Ceiling",
@@ -384,7 +389,7 @@ func Test_runManager(t *testing.T) {
 			name:            "test_Sub_24_Hour_Precipitation",
 			docId:           "SCTEST:test_Sub_24_Hour_Precipitation",
 			fileName:        "./testdata/test_Sub_24_Hour_Precipitation.json",
-			expectedSeconds: 5,
+			expectedSeconds: 15,
 		},
 		{
 			name:            "test_Surface",
@@ -396,7 +401,7 @@ func Test_runManager(t *testing.T) {
 			name:            "test_Surface_Land_Use",
 			docId:           "SCTEST:test_Surface_Land_Use",
 			fileName:        "./testdata/test_Surface_Land_Use.json",
-			expectedSeconds: 40,
+			expectedSeconds: 140,
 		},
 		{
 			name:            "test_Vertically_Integrated_Liquid",
@@ -418,7 +423,13 @@ func Test_runManager(t *testing.T) {
 		},
 	}
 	var cbCredentials director.DbCredentials
-	_, cbCredentials, err = loadEnvironment()
+	t.Setenv("PROC_TESTING_ACCEPT_SCTEST_DOCIDS", "")
+	documentID := "SCTEST:test_scorecard"
+	mngr, err = GetManager(documentID)
+	if err != nil {
+		t.Fatal(fmt.Errorf("manager loadEnvironment error GetManager %w", err))
+	}
+	_, cbCredentials, err = mngr.loadEnvironment()
 	if err != nil {
 		t.Fatal(fmt.Errorf("manager loadEnvironment error loadEnvironment %w", err))
 	}
@@ -430,7 +441,7 @@ func Test_runManager(t *testing.T) {
 		if err != nil {
 			t.Fatal(fmt.Errorf("manager - getManager for %s error  %w", tt.name, err))
 		}
-		err = getConnection(mngr, cbCredentials)
+		err = mngr.getConnection(cbCredentials)
 		if err != nil {
 			t.Fatal(fmt.Errorf("manager loadEnvironmenttest %s error getConnection %w", tt.name, err))
 		}

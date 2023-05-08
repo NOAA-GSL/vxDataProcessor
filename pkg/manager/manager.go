@@ -312,6 +312,9 @@ func (mngr *Manager) processRegion(
 	documentScorecardAppURL string,
 	cellCountPtr *int,
 ) error {
+	mngr.mu.Lock()
+	defer mngr.mu.Unlock()
+
 	if strings.ToUpper(appName) == "CB" {
 		log.Print("launch CB director - which we don't have yet")
 	} else {

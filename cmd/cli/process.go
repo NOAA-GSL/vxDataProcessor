@@ -41,6 +41,12 @@ func process() int {
 	}
 
 	mngr, err := manager.GetManager(documentID)
+	defer func() {
+		errd := mngr.Close()
+		if errd != nil {
+			log.Printf("Error cleaning up manager: %q", errd)
+		}
+	}()
 	if err != nil {
 		log.Printf("manager loadEnvironmant error GetManager %q", err)
 		return 2

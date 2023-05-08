@@ -234,7 +234,7 @@ func Test_getQueryBlocks(t *testing.T) {
 			if retData == nil {
 				t.Errorf("%v error = %v", tt.name, err)
 			}
-			got := mngr.Keys(retData)
+			got := mngr.keys(retData)
 			sort.Strings(got)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("getQueryBlocks() error = %v, wantErr %v", err, tt.wantErr)
@@ -296,7 +296,7 @@ func Test_getSliceResultBlocks(t *testing.T) {
 			if retData == nil {
 				t.Errorf("%v error = %v", tt.name, err)
 			}
-			got := mngr.Keys(retData[0])
+			got := mngr.keys(retData[0])
 			sort.Strings(got)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("getPlotParamCurves() error = %v, wantErr %v", err, tt.wantErr)

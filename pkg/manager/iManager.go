@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"sync"
 
 	"github.com/NOAA-GSL/vxDataProcessor/pkg/director"
 	"github.com/couchbase/gocb/v2"
@@ -35,7 +34,6 @@ type cbConnection struct {
 }
 
 type Manager struct {
-	mu         sync.Mutex
 	documentID string
 	cb         *cbConnection
 }
@@ -44,7 +42,7 @@ type ManagerBuilder interface {
 	Run() error
 	SetStatus(status string)
 	SetProcessedAt() error
-	Keys(m map[string]interface{}) []string
+	keys(m map[string]interface{}) []string
 	loadEnvironment() (mysqlCredentials, cbCredentials director.DbCredentials, err error)
 	getConnection(cbCredentials director.DbCredentials) (err error)
 	upsertSubDocument(path string, subDoc interface{}) error

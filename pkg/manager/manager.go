@@ -58,7 +58,7 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-func (mngr *Manager) Keys(m map[string]interface{}) []string {
+func (mngr *Manager) keys(m map[string]interface{}) []string {
 	keys := make([]string, 0, len(m))
 	for k := range m {
 		keys = append(keys, k)
@@ -312,9 +312,6 @@ func (mngr *Manager) processRegion(
 	documentScorecardAppURL string,
 	cellCountPtr *int,
 ) error {
-	mngr.mu.Lock()
-	defer mngr.mu.Unlock()
-
 	if strings.ToUpper(appName) == "CB" {
 		log.Print("launch CB director - which we don't have yet")
 	} else {
@@ -367,7 +364,7 @@ func (mngr *Manager) Run() (err error) {
 		_ = mngr.SetStatus("error")
 		return fmt.Errorf("manager Run error getting resultsBlocks: %w", err)
 	}
-	blockKeys := mngr.Keys(resultsBlocks)
+	blockKeys := mngr.keys(resultsBlocks)
 	sort.Strings(blockKeys)
 	// get the appUrl from the first block - they should all be the same
 	scorecardAppUrl := resultsBlocks[blockKeys[0]].(map[string]interface{})["blockApplication"].(string)
@@ -430,9 +427,9 @@ func (mngr *Manager) Run() (err error) {
 			}
 		}
 		queryData := queryBlock["data"].(map[string]interface{})
-		blockRegionNames := mngr.Keys(block.(map[string]interface{})["data"].(map[string]interface{}))
+		blockRegionNames := mngr.keys(block.(map[string]interface{})["data"].(map[string]interface{}))
 		sort.Strings(blockRegionNames)
-		queryRegionNames := mngr.Keys(queryData)
+		queryRegionNames := mngr.keys(queryData)
 		sort.Strings(queryRegionNames)
 		numBlockRegions := len(blockRegionNames)
 		numQueryRegions := len(queryRegionNames)

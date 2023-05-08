@@ -107,7 +107,7 @@ func (mngr *Manager) Close() error {
 
 // getConnection establishes the couchbase connection
 // mysql connections are maintained in the mysql_director
-func (mngr *Manager) getConnection(cbCredentials director.DbCredentials) (err error) {
+func (mngr *Manager) getConnection(cbCredentials director.DbCredentials) (err error) { // TODO - rename to getCouchbaseConnection to standardize with director.getMySQLConnection
 	options := gocb.ClusterOptions{
 		Authenticator: gocb.PasswordAuthenticator{
 			Username: cbCredentials.User,
@@ -317,22 +317,25 @@ func (mngr *Manager) processRegion(
 	cellCountPtr *int,
 ) error {
 	if strings.ToUpper(appName) == "CB" {
-		log.Print("launch CB director - which we don't have yet")
-	} else {
-		// launch mysql director
-		mysqlDirector, err := director.GetDirector("MysqlDirector", mysqlCredentials, dateRange, minorThreshold, majorThreshold)
-		if err != nil {
-			return fmt.Errorf("manager Run error getting director: %w", err)
-		}
-		*region, err = mysqlDirector.Run(*region, queryRegion, cellCountPtr)
-		if err != nil {
-			return fmt.Errorf("manager Run error running director: %w", err)
-		}
+		return fmt.Errorf("Couchbase director is unimplemented")
 	}
-	err := mngr.upsertSubDocument(regionPath, region)
+	// launch mysql director
+	mysqlDirector, err := director.GetDirector("MysqlDirector", mysqlCredentials, dateRange, minorThreshold, majorThreshold)
+	if err != nil {
+		return fmt.Errorf("manager Run error getting director: %w", err)
+	}
+	defer mysqlDirector.Close()
+
+	*region, err = mysqlDirector.Run(*region, queryRegion, cellCountPtr)
+	if err != nil {
+		return fmt.Errorf("manager Run error running director: %w", err)
+	}
+
+	err = mngr.upsertSubDocument(regionPath, region)
 	if err != nil {
 		return fmt.Errorf("manager Run error upserting resultRegion: %q error: %w", blockRegionName, err)
 	}
+
 	// notify server to update with scorecardApUrl
 	// try to get the SCORECARD_APP_URL from the environment
 	scorecardAppURL := os.Getenv("DEBUG_SCORECARD_APP_URL")

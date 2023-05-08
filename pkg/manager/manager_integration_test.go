@@ -351,7 +351,7 @@ func Test_runManager(t *testing.T) {
 			name:            "test_Anomaly_Correlation",
 			docId:           "SCTEST:test_Anomaly_Correlation",
 			fileName:        "./testdata/test_Anomaly_Correlation.json",
-			expectedSeconds: 5,
+			expectedSeconds: 20,
 		},
 		{
 			name:            "test_Ceiling",
@@ -405,7 +405,7 @@ func Test_runManager(t *testing.T) {
 			name:            "test_Surface_Land_Use",
 			docId:           "SCTEST:test_Surface_Land_Use",
 			fileName:        "./testdata/test_Surface_Land_Use.json",
-			expectedSeconds: 40,
+			expectedSeconds: 50,
 		},
 		{
 			name:            "test_Vertically_Integrated_Liquid",

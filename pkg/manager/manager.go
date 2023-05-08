@@ -105,9 +105,9 @@ func (mngr *Manager) Close() error {
 	return mngr.cb.Cluster.Close(nil)
 }
 
-// getConnection establishes the couchbase connection
+// getCouchbaseConnection establishes the couchbase connection
 // mysql connections are maintained in the mysql_director
-func (mngr *Manager) getConnection(cbCredentials director.DbCredentials) (err error) { // TODO - rename to getCouchbaseConnection to standardize with director.getMySQLConnection
+func (mngr *Manager) getCouchbaseConnection(cbCredentials director.DbCredentials) (err error) {
 	options := gocb.ClusterOptions{
 		Authenticator: gocb.PasswordAuthenticator{
 			Username: cbCredentials.User,
@@ -360,7 +360,7 @@ func (mngr *Manager) Run() (err error) {
 	if err != nil {
 		return fmt.Errorf("manager loadEnvironmant error %w", err)
 	}
-	err = mngr.getConnection(cbCredentials)
+	err = mngr.getCouchbaseConnection(cbCredentials)
 	if err != nil {
 		return fmt.Errorf("manager Run GetConnection error: %w", err)
 	}

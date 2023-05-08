@@ -94,7 +94,7 @@ func TestDirector_test_connection(t *testing.T) {
 	t.Setenv("PROC_TESTING_ACCEPT_SCTEST_DOCIDS", "")
 	mngr, _ := GetManager(documentID)
 	defer mngr.Close()
-	err = mngr.getConnection(cbCredentials)
+	err = mngr.getCouchbaseConnection(cbCredentials)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestDirector_test_connection Build GetConnection error ", err))
 	}
@@ -206,7 +206,7 @@ func Test_getQueryBlocks(t *testing.T) {
 	if err != nil {
 		t.Fatal(fmt.Errorf("manager loadEnvironment error loadEnvironment %w", err))
 	}
-	err = mngr.getConnection(cbCredentials)
+	err = mngr.getCouchbaseConnection(cbCredentials)
 	if err != nil {
 		t.Fatal(fmt.Errorf("manager loadEnvironment error getConnection %w", err))
 	}
@@ -275,7 +275,7 @@ func Test_getSliceResultBlocks(t *testing.T) {
 	if err != nil {
 		t.Fatal(fmt.Errorf("manager loadEnvironment error loadEnvironment %w", err))
 	}
-	err = mngr.getConnection(cbCredentials)
+	err = mngr.getCouchbaseConnection(cbCredentials)
 	if err != nil {
 		t.Fatal(fmt.Errorf("manager loadEnvironment error getConnection %w", err))
 	}
@@ -450,7 +450,7 @@ func Test_runManager(t *testing.T) {
 		if err != nil {
 			t.Fatal(fmt.Errorf("manager - getManager for %s error  %w", tt.name, err))
 		}
-		err = setupManager.getConnection(cbCredentials)
+		err = setupManager.getCouchbaseConnection(cbCredentials)
 		if err != nil {
 			t.Fatal(fmt.Errorf("manager loadEnvironmenttest %s error getConnection %w", tt.name, err))
 		}

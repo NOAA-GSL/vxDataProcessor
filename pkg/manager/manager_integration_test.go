@@ -192,7 +192,12 @@ func Test_getQueryBlocks(t *testing.T) {
 	var err error
 	loadEnvironmentFile()
 	mngr, err = GetManager(documentID)
-	defer mngr.Close()
+	defer func() {
+		errd := mngr.Close()
+		if errd != nil {
+			log.Printf("Error cleaning up manager: %q", errd)
+		}
+	}()
 	if err != nil {
 		t.Fatal(fmt.Errorf("manager loadEnvironment error GetManager %w", err))
 	}
@@ -256,7 +261,12 @@ func Test_getSliceResultBlocks(t *testing.T) {
 	var err error
 	loadEnvironmentFile()
 	mngr, err = GetManager(documentID)
-	defer mngr.Close()
+	defer func() {
+		errd := mngr.Close()
+		if errd != nil {
+			log.Printf("Error cleaning up manager: %q", errd)
+		}
+	}()
 	if err != nil {
 		t.Fatal(fmt.Errorf("manager loadEnvironment error GetManager %w", err))
 	}

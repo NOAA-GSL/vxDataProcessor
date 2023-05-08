@@ -4,9 +4,9 @@ package manager
 The Manager has the following responsibilities and transformations.
 
 1. The manager will maintain a Couchbase connection.
-1. The manager is given a process_id from the service. The service
+1. The manager is given a documentID from the API service. The API service
 will have as many managers open as go workers as needed so that it can handle multiple service
-requests simultaneously. The service starts a manager in a GO worker routine and
+requests simultaneously. The API service starts a manager in a GO worker routine and
 the manager is passed the id of the corresponding scorecard document.
 1. The manager will read the scorcard document associated with the id from Couchbase
 and maintain it in memory on behalf of its directors.
@@ -58,6 +58,7 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
+// loadEnvironment retrieves required settings from the environment
 func loadEnvironment() (mysqlCredentials, cbCredentials director.DbCredentials, err error) {
 	cbCredentials = director.DbCredentials{
 		Scope:      "_default",
@@ -104,7 +105,7 @@ func (mngr *Manager) Close() error {
 	return mngr.cb.Cluster.Close(nil)
 }
 
-// get the couchbase connection
+// getConnection establishes the couchbase connection
 // mysql connections are maintained in the mysql_director
 func (mngr *Manager) getConnection(cbCredentials director.DbCredentials) (err error) {
 	options := gocb.ClusterOptions{
@@ -133,6 +134,7 @@ func (mngr *Manager) getConnection(cbCredentials director.DbCredentials) (err er
 	return nil
 }
 
+// upsertSubDocument updates a Couchbase subdocument
 func (mngr *Manager) upsertSubDocument(path string, subDoc interface{}) error {
 	mops := []gocb.MutateInSpec{
 		gocb.UpsertSpec(path, subDoc, &gocb.UpsertSpecOptions{}),
@@ -150,6 +152,7 @@ func (mngr *Manager) upsertSubDocument(path string, subDoc interface{}) error {
 	return nil
 }
 
+// getSubDocument retrieves a Couchbase subdocument
 func (mngr *Manager) getSubDocument(path string, subDocPtr *interface{}) error {
 	ops := []gocb.LookupInSpec{
 		gocb.GetSpec(path, &gocb.GetSpecOptions{IsXattr: false}),
@@ -239,6 +242,7 @@ func (mngr *Manager) getDateRange() (director.DateRange, error) {
 	return dateRange, err
 }
 
+// convertStdToPercent converts a standard deviation to a percent error
 func convertStdToPercent(std string) (percent float64, err error) {
 	stdfloat, err := strconv.ParseFloat(std, 64)
 	if err != nil {
@@ -261,6 +265,7 @@ func convertStdToPercent(std string) (percent float64, err error) {
 	return percent, err
 }
 
+// getThresholds extracts the major and minor thresholds
 func getThresholds(plotParams map[string]interface{}) (minorThreshold, majorThreshold float64, err error) {
 	percentStddev := plotParams["scorecard-percent-stdv"]
 	switch percentStddev {
@@ -288,6 +293,7 @@ func getThresholds(plotParams map[string]interface{}) (minorThreshold, majorThre
 	return minorThreshold, majorThreshold, nil
 }
 
+// notifyMatsRefreash notifies the MATS scorecard app that a particular docID has been updated
 func notifyMatsRefresh(scorecardAppURL, docID string) error {
 	err := client.NotifyScorecard(scorecardAppURL, docID)
 	if err != nil {
@@ -341,6 +347,7 @@ func (mngr *Manager) processRegion(
 	return nil
 }
 
+// Run processes the docID associated with the manager
 func (mngr *Manager) Run() (err error) {
 	// load the environment
 	cellCount := 0
@@ -494,6 +501,7 @@ func (mngr *Manager) Run() (err error) {
 	return nil
 }
 
+// SetStatus updates the couchbase scorecard document with the processing status
 func (mngr *Manager) SetStatus(status string) (err error) {
 	stmnt := "UPDATE vxdata._default.SCORECARD SET status = \"" + status + "\" where meta().id=\"" + mngr.documentID + "\";"
 	_, err = mngr.cb.Cluster.Query(stmnt, &gocb.QueryOptions{Adhoc: true})
@@ -503,6 +511,7 @@ func (mngr *Manager) SetStatus(status string) (err error) {
 	return nil
 }
 
+// SetProcessedAt updates the couchbase scorecard document with the processed timestamp
 func (mngr *Manager) SetProcessedAt() (err error) {
 	timeStamp := strconv.FormatInt(time.Now().Unix(), 10)
 	stmnt := fmt.Sprintf("UPDATE vxdata._default.SCORECARD SET processedAt = %v where meta().id='%s';", timeStamp, mngr.documentID)
@@ -513,6 +522,7 @@ func (mngr *Manager) SetProcessedAt() (err error) {
 	return nil
 }
 
+// newScorecardManager creates a correctly initialized scorecard manager. GetManager should be used by clients instead of this.
 func newScorecardManager(documentID string) (*Manager, error) {
 	scMgr := Manager{}
 	scMgr.cb = &cbConnection{}

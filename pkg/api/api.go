@@ -55,6 +55,10 @@ func Worker(id int, getProcessor func(string) (Processor, error), jobs <-chan jo
 		mgr, err := getProcessor(job.DocID)
 		if err != nil {
 			fmt.Printf("Error: Job %v - %v\n", job.DocID, err)
+			err = mgr.Close() // we're in a loop so we can't defer this
+			if err != nil {
+				fmt.Printf("Error cleaning up: Job %v - %v\n", job.DocID, err)
+			}
 			job.Status = jobstore.StatusFailed
 			status <- job
 			continue
@@ -65,14 +69,18 @@ func Worker(id int, getProcessor func(string) (Processor, error), jobs <-chan jo
 		calculationDuration.WithLabelValues(job.DocID).Observe(duration)
 		if err != nil {
 			fmt.Printf("Error: Job %v - %v\n", job.DocID, err)
-			err = mgr.Close()
-			fmt.Printf("Error: Job %v - %v\n", job.DocID, err)
+			err = mgr.Close() // we're in a loop so we can't defer this
+			if err != nil {
+				fmt.Printf("Error cleaning up: Job %v - %v\n", job.DocID, err)
+			}
 			job.Status = jobstore.StatusFailed
 			status <- job
 			continue
 		}
-		err = mgr.Close()
-		fmt.Printf("Error: Job %v - %v\n", job.DocID, err)
+		err = mgr.Close() // we're in a loop so we can't defer this
+		if err != nil {
+			fmt.Printf("Error cleaning up: Job %v - %v\n", job.DocID, err)
+		}
 
 		// report status
 		job.Status = jobstore.StatusCompleted

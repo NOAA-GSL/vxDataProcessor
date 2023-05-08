@@ -94,7 +94,7 @@ func TestDirector_test_connection(t *testing.T) {
 	t.Setenv("PROC_TESTING_ACCEPT_SCTEST_DOCIDS", "")
 	mngr, _ := GetManager(documentID)
 	defer mngr.Close()
-	err = getConnection(mngr, cbCredentials)
+	err = mngr.getConnection(cbCredentials)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestDirector_test_connection Build GetConnection error ", err))
 	}
@@ -201,7 +201,7 @@ func Test_getQueryBlocks(t *testing.T) {
 	if err != nil {
 		t.Fatal(fmt.Errorf("manager loadEnvironment error loadEnvironment %w", err))
 	}
-	err = getConnection(mngr, cbCredentials)
+	err = mngr.getConnection(cbCredentials)
 	if err != nil {
 		t.Fatal(fmt.Errorf("manager loadEnvironment error getConnection %w", err))
 	}
@@ -230,7 +230,7 @@ func Test_getQueryBlocks(t *testing.T) {
 		var retData map[string]interface{}
 		var err error
 		t.Run(tt.name, func(t *testing.T) {
-			retData, err = getQueryBlocks(*tt.args)
+			retData, err = tt.args.getQueryBlocks()
 			if retData == nil {
 				t.Errorf("%v error = %v", tt.name, err)
 			}
@@ -265,7 +265,7 @@ func Test_getSliceResultBlocks(t *testing.T) {
 	if err != nil {
 		t.Fatal(fmt.Errorf("manager loadEnvironment error loadEnvironment %w", err))
 	}
-	err = getConnection(mngr, cbCredentials)
+	err = mngr.getConnection(cbCredentials)
 	if err != nil {
 		t.Fatal(fmt.Errorf("manager loadEnvironment error getConnection %w", err))
 	}
@@ -294,7 +294,7 @@ func Test_getSliceResultBlocks(t *testing.T) {
 		var retData []map[string]interface{}
 		var err error
 		t.Run(tt.name, func(t *testing.T) {
-			retData, err = getPlotParamCurves(*tt.args)
+			retData, err = tt.args.getPlotParamCurves()
 			if retData == nil {
 				t.Errorf("%v error = %v", tt.name, err)
 			}
@@ -314,7 +314,7 @@ func Test_getSliceResultBlocks(t *testing.T) {
 func Test_runManager(t *testing.T) {
 	defer goleak.VerifyNone(t)
 	t.Setenv("PROC_TESTING_ACCEPT_SCTEST_DOCIDS", "")
-	var setupConnection *Manager
+	var setupManager *Manager
 	var err error
 	loadEnvironmentFile()
 	tests := []struct {
@@ -436,19 +436,19 @@ func Test_runManager(t *testing.T) {
 		log.Printf("Starting test %s", tt.name)
 		start := time.Now()
 		// Test setup
-		setupConnection, err = GetManager(tt.docId)
+		setupManager, err = GetManager(tt.docId)
 		if err != nil {
 			t.Fatal(fmt.Errorf("manager - getManager for %s error  %w", tt.name, err))
 		}
-		err = getConnection(setupConnection, cbCredentials)
+		err = setupManager.getConnection(cbCredentials)
 		if err != nil {
 			t.Fatal(fmt.Errorf("manager loadEnvironmenttest %s error getConnection %w", tt.name, err))
 		}
-		err = upsertTestDoc(setupConnection, tt.fileName, tt.docId)
+		err = upsertTestDoc(setupManager, tt.fileName, tt.docId)
 		if err != nil {
 			t.Fatal(fmt.Errorf("manager upsertTestDoc test %s error upserting test scorecard %w", tt.name, err))
 		}
-		setupConnection.Close() // Can't defer since we're in a for loop
+		setupManager.Close() // Can't defer since we're in a for loop
 
 		// Test execution
 		manager, err := GetManager(tt.docId)

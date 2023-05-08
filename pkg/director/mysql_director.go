@@ -40,7 +40,7 @@ const (
 	convertingNull = "converting NULL"
 )
 
-func (director *Director) Keys(m map[string]interface{}) []string {
+func (director *Director) keys(m map[string]interface{}) []string {
 	keys := make([]string, 0, len(m))
 	for k := range m {
 		keys = append(keys, k)
@@ -82,6 +82,7 @@ func NewMysqlDirector(mysqlCredentials DbCredentials, dateRange DateRange, minor
 		mysqlDirector.dateRange = dateRange
 		mysqlDirector.minorThreshold = minorThreshold
 		mysqlDirector.majorThreshold = majorThreshold
+		mysqlDirector.wg = &sync.WaitGroup{}
 	}
 	return &mysqlDirector, nil
 }
@@ -150,12 +151,6 @@ func (director *Director) queryDataScalar(stmnt string) (queryResult builder.Sca
 	return queryResult, nil
 }
 
-var (
-	statistics    []string
-	statisticType string
-	thisIsALeaf   bool
-)
-
 // used to return value and err from go routines
 type errval struct {
 	err error
@@ -165,10 +160,10 @@ type errval struct {
 var singleThreadedDirector bool = false
 
 // Recursively process a region/Block until all the leaves (which are cells) have been traversed and processed
-func (director *Director) processSub(queryRegionName string, region interface{}, queryElem interface{}, wgPtr *sync.WaitGroup, cellCountPtr *int, keychain *[]string, dateRange DateRange) (interface{}, error) {
+func (director *Director) processSub(queryRegionName string, region interface{}, queryElem interface{}, cellCountPtr *int, keychain *[]string, dateRange DateRange) (interface{}, error) {
 	var err error
-	keys := director.Keys(queryElem.(map[string]interface{}))
-	thisIsALeaf = false
+	keys := director.keys(queryElem.(map[string]interface{}))
+	thisIsALeaf := false
 	for _, k := range keys {
 		if k == "controlQueryTemplate" {
 			thisIsALeaf = true
@@ -294,15 +289,15 @@ func (director *Director) processSub(queryRegionName string, region interface{},
 			return builder.ErrorValue, err
 		} else {
 			if !singleThreadedDirector {
-				wgPtr.Add(1)
+				director.wg.Add(1)
 				// run builder in parallel
 				c := make(chan errval)
 				go func(regionName string) {
-					defer wgPtr.Done()
+					defer director.wg.Done()
 					*cellCountPtr++
 					scc := builder.NewTwoSampleTTestBuilder()
 					_ = scc.SetKeyChain(*keychain) // ignore error
-					value, err := (scc.Build(queryResult, statisticType, director.minorThreshold, director.majorThreshold))
+					value, err := (scc.Build(queryResult, director.statisticType, director.minorThreshold, director.majorThreshold))
 					// remove this leaf key from the keychain
 					if len(*keychain) > 0 {
 						kc := *keychain
@@ -321,7 +316,7 @@ func (director *Director) processSub(queryRegionName string, region interface{},
 				*cellCountPtr++
 				scc := builder.NewTwoSampleTTestBuilder()
 				_ = scc.SetKeyChain(*keychain) // ignore error
-				value, err := (scc.Build(queryResult, statisticType, director.minorThreshold, director.majorThreshold))
+				value, err := (scc.Build(queryResult, director.statisticType, director.minorThreshold, director.majorThreshold))
 				// remove this leaf key from the keychain
 				if len(*keychain) > 0 {
 					kc := *keychain
@@ -341,11 +336,11 @@ func (director *Director) processSub(queryRegionName string, region interface{},
 		// log.Printf("mysql_director processSub branch keys are %q", keys)
 		// this is a branch (not a leaf) so we keep traversing
 		// check to see if this is a statistic elem, so we can set the statisticType
-		var keys []string = director.Keys((region).(map[string]interface{}))
+		var keys []string = director.keys((region).(map[string]interface{}))
 		for _, elemKey := range keys {
-			for _, s := range statistics {
+			for _, s := range director.statistics {
 				if elemKey == fmt.Sprint(s) {
-					statisticType = elemKey
+					director.statisticType = elemKey
 					break
 				}
 			}
@@ -353,7 +348,7 @@ func (director *Director) processSub(queryRegionName string, region interface{},
 			queryElem := queryElem.(map[string]interface{})[elemKey]
 			// update the region with the result of the recursive call - this inserts the value into the document
 			// eventually we will want to put the other scc values(pvalue, stat, keychain) into the scorecard cell as well
-			region.(map[string]interface{})[elemKey], err = director.processSub(queryRegionName, region.(map[string]interface{})[elemKey], queryElem, wgPtr, cellCountPtr, keychain, dateRange)
+			region.(map[string]interface{})[elemKey], err = director.processSub(queryRegionName, region.(map[string]interface{})[elemKey], queryElem, cellCountPtr, keychain, dateRange)
 			// remove this branch key from the keychain
 			if len(*keychain) > 0 {
 				kc := *keychain
@@ -378,19 +373,17 @@ func (director *Director) Run(queryRegionName string, region interface{}, queryM
 	// This is recursive. Recurse down to the cell levl then traverse back up processing
 	// all the cells on the way
 	// get all the statistic strings (they are the keys of the regionMap)
-
-	statistics = director.Keys((region).(map[string]interface{})) // declared at the top
+	director.statistics = director.keys((region).(map[string]interface{})) // declared at the top
 	dateRange := director.dateRange
 	// declare a waitgroup so that we can wait for all the stats to finish running - only use it if !singlethreaded
-	var wg sync.WaitGroup
 	// process the regionMap (all the values will be filled in)
 	var keychain []string = make([]string, 0)
 	keychain = append(keychain, queryRegionName)
-	region, err := director.processSub(queryRegionName, region, queryMap, &wg, cellCountPtr, &keychain, dateRange)
+	region, err := director.processSub(queryRegionName, region, queryMap, cellCountPtr, &keychain, dateRange)
 	// don't really care what SINGLETHREADEDDIRECTOR env var is set to, just if it is set
 	_, singleThreadedDirector = os.LookupEnv("SINGLETHREADEDDIRECTOR")
 	if !singleThreadedDirector {
-		wg.Wait()
+		director.wg.Wait()
 	} else {
 		log.Printf("mysql_director running as SINGLETHREADEDDIRECTOR")
 	}

@@ -95,13 +95,13 @@ func TestGetMatchedDataSet(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := GetMatchedDataSet(tt.args)
+			got, err := getMatchedDataSet(tt.args)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("GetMatchedDataSet() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("getMatchedDataSet() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("GetMatchedDataSet() = %v, want %v", got, tt.want)
+				t.Errorf("getMatchedDataSet() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -850,15 +850,15 @@ func TestGetMatchedDataSetRealWorld(t *testing.T) {
 	dataSet.ctlPop = ctlData
 	dataSet.expPop = expData
 
-	got, err := GetMatchedDataSet(dataSet)
+	got, err := getMatchedDataSet(dataSet)
 	if err != nil {
-		t.Errorf("GetMatchedDataSet() error = %v", err)
+		t.Errorf("getMatchedDataSet() error = %v", err)
 	}
 	if len(got.ctlPop) != 39 {
-		t.Errorf("GetMatchedDataSetRealWorld() len(got.ctlPop)= %v, wanted %v", len(got.ctlPop), 41)
+		t.Errorf("getMatchedDataSetRealWorld() len(got.ctlPop)= %v, wanted %v", len(got.ctlPop), 41)
 	}
 	if len(got.expPop) != 39 {
-		t.Errorf("GetMatchedDataSetRealWorld() len(got.expPop)= %v, wanted %v", len(got.expPop), 41)
+		t.Errorf("getMatchedDataSetRealWorld() len(got.expPop)= %v, wanted %v", len(got.expPop), 41)
 	}
 }
 
@@ -964,7 +964,7 @@ func Test_calculateStatScalar(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			var got float64
 			var err error
-			got, err = CalculateStatScalar(tt.args.squareDiffSum, tt.args.NSum, tt.args.obsModelDiffSum, tt.args.modelSum, tt.args.obsSum, tt.args.absSum, tt.args.statistic)
+			got, err = calculateStatScalar(tt.args.squareDiffSum, tt.args.NSum, tt.args.obsModelDiffSum, tt.args.modelSum, tt.args.obsSum, tt.args.absSum, tt.args.statistic)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("calculateStatScalar() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -1159,7 +1159,7 @@ func Test_calculateStatCTC(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var delta float64 = 0.006
-			got, err := CalculateStatCTC(tt.args.hit, tt.args.fa, tt.args.miss, tt.args.cn, tt.args.statistic)
+			got, err := calculateStatCTC(tt.args.hit, tt.args.fa, tt.args.miss, tt.args.cn, tt.args.statistic)
 			if tt.wantErr {
 				assert.Errorf(t, err, "calculateStatCTC() should have returned error but did not - got %w", got)
 			} else {

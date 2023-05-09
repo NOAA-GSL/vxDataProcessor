@@ -110,14 +110,14 @@ type BuilderPreCalcResult struct {
 }
 
 type ScorecardCellBuilder interface {
-	SetGoodnessPolarity(GoodnessPolarity)
-	SetMajorThreshold(Threshold)
-	SetMinorThreshold(Threshold)
-	SetKeyChain([]string)
-	DeriveInputData(QueryResult interface{}, statisticType string)
-	ComputeSignificance()
-	GetValue()
-	SetValue(value int32)
+	setGoodnessPolarity(GoodnessPolarity)
+	setMajorThreshold(Threshold)
+	setMinorThreshold(Threshold)
+	SetKeyChain([]string) // has to be public
+	deriveInputData(QueryResult interface{}, statisticType string)
+	computeSignificance()
+	getValue()
+	setValue(value int32)
 	Build(qrPtr interface{}, statisticType string, minorThreshold float64, majorThreshold float64)
 }
 

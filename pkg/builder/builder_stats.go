@@ -20,7 +20,7 @@ There is also a time matching function. These functions are used by the builder 
 */
 
 // calculates the statistic for ctc plots
-func CalculateStatCTC(hit float32, fa float32, miss float32, cn float32, statistic string) (float32, error) {
+func calculateStatCTC(hit float32, fa float32, miss float32, cn float32, statistic string) (float32, error) {
 	var err error
 	var value float32
 	validate = validator.New()
@@ -82,7 +82,7 @@ func CalculateStatCTC(hit float32, fa float32, miss float32, cn float32, statist
 }
 
 // calculates the statistic for scalar partial sums plots
-func CalculateStatScalar(squareDiffSum, NSum, obsModelDiffSum, modelSum, obsSum, absSum float64, statistic string) (float64, error) {
+func calculateStatScalar(squareDiffSum, NSum, obsModelDiffSum, modelSum, obsSum, absSum float64, statistic string) (float64, error) {
 	var err error
 	var value float64
 	switch statistic {
@@ -103,7 +103,7 @@ func CalculateStatScalar(squareDiffSum, NSum, obsModelDiffSum, modelSum, obsSum,
 // This function assumes that the two slices are sorted by the time element (which is an epoch)
 // The DataSet consists of time and value elements only, since the statistical value has
 // already been derived
-func GetMatchedDataSet(dataSet DataSet) (DataSet, error) {
+func getMatchedDataSet(dataSet DataSet) (DataSet, error) {
 	var result DataSet
 	var indexCtl int = 0
 	var indexExp int = 0

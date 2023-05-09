@@ -58,6 +58,15 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
+// getMapKeys returns an unsorted slice containing the keys in the given map
+func getMapKeys[K comparable, V any](m map[K]V) []K {
+	keys := make([]K, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	return keys
+}
+
 // loadEnvironment retrieves required settings from the environment
 func loadEnvironment() (mysqlCredentials, cbCredentials director.DbCredentials, err error) {
 	cbCredentials = director.DbCredentials{
@@ -370,7 +379,7 @@ func (mngr *Manager) Run() (err error) {
 		_ = mngr.SetStatus("error")
 		return fmt.Errorf("manager Run error getting resultsBlocks: %w", err)
 	}
-	blockKeys := director.ExtractKeys(resultsBlocks)
+	blockKeys := getMapKeys(resultsBlocks)
 	sort.Strings(blockKeys)
 	// get the appUrl from the first block - they should all be the same
 	scorecardAppUrl := resultsBlocks[blockKeys[0]].(map[string]interface{})["blockApplication"].(string)
@@ -428,9 +437,9 @@ func (mngr *Manager) Run() (err error) {
 			}
 		}
 		queryData := queryBlock["data"].(map[string]interface{})
-		blockRegionNames := director.ExtractKeys(block.(map[string]interface{})["data"].(map[string]interface{}))
+		blockRegionNames := getMapKeys(block.(map[string]interface{})["data"].(map[string]interface{}))
 		sort.Strings(blockRegionNames)
-		queryRegionNames := director.ExtractKeys(queryData)
+		queryRegionNames := getMapKeys(queryData)
 		sort.Strings(queryRegionNames)
 		numBlockRegions := len(blockRegionNames)
 		numQueryRegions := len(queryRegionNames)

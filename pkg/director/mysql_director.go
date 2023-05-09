@@ -39,8 +39,8 @@ const (
 	convertingNull = "converting NULL"
 )
 
-// ExtractKeys returns a slice containing the keys in the given map
-func ExtractKeys[K comparable, V any](m map[K]V) []K {
+// getMapKeys returns an unsorted slice containing the keys in the given map
+func getMapKeys[K comparable, V any](m map[K]V) []K {
 	keys := make([]K, 0, len(m))
 	for k := range m {
 		keys = append(keys, k)
@@ -164,7 +164,7 @@ type errval struct {
 // Recursively process a region/Block until all the leaves (which are cells) have been traversed and processed
 func (director *Director) processSub(region interface{}, queryElem interface{}, wgPtr *sync.WaitGroup, cellCountPtr *int) (interface{}, error) {
 	var err error
-	keys := ExtractKeys(queryElem.(map[string]interface{}))
+	keys := getMapKeys(queryElem.(map[string]interface{}))
 	thisIsALeaf := false
 	for _, k := range keys {
 		if k == "controlQueryTemplate" {
@@ -313,7 +313,7 @@ func (director *Director) processSub(region interface{}, queryElem interface{}, 
 		// log.Printf("mysql_director processSub branch keys are %q", keys)
 		// this is a branch (not a leaf) so we keep traversing
 		// check to see if this is a statistic elem, so we can set the statisticType
-		var keys []string = ExtractKeys((region).(map[string]interface{}))
+		var keys []string = getMapKeys((region).(map[string]interface{}))
 		for _, elemKey := range keys {
 			for _, s := range director.statistics {
 				if elemKey == fmt.Sprint(s) {
@@ -336,7 +336,7 @@ func (director *Director) Run(region interface{}, queryMap map[string]interface{
 	// This is recursive. Recurse down to the cell levl then traverse back up processing
 	// all the cells on the way
 	// get all the statistic strings (they are the keys of the regionMap)
-	director.statistics = ExtractKeys((region).(map[string]interface{})) // declared at the top
+	director.statistics = getMapKeys((region).(map[string]interface{})) // declared at the top
 	// declare a waitgroup so that we can wait for all the stats to finish running
 	var wg sync.WaitGroup
 	// process the regionMap (all the values will be filled in)

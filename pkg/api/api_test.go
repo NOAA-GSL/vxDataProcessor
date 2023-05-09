@@ -34,6 +34,11 @@ func (tp *TestProcess) Run() error {
 	return nil
 }
 
+// Close is a dummy method for testing that satisfies the Processor interface
+func (tp *TestProcess) Close() error {
+	return nil
+}
+
 func ProcessorFactoryMock(docID string) (Processor, error) {
 	documentType := strings.Split(docID, ":")[0]
 	switch documentType {

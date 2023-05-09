@@ -37,6 +37,7 @@ func SetupRouter(js *jobstore.JobStore) *gin.Engine {
 // processor is intended to encapsulate the manager.manager struct
 type Processor interface {
 	Run() error
+	Close() error
 }
 
 // Worker receives jobs on a channel, processes them, and reports the status on a return channel
@@ -54,6 +55,10 @@ func Worker(id int, getProcessor func(string) (Processor, error), jobs <-chan jo
 		mgr, err := getProcessor(job.DocID)
 		if err != nil {
 			fmt.Printf("Error: Job %v - %v\n", job.DocID, err)
+			err = mgr.Close() // we're in a loop so we can't defer this
+			if err != nil {
+				fmt.Printf("Error cleaning up: Job %v - %v\n", job.DocID, err)
+			}
 			job.Status = jobstore.StatusFailed
 			status <- job
 			continue
@@ -64,9 +69,17 @@ func Worker(id int, getProcessor func(string) (Processor, error), jobs <-chan jo
 		calculationDuration.WithLabelValues(job.DocID).Observe(duration)
 		if err != nil {
 			fmt.Printf("Error: Job %v - %v\n", job.DocID, err)
+			err = mgr.Close() // we're in a loop so we can't defer this
+			if err != nil {
+				fmt.Printf("Error cleaning up: Job %v - %v\n", job.DocID, err)
+			}
 			job.Status = jobstore.StatusFailed
 			status <- job
 			continue
+		}
+		err = mgr.Close() // we're in a loop so we can't defer this
+		if err != nil {
+			fmt.Printf("Error cleaning up: Job %v - %v\n", job.DocID, err)
 		}
 
 		// report status

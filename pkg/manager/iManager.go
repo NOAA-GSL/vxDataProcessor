@@ -39,10 +39,13 @@ type Manager struct {
 
 type ManagerBuilder interface {
 	Run() error
+	Close() error
 	SetStatus(status string)
 	SetProcessedAt() error
 }
 
+// Returns a Manager based on the document type. Make sure to call Close() on
+// the returned manager to clean up database connections.
 func GetManager(documentID string) (*Manager, error) {
 	documentType := strings.Split(documentID, ":")[0]
 	if documentType == "SC" {

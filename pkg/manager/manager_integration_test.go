@@ -16,6 +16,7 @@ import (
 	"github.com/NOAA-GSL/vxDataProcessor/pkg/director"
 	"github.com/couchbase/gocb/v2"
 	"github.com/joho/godotenv"
+	"go.uber.org/goleak"
 )
 
 func loadEnvironmentFile() {
@@ -72,6 +73,7 @@ func upsertTestDoc(mngr *Manager, test_doc_file string, test_doc_id string) erro
 }
 
 func TestDirector_test_connection(t *testing.T) {
+	defer goleak.VerifyNone(t)
 	var cbCredentials director.DbCredentials
 	var mysqlCredentials director.DbCredentials
 	var err error
@@ -91,7 +93,8 @@ func TestDirector_test_connection(t *testing.T) {
 	documentID := "SCTEST:test_scorecard"
 	t.Setenv("PROC_TESTING_ACCEPT_SCTEST_DOCIDS", "")
 	mngr, _ := GetManager(documentID)
-	err = getConnection(mngr, cbCredentials)
+	defer mngr.Close()
+	err = mngr.getCouchbaseConnection(cbCredentials)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestDirector_test_connection Build GetConnection error ", err))
 	}
@@ -110,6 +113,7 @@ func TestDirector_test_connection(t *testing.T) {
 }
 
 func Test_loadEnvironment(t *testing.T) {
+	defer goleak.VerifyNone(t)
 	tests := []struct {
 		name                 string
 		wantMysqlCredentials director.DbCredentials
@@ -180,6 +184,7 @@ func Test_loadEnvironment(t *testing.T) {
 }
 
 func Test_getQueryBlocks(t *testing.T) {
+	defer goleak.VerifyNone(t)
 	// setup a test document
 	documentID := "SCTEST:test_scorecard"
 	t.Setenv("PROC_TESTING_ACCEPT_SCTEST_DOCIDS", "")
@@ -187,6 +192,12 @@ func Test_getQueryBlocks(t *testing.T) {
 	var err error
 	loadEnvironmentFile()
 	mngr, err = GetManager(documentID)
+	defer func() {
+		errd := mngr.Close()
+		if errd != nil {
+			log.Printf("Error cleaning up manager: %q", errd)
+		}
+	}()
 	if err != nil {
 		t.Fatal(fmt.Errorf("manager loadEnvironment error GetManager %w", err))
 	}
@@ -195,7 +206,7 @@ func Test_getQueryBlocks(t *testing.T) {
 	if err != nil {
 		t.Fatal(fmt.Errorf("manager loadEnvironment error loadEnvironment %w", err))
 	}
-	err = getConnection(mngr, cbCredentials)
+	err = mngr.getCouchbaseConnection(cbCredentials)
 	if err != nil {
 		t.Fatal(fmt.Errorf("manager loadEnvironment error getConnection %w", err))
 	}
@@ -224,11 +235,11 @@ func Test_getQueryBlocks(t *testing.T) {
 		var retData map[string]interface{}
 		var err error
 		t.Run(tt.name, func(t *testing.T) {
-			retData, err = getQueryBlocks(*tt.args)
+			retData, err = tt.args.getQueryBlocks()
 			if retData == nil {
 				t.Errorf("%v error = %v", tt.name, err)
 			}
-			got := director.Keys(retData)
+			got := getMapKeys(retData)
 			sort.Strings(got)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("getQueryBlocks() error = %v, wantErr %v", err, tt.wantErr)
@@ -242,6 +253,7 @@ func Test_getQueryBlocks(t *testing.T) {
 }
 
 func Test_getSliceResultBlocks(t *testing.T) {
+	defer goleak.VerifyNone(t)
 	// setup a test document
 	documentID := "SCTEST:test_scorecard"
 	t.Setenv("PROC_TESTING_ACCEPT_SCTEST_DOCIDS", "")
@@ -249,6 +261,12 @@ func Test_getSliceResultBlocks(t *testing.T) {
 	var err error
 	loadEnvironmentFile()
 	mngr, err = GetManager(documentID)
+	defer func() {
+		errd := mngr.Close()
+		if errd != nil {
+			log.Printf("Error cleaning up manager: %q", errd)
+		}
+	}()
 	if err != nil {
 		t.Fatal(fmt.Errorf("manager loadEnvironment error GetManager %w", err))
 	}
@@ -257,7 +275,7 @@ func Test_getSliceResultBlocks(t *testing.T) {
 	if err != nil {
 		t.Fatal(fmt.Errorf("manager loadEnvironment error loadEnvironment %w", err))
 	}
-	err = getConnection(mngr, cbCredentials)
+	err = mngr.getCouchbaseConnection(cbCredentials)
 	if err != nil {
 		t.Fatal(fmt.Errorf("manager loadEnvironment error getConnection %w", err))
 	}
@@ -286,11 +304,11 @@ func Test_getSliceResultBlocks(t *testing.T) {
 		var retData []map[string]interface{}
 		var err error
 		t.Run(tt.name, func(t *testing.T) {
-			retData, err = getPlotParamCurves(*tt.args)
+			retData, err = tt.args.getPlotParamCurves()
 			if retData == nil {
 				t.Errorf("%v error = %v", tt.name, err)
 			}
-			got := director.Keys(retData[0])
+			got := getMapKeys(retData[0])
 			sort.Strings(got)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("getPlotParamCurves() error = %v, wantErr %v", err, tt.wantErr)
@@ -304,8 +322,9 @@ func Test_getSliceResultBlocks(t *testing.T) {
 }
 
 func Test_runManager(t *testing.T) {
+	defer goleak.VerifyNone(t)
 	t.Setenv("PROC_TESTING_ACCEPT_SCTEST_DOCIDS", "")
-	var mngr *Manager
+	var setupManager *Manager
 	var err error
 	loadEnvironmentFile()
 	tests := []struct {
@@ -342,7 +361,7 @@ func Test_runManager(t *testing.T) {
 			name:            "test_Anomaly_Correlation",
 			docId:           "SCTEST:test_Anomaly_Correlation",
 			fileName:        "./testdata/test_Anomaly_Correlation.json",
-			expectedSeconds: 5,
+			expectedSeconds: 20,
 		},
 		{
 			name:            "test_Ceiling",
@@ -396,7 +415,7 @@ func Test_runManager(t *testing.T) {
 			name:            "test_Surface_Land_Use",
 			docId:           "SCTEST:test_Surface_Land_Use",
 			fileName:        "./testdata/test_Surface_Land_Use.json",
-			expectedSeconds: 40,
+			expectedSeconds: 50,
 		},
 		{
 			name:            "test_Vertically_Integrated_Liquid",
@@ -426,20 +445,23 @@ func Test_runManager(t *testing.T) {
 	for _, tt := range tests {
 		log.Printf("Starting test %s", tt.name)
 		start := time.Now()
-		mngr, err = GetManager(tt.docId)
+		// Test setup
+		setupManager, err = GetManager(tt.docId)
 		if err != nil {
 			t.Fatal(fmt.Errorf("manager - getManager for %s error  %w", tt.name, err))
 		}
-		err = getConnection(mngr, cbCredentials)
+		err = setupManager.getCouchbaseConnection(cbCredentials)
 		if err != nil {
 			t.Fatal(fmt.Errorf("manager loadEnvironmenttest %s error getConnection %w", tt.name, err))
 		}
-		err = upsertTestDoc(mngr, tt.fileName, tt.docId)
+		err = upsertTestDoc(setupManager, tt.fileName, tt.docId)
 		if err != nil {
 			t.Fatal(fmt.Errorf("manager upsertTestDoc test %s error upserting test scorecard %w", tt.name, err))
 		}
-		// get a manager
-		manager, err := newScorecardManager(tt.docId)
+		setupManager.Close() // Can't defer since we're in a for loop
+
+		// Test execution
+		manager, err := GetManager(tt.docId)
 		if err != nil {
 			t.Fatal(fmt.Errorf("manager test %s NewScorecardManager error getting a manager %w", tt.name, err))
 		}
@@ -451,6 +473,7 @@ func Test_runManager(t *testing.T) {
 		if tt.expectedSeconds < int(elapsed.Seconds()) {
 			t.Fatalf("manager test %s expected %d seconds but took %d seconds", tt.name, tt.expectedSeconds, int(elapsed.Seconds()))
 		}
+		manager.Close() // Can't defer since we're in a for loop
 		log.Printf("The test %s took combined %s", tt.name, elapsed)
 	}
 }

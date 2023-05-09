@@ -14,6 +14,7 @@ import (
 	"github.com/NOAA-GSL/vxDataProcessor/pkg/builder"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/joho/godotenv"
+	"go.uber.org/goleak"
 )
 
 func loadEnvironmentFile() {
@@ -32,6 +33,7 @@ func loadEnvironmentFile() {
 }
 
 func Test_getMySqlConnection(t *testing.T) {
+	defer goleak.VerifyNone(t)
 	type args struct {
 		mysqlCredentials DbCredentials
 	}
@@ -65,7 +67,7 @@ func Test_getMySqlConnection(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := getMySqlConnection(tt.args.mysqlCredentials)
+			got, err := getMySQLConnection(tt.args.mysqlCredentials)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("getMySqlConnection() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -80,6 +82,7 @@ func Test_getMySqlConnection(t *testing.T) {
 
 // record.squareDiffSum record.NSum record.obsModelDiffSum record.modelSum record.obsSum record.absSum record.time
 func Test_mySqlQuery(t *testing.T) {
+	defer goleak.VerifyNone(t)
 	loadEnvironmentFile()
 	var mysqlCredentials DbCredentials
 	// refer to https://github.com/go-sql-driver/mysql/#dsn-data-source-name
@@ -95,7 +98,7 @@ func Test_mySqlQuery(t *testing.T) {
 	if mysqlCredentials.Password == "" {
 		t.Fatalf("Undefined MYSQL_PASSWORD in environment")
 	}
-	mysqlDB, err := getMySqlConnection(mysqlCredentials)
+	mysqlDB, err := getMySQLConnection(mysqlCredentials)
 	if err != nil {
 		t.Fatalf("getMySqlConnection() error = %v", err)
 		return
@@ -147,8 +150,8 @@ func Test_mySqlQuery(t *testing.T) {
 		}
 
 		stmnt := string(buf)
-		fromEpoch := tt.fromEpoch // Tue, 1 Feb 2023 20:00:00 GMT
-		toEpoch := tt.toEpoch     // Tue, 1 Mar 2023 20:00:00 GMT
+		fromEpoch := tt.fromEpoch
+		toEpoch := tt.toEpoch
 		stmnt = strings.ReplaceAll(stmnt, "{ { fromSecs } }", fromEpoch)
 		stmnt = strings.ReplaceAll(stmnt, "{ { toSecs } }", toEpoch)
 		t.Run(tt.name, func(t *testing.T) {

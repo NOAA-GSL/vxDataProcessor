@@ -34,14 +34,13 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
-var dateRange DateRange
-
 const (
 	noTableFound   = "Error 1146 (42S02)"
 	convertingNull = "converting NULL"
 )
 
-func Keys[K comparable, V any](m map[K]V) []K {
+// getMapKeys returns an unsorted slice containing the keys in the given map
+func getMapKeys[K comparable, V any](m map[K]V) []K {
 	keys := make([]K, 0, len(m))
 	for k := range m {
 		keys = append(keys, k)
@@ -49,10 +48,10 @@ func Keys[K comparable, V any](m map[K]V) []K {
 	return keys
 }
 
-func getMySqlConnection(mysqlCredentials DbCredentials) (*sql.DB, error) {
-	// get the connection
+// getMySQLConnection establishes a connection to the given SQL database
+// connection strings should be like: user:password@tcp(localhost:5555)
+func getMySQLConnection(mysqlCredentials DbCredentials) (*sql.DB, error) {
 	driver := "mysql"
-	//user:password@tcp(localhost:5555)
 	dataSource := fmt.Sprintf("%s:%s@tcp(%s)/", mysqlCredentials.User, mysqlCredentials.Password, mysqlCredentials.Host)
 	var db *sql.DB
 	db, err := sql.Open(driver, dataSource)
@@ -67,10 +66,10 @@ func getMySqlConnection(mysqlCredentials DbCredentials) (*sql.DB, error) {
 	return db, nil
 }
 
-var mysqlDirector = Director{}
-
-func NewMysqlDirector(mysqlCredentials DbCredentials, dateRange DateRange, minorThreshold float64, majorThreshold float64) (*Director, error) {
-	db, err := getMySqlConnection(mysqlCredentials)
+// newMySQLDirector creates a correctly initialized MySQL director. GetDirector should be used by clients instead of this.
+func newMySQLDirector(mysqlCredentials DbCredentials, dateRange DateRange, minorThreshold, majorThreshold float64) (*Director, error) {
+	mysqlDirector := Director{}
+	db, err := getMySQLConnection(mysqlCredentials)
 	if err != nil {
 		return nil, fmt.Errorf("mysql_director NewMysqlDirector error: %w", err)
 	} else {
@@ -85,9 +84,15 @@ func NewMysqlDirector(mysqlCredentials DbCredentials, dateRange DateRange, minor
 	return &mysqlDirector, nil
 }
 
-func queryDataPreCalc(stmnt string) (queryResult builder.PreCalcRecords, err error) {
+// Close cleans up the database connection and must be called
+func (director *Director) Close() error {
+	return director.db.Close()
+}
+
+// queryDataPreCalc extracts "preCalc" records from the database
+func (director *Director) queryDataPreCalc(stmnt string) (queryResult builder.PreCalcRecords, err error) {
 	var rows *sql.Rows
-	rows, err = mysqlDirector.db.Query(stmnt)
+	rows, err = director.db.Query(stmnt)
 	if err != nil {
 		err = fmt.Errorf("mysql_director queryData Query failed: %w", err)
 		return queryResult, err
@@ -106,9 +111,10 @@ func queryDataPreCalc(stmnt string) (queryResult builder.PreCalcRecords, err err
 	return queryResult, nil
 }
 
-func queryDataCTC(stmnt string) (queryResult builder.CTCRecords, err error) {
+// queryDataCTC extracts "CTC" records from the database
+func (director *Director) queryDataCTC(stmnt string) (queryResult builder.CTCRecords, err error) {
 	var rows *sql.Rows
-	rows, err = mysqlDirector.db.Query(stmnt)
+	rows, err = director.db.Query(stmnt)
 	if err != nil {
 		err = fmt.Errorf("mysql_director queryData Query failed: %w", err)
 		return queryResult, err
@@ -127,10 +133,10 @@ func queryDataCTC(stmnt string) (queryResult builder.CTCRecords, err error) {
 	return queryResult, nil
 }
 
-// func queryDataScalar(stmnt string, queryResult builder.ScalarRecords) (err error) {
-func queryDataScalar(stmnt string) (queryResult builder.ScalarRecords, err error) {
+// queryDataScalar extracts scalar records from the database
+func (director *Director) queryDataScalar(stmnt string) (queryResult builder.ScalarRecords, err error) {
 	var rows *sql.Rows
-	rows, err = mysqlDirector.db.Query(stmnt)
+	rows, err = director.db.Query(stmnt)
 	if err != nil {
 		err = fmt.Errorf("mysql_director queryData Query failed: %w", err)
 		return queryResult, err
@@ -149,12 +155,6 @@ func queryDataScalar(stmnt string) (queryResult builder.ScalarRecords, err error
 	return queryResult, nil
 }
 
-var (
-	statistics    []string
-	statisticType string
-	thisIsALeaf   bool
-)
-
 // used to return value and err from go routines
 type errval struct {
 	err error
@@ -162,10 +162,10 @@ type errval struct {
 }
 
 // Recursively process a region/Block until all the leaves (which are cells) have been traversed and processed
-func processSub(region interface{}, queryElem interface{}, wgPtr *sync.WaitGroup, cellCountPtr *int) (interface{}, error) {
+func (director *Director) processSub(region interface{}, queryElem interface{}, wgPtr *sync.WaitGroup, cellCountPtr *int) (interface{}, error) {
 	var err error
-	keys := Keys(queryElem.(map[string]interface{}))
-	thisIsALeaf = false
+	keys := getMapKeys(queryElem.(map[string]interface{}))
+	thisIsALeaf := false
 	for _, k := range keys {
 		if k == "controlQueryTemplate" {
 			thisIsALeaf = true
@@ -180,10 +180,10 @@ func processSub(region interface{}, queryElem interface{}, wgPtr *sync.WaitGroup
 		var ctlQueryStatement string = queryElem.(map[string]interface{})["controlQueryTemplate"].(string)
 		var expQueryStatement string = queryElem.(map[string]interface{})["experimentalQueryTemplate"].(string)
 		// substitute the {{fromSecs}} and {{toSecs}}
-		ctlQueryStatement = strings.Replace(ctlQueryStatement, "{{fromSecs}}", fmt.Sprint(dateRange.FromSecs), -1)
-		ctlQueryStatement = strings.Replace(ctlQueryStatement, "{{toSecs}}", fmt.Sprint(dateRange.ToSecs), -1)
-		expQueryStatement = strings.Replace(expQueryStatement, "{{fromSecs}}", fmt.Sprint(dateRange.FromSecs), -1)
-		expQueryStatement = strings.Replace(expQueryStatement, "{{toSecs}}", fmt.Sprint(dateRange.ToSecs), -1)
+		ctlQueryStatement = strings.Replace(ctlQueryStatement, "{{fromSecs}}", fmt.Sprint(director.dateRange.FromSecs), -1)
+		ctlQueryStatement = strings.Replace(ctlQueryStatement, "{{toSecs}}", fmt.Sprint(director.dateRange.ToSecs), -1)
+		expQueryStatement = strings.Replace(expQueryStatement, "{{fromSecs}}", fmt.Sprint(director.dateRange.FromSecs), -1)
+		expQueryStatement = strings.Replace(expQueryStatement, "{{toSecs}}", fmt.Sprint(director.dateRange.ToSecs), -1)
 		var err error
 		var queryResult interface{}
 		queryError := false
@@ -191,7 +191,7 @@ func processSub(region interface{}, queryElem interface{}, wgPtr *sync.WaitGroup
 		// what kind of data?
 		if strings.Contains(ctlQueryStatement, "hit") {
 			// get the data
-			ctlQueryResult, err := queryDataCTC(ctlQueryStatement)
+			ctlQueryResult, err := director.queryDataCTC(ctlQueryStatement)
 			if len(ctlQueryResult) == 0 && err == nil {
 				// no data is ok, but no need to go on either
 				return builder.ErrorValue, nil
@@ -202,7 +202,7 @@ func processSub(region interface{}, queryElem interface{}, wgPtr *sync.WaitGroup
 					log.Printf("mysql_director queryDataCTC ctlQueryStatement error %q", err)
 				}
 			} else {
-				expQueryResult, err := queryDataCTC(expQueryStatement)
+				expQueryResult, err := director.queryDataCTC(expQueryStatement)
 				if len(expQueryResult) == 0 && err == nil {
 					// no data is ok, but no need to go on either
 					return builder.ErrorValue, nil
@@ -219,7 +219,7 @@ func processSub(region interface{}, queryElem interface{}, wgPtr *sync.WaitGroup
 			}
 		} else if strings.Contains(ctlQueryStatement, "square_diff_sum") {
 			// get the data
-			ctlQueryResult, err := queryDataScalar(ctlQueryStatement)
+			ctlQueryResult, err := director.queryDataScalar(ctlQueryStatement)
 			if len(ctlQueryResult) == 0 && err == nil {
 				// no data is ok, but no need to go on either
 				return builder.ErrorValue, nil
@@ -231,7 +231,7 @@ func processSub(region interface{}, queryElem interface{}, wgPtr *sync.WaitGroup
 					log.Printf("mysql_director queryDataScalar ctlQueryStatement error %q", err)
 				}
 			} else {
-				expQueryResult, err := queryDataScalar(expQueryStatement)
+				expQueryResult, err := director.queryDataScalar(expQueryStatement)
 				if len(expQueryResult) == 0 && err == nil {
 					// no data is ok, but no need to go on either
 					return builder.ErrorValue, nil
@@ -248,7 +248,7 @@ func processSub(region interface{}, queryElem interface{}, wgPtr *sync.WaitGroup
 			}
 		} else if strings.Contains(ctlQueryStatement, "stat") {
 			// get the data
-			ctlQueryResult, err := queryDataPreCalc(ctlQueryStatement)
+			ctlQueryResult, err := director.queryDataPreCalc(ctlQueryStatement)
 			if len(ctlQueryResult) == 0 && err == nil {
 				// no data is ok, but no need to go on either
 				return builder.ErrorValue, nil
@@ -260,7 +260,7 @@ func processSub(region interface{}, queryElem interface{}, wgPtr *sync.WaitGroup
 					log.Printf("mysql_director queryDataPreCalc ctlQueryStatement error %q", err)
 				}
 			} else {
-				expQueryResult, err := queryDataPreCalc(expQueryStatement)
+				expQueryResult, err := director.queryDataPreCalc(expQueryStatement)
 				if len(expQueryResult) == 0 && err == nil {
 					// no data is ok, but no need to go on either
 					return builder.ErrorValue, nil
@@ -298,7 +298,7 @@ func processSub(region interface{}, queryElem interface{}, wgPtr *sync.WaitGroup
 				defer wgPtr.Done()
 				*cellCountPtr++
 				scc := builder.NewTwoSampleTTestBuilder()
-				value, err := (scc.Build(queryResult, statisticType, mysqlDirector.minorThreshold, mysqlDirector.majorThreshold))
+				value, err := (scc.Build(queryResult, director.statisticType, director.minorThreshold, director.majorThreshold))
 				c <- errval{err: err, val: value}
 			}()
 			ret := <-c
@@ -313,16 +313,16 @@ func processSub(region interface{}, queryElem interface{}, wgPtr *sync.WaitGroup
 		// log.Printf("mysql_director processSub branch keys are %q", keys)
 		// this is a branch (not a leaf) so we keep traversing
 		// check to see if this is a statistic elem, so we can set the statisticType
-		var keys []string = Keys((region).(map[string]interface{}))
+		var keys []string = getMapKeys((region).(map[string]interface{}))
 		for _, elemKey := range keys {
-			for _, s := range statistics {
+			for _, s := range director.statistics {
 				if elemKey == fmt.Sprint(s) {
-					statisticType = elemKey
+					director.statisticType = elemKey
 					break
 				}
 			}
 			queryElem := queryElem.(map[string]interface{})[elemKey]
-			region.(map[string]interface{})[elemKey], err = processSub(region.(map[string]interface{})[elemKey], queryElem, wgPtr, cellCountPtr)
+			region.(map[string]interface{})[elemKey], err = director.processSub(region.(map[string]interface{})[elemKey], queryElem, wgPtr, cellCountPtr)
 			if err != nil {
 				return builder.ErrorValue, err
 			}
@@ -336,12 +336,11 @@ func (director *Director) Run(region interface{}, queryMap map[string]interface{
 	// This is recursive. Recurse down to the cell levl then traverse back up processing
 	// all the cells on the way
 	// get all the statistic strings (they are the keys of the regionMap)
-	statistics = Keys((region).(map[string]interface{})) // declared at the top
-	dateRange = director.dateRange
+	director.statistics = getMapKeys((region).(map[string]interface{})) // declared at the top
 	// declare a waitgroup so that we can wait for all the stats to finish running
 	var wg sync.WaitGroup
 	// process the regionMap (all the values will be filled in)
-	region, err := processSub(region, queryMap, &wg, cellCountPtr)
+	region, err := director.processSub(region, queryMap, &wg, cellCountPtr)
 	wg.Wait()
 	if err != nil {
 		return region, fmt.Errorf("mysql_director error in Run %w", err)

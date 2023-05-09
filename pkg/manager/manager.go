@@ -4,9 +4,9 @@ package manager
 The Manager has the following responsibilities and transformations.
 
 1. The manager will maintain a Couchbase connection.
-1. The manager is given a process_id from the service. The service
+1. The manager is given a documentID from the API service. The API service
 will have as many managers open as go workers as needed so that it can handle multiple service
-requests simultaneously. The service starts a manager in a GO worker routine and
+requests simultaneously. The API service starts a manager in a GO worker routine and
 the manager is passed the id of the corresponding scorecard document.
 1. The manager will read the scorcard document associated with the id from Couchbase
 and maintain it in memory on behalf of its directors.
@@ -58,6 +58,16 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
+// getMapKeys returns an unsorted slice containing the keys in the given map
+func getMapKeys[K comparable, V any](m map[K]V) []K {
+	keys := make([]K, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	return keys
+}
+
+// loadEnvironment retrieves required settings from the environment
 func loadEnvironment() (mysqlCredentials, cbCredentials director.DbCredentials, err error) {
 	cbCredentials = director.DbCredentials{
 		Scope:      "_default",
@@ -98,9 +108,15 @@ func loadEnvironment() (mysqlCredentials, cbCredentials director.DbCredentials, 
 	return mysqlCredentials, cbCredentials, nil
 }
 
-// get the couchbase connection
+// Close is required after we are finished with a Manager. It usually recommended to
+// call it with defer.
+func (mngr *Manager) Close() error {
+	return mngr.cb.Cluster.Close(nil)
+}
+
+// getCouchbaseConnection establishes the couchbase connection
 // mysql connections are maintained in the mysql_director
-func getConnection(mngr *Manager, cbCredentials director.DbCredentials) (err error) {
+func (mngr *Manager) getCouchbaseConnection(cbCredentials director.DbCredentials) (err error) {
 	options := gocb.ClusterOptions{
 		Authenticator: gocb.PasswordAuthenticator{
 			Username: cbCredentials.User,
@@ -127,7 +143,8 @@ func getConnection(mngr *Manager, cbCredentials director.DbCredentials) (err err
 	return nil
 }
 
-func upsertSubDocument(mngr Manager, path string, subDoc interface{}) error {
+// upsertSubDocument updates a Couchbase subdocument
+func (mngr *Manager) upsertSubDocument(path string, subDoc interface{}) error {
 	mops := []gocb.MutateInSpec{
 		gocb.UpsertSpec(path, subDoc, &gocb.UpsertSpecOptions{}),
 	}
@@ -144,7 +161,8 @@ func upsertSubDocument(mngr Manager, path string, subDoc interface{}) error {
 	return nil
 }
 
-func getSubDocument(mngr Manager, path string, subDocPtr *interface{}) error {
+// getSubDocument retrieves a Couchbase subdocument
+func (mngr *Manager) getSubDocument(path string, subDocPtr *interface{}) error {
 	ops := []gocb.LookupInSpec{
 		gocb.GetSpec(path, &gocb.GetSpecOptions{IsXattr: false}),
 	}
@@ -160,9 +178,9 @@ func getSubDocument(mngr Manager, path string, subDocPtr *interface{}) error {
 }
 
 // retrieve the results.blocks section of the document by subdoc get
-func getBlocks(mngr Manager) (map[string]interface{}, error) {
+func (mngr *Manager) getBlocks() (map[string]interface{}, error) {
 	var blocks interface{}
-	err := getSubDocument(mngr, "results.blocks", &blocks)
+	err := mngr.getSubDocument("results.blocks", &blocks)
 	if err != nil {
 		return nil, fmt.Errorf("manager getBlocks error %w", err)
 	}
@@ -170,9 +188,9 @@ func getBlocks(mngr Manager) (map[string]interface{}, error) {
 }
 
 // retrieve the queryMap.blocks section of the document by subdoc get
-func getQueryBlocks(mngr Manager) (map[string]interface{}, error) {
+func (mngr *Manager) getQueryBlocks() (map[string]interface{}, error) {
 	var blocks interface{}
-	err := getSubDocument(mngr, "queryMap.blocks", &blocks)
+	err := mngr.getSubDocument("queryMap.blocks", &blocks)
 	if err != nil {
 		return nil, fmt.Errorf("manager getQueryBlocks error %w", err)
 	}
@@ -180,9 +198,9 @@ func getQueryBlocks(mngr Manager) (map[string]interface{}, error) {
 }
 
 // retrieve the PlotParams section of the document by subdoc get
-func getPlotParams(mngr Manager) (map[string]interface{}, error) {
+func (mngr *Manager) getPlotParams() (map[string]interface{}, error) {
 	var plotParams interface{}
-	err := getSubDocument(mngr, "plotParams", &plotParams)
+	err := mngr.getSubDocument("plotParams", &plotParams)
 	if err != nil {
 		return nil, fmt.Errorf("manager getPlotParams error %w", err)
 	}
@@ -190,10 +208,10 @@ func getPlotParams(mngr Manager) (map[string]interface{}, error) {
 }
 
 // retrieve the PlotParam.curves (this is an array) section of the document by subdoc get
-func getPlotParamCurves(mngr Manager) ([]map[string]interface{}, error) {
+func (mngr *Manager) getPlotParamCurves() ([]map[string]interface{}, error) {
 	var curves interface{}
 	var curveArray []map[string]interface{}
-	err := getSubDocument(mngr, "plotParams.curves", &curves)
+	err := mngr.getSubDocument("plotParams.curves", &curves)
 	if err != nil {
 		return nil, fmt.Errorf("manager getPlotParamCurves error %w", err)
 	}
@@ -205,9 +223,9 @@ func getPlotParamCurves(mngr Manager) ([]map[string]interface{}, error) {
 
 // retrieve the dateRange section of the document by subdoc get
 // and convert it to a dateRange struct
-func getDateRange(mngr Manager) (director.DateRange, error) {
+func (mngr *Manager) getDateRange() (director.DateRange, error) {
 	var datesStr interface{}
-	err := getSubDocument(mngr, "dateRange", &datesStr)
+	err := mngr.getSubDocument("dateRange", &datesStr)
 	var dateRange director.DateRange
 	// parse the daterange string
 	// "02/19/2023 20:00 - 03/21/2023 20:00"
@@ -233,6 +251,7 @@ func getDateRange(mngr Manager) (director.DateRange, error) {
 	return dateRange, err
 }
 
+// convertStdToPercent converts a standard deviation to a percent error
 func convertStdToPercent(std string) (percent float64, err error) {
 	stdfloat, err := strconv.ParseFloat(std, 64)
 	if err != nil {
@@ -255,6 +274,7 @@ func convertStdToPercent(std string) (percent float64, err error) {
 	return percent, err
 }
 
+// getThresholds extracts the major and minor thresholds
 func getThresholds(plotParams map[string]interface{}) (minorThreshold, majorThreshold float64, err error) {
 	percentStddev := plotParams["scorecard-percent-stdv"]
 	switch percentStddev {
@@ -282,6 +302,7 @@ func getThresholds(plotParams map[string]interface{}) (minorThreshold, majorThre
 	return minorThreshold, majorThreshold, nil
 }
 
+// notifyMatsRefreash notifies the MATS scorecard app that a particular docID has been updated
 func notifyMatsRefresh(scorecardAppURL, docID string) error {
 	err := client.NotifyScorecard(scorecardAppURL, docID)
 	if err != nil {
@@ -290,8 +311,7 @@ func notifyMatsRefresh(scorecardAppURL, docID string) error {
 	return err
 }
 
-func processRegion(
-	mngr Manager,
+func (mngr *Manager) processRegion(
 	appName string,
 	queryRegionName string,
 	queryRegion map[string]interface{},
@@ -306,22 +326,25 @@ func processRegion(
 	cellCountPtr *int,
 ) error {
 	if strings.ToUpper(appName) == "CB" {
-		log.Print("launch CB director - which we don't have yet")
-	} else {
-		// launch mysql director
-		mysqlDirector, err := director.GetDirector("MysqlDirector", mysqlCredentials, dateRange, minorThreshold, majorThreshold)
-		if err != nil {
-			return fmt.Errorf("manager Run error getting director: %w", err)
-		}
-		*region, err = mysqlDirector.Run(*region, queryRegion, cellCountPtr)
-		if err != nil {
-			return fmt.Errorf("manager Run error running director: %w", err)
-		}
+		return fmt.Errorf("Couchbase director is unimplemented")
 	}
-	err := upsertSubDocument(mngr, regionPath, region)
+	// launch mysql director
+	mysqlDirector, err := director.GetDirector("MysqlDirector", mysqlCredentials, dateRange, minorThreshold, majorThreshold)
+	if err != nil {
+		return fmt.Errorf("manager Run error getting director: %w", err)
+	}
+	defer mysqlDirector.Close()
+
+	*region, err = mysqlDirector.Run(*region, queryRegion, cellCountPtr)
+	if err != nil {
+		return fmt.Errorf("manager Run error running director: %w", err)
+	}
+
+	err = mngr.upsertSubDocument(regionPath, region)
 	if err != nil {
 		return fmt.Errorf("manager Run error upserting resultRegion: %q error: %w", blockRegionName, err)
 	}
+
 	// notify server to update with scorecardApUrl
 	// try to get the SCORECARD_APP_URL from the environment
 	scorecardAppURL := os.Getenv("DEBUG_SCORECARD_APP_URL")
@@ -336,7 +359,8 @@ func processRegion(
 	return nil
 }
 
-func (mngr Manager) Run() (err error) {
+// Run processes the docID associated with the manager
+func (mngr *Manager) Run() (err error) {
 	// load the environment
 	cellCount := 0
 	start := time.Now()
@@ -345,29 +369,29 @@ func (mngr Manager) Run() (err error) {
 	if err != nil {
 		return fmt.Errorf("manager loadEnvironmant error %w", err)
 	}
-	err = getConnection(&mngr, cbCredentials)
+	err = mngr.getCouchbaseConnection(cbCredentials)
 	if err != nil {
 		return fmt.Errorf("manager Run GetConnection error: %w", err)
 	}
 	// from here on we should be able to set an error status in the document, if we need to
-	resultsBlocks, err := getBlocks(mngr)
+	resultsBlocks, err := mngr.getBlocks()
 	if err != nil {
 		_ = mngr.SetStatus("error")
 		return fmt.Errorf("manager Run error getting resultsBlocks: %w", err)
 	}
-	blockKeys := director.Keys(resultsBlocks)
+	blockKeys := getMapKeys(resultsBlocks)
 	sort.Strings(blockKeys)
 	// get the appUrl from the first block - they should all be the same
 	scorecardAppUrl := resultsBlocks[blockKeys[0]].(map[string]interface{})["blockApplication"].(string)
 	// from this point on, we can notify the scorecard app with the status and error
-	queryBlocks, err := getQueryBlocks(mngr)
+	queryBlocks, err := mngr.getQueryBlocks()
 	if err != nil {
 		_ = mngr.SetStatus("error")
 		err := fmt.Errorf("manager Run error getting queryBlocks: %w", err)
 		_ = client.NotifyScorecardStatus(scorecardAppUrl, mngr.documentID, "error", err)
 		return err
 	}
-	plotParams, err := getPlotParams(mngr)
+	plotParams, err := mngr.getPlotParams()
 	if err != nil {
 		err := fmt.Errorf("manager Run error getting plotParamCurves: %w", err)
 		_ = client.NotifyScorecardStatus(scorecardAppUrl, mngr.documentID, "error", err)
@@ -381,14 +405,14 @@ func (mngr Manager) Run() (err error) {
 		_ = mngr.SetStatus("error")
 		return err
 	}
-	curves, err := getPlotParamCurves(mngr)
+	curves, err := mngr.getPlotParamCurves()
 	if err != nil {
 		err := fmt.Errorf("manager Run error getting plotParamCurves: %w", err)
 		_ = client.NotifyScorecardStatus(scorecardAppUrl, mngr.documentID, "error", err)
 		_ = mngr.SetStatus("error")
 		return err
 	}
-	dateRange, err := getDateRange(mngr)
+	dateRange, err := mngr.getDateRange()
 	if err != nil {
 		err := fmt.Errorf("manager Run error getting daterange: %w", err)
 		_ = client.NotifyScorecardStatus(scorecardAppUrl, mngr.documentID, "error", err)
@@ -413,9 +437,9 @@ func (mngr Manager) Run() (err error) {
 			}
 		}
 		queryData := queryBlock["data"].(map[string]interface{})
-		blockRegionNames := director.Keys(block.(map[string]interface{})["data"].(map[string]interface{}))
+		blockRegionNames := getMapKeys(block.(map[string]interface{})["data"].(map[string]interface{}))
 		sort.Strings(blockRegionNames)
-		queryRegionNames := director.Keys(queryData)
+		queryRegionNames := getMapKeys(queryData)
 		sort.Strings(queryRegionNames)
 		numBlockRegions := len(blockRegionNames)
 		numQueryRegions := len(queryRegionNames)
@@ -437,7 +461,7 @@ func (mngr Manager) Run() (err error) {
 			blockRegionName := blockRegionNames[i]
 			var region interface{}
 			regionPath := "results.blocks." + blockName + ".data." + blockRegionName
-			err = getSubDocument(mngr, regionPath, &region)
+			err = mngr.getSubDocument(regionPath, &region)
 			if err != nil {
 				err := fmt.Errorf("error getting region SubDocument %w", err)
 				_ = client.NotifyScorecardStatus(scorecardAppUrl, mngr.documentID, "error", err)
@@ -446,7 +470,7 @@ func (mngr Manager) Run() (err error) {
 			}
 			// process the region/block in the errgroup
 			errGroup.Go(func() error {
-				err = processRegion(mngr,
+				err = mngr.processRegion(
 					appName,
 					queryRegionName,
 					queryRegion,
@@ -489,7 +513,8 @@ func (mngr Manager) Run() (err error) {
 	return nil
 }
 
-func (mngr Manager) SetStatus(status string) (err error) {
+// SetStatus updates the couchbase scorecard document with the processing status
+func (mngr *Manager) SetStatus(status string) (err error) {
 	stmnt := "UPDATE vxdata._default.SCORECARD SET status = \"" + status + "\" where meta().id=\"" + mngr.documentID + "\";"
 	_, err = mngr.cb.Cluster.Query(stmnt, &gocb.QueryOptions{Adhoc: true})
 	if err != nil {
@@ -498,7 +523,8 @@ func (mngr Manager) SetStatus(status string) (err error) {
 	return nil
 }
 
-func (mngr Manager) SetProcessedAt() (err error) {
+// SetProcessedAt updates the couchbase scorecard document with the processed timestamp
+func (mngr *Manager) SetProcessedAt() (err error) {
 	timeStamp := strconv.FormatInt(time.Now().Unix(), 10)
 	stmnt := fmt.Sprintf("UPDATE vxdata._default.SCORECARD SET processedAt = %v where meta().id='%s';", timeStamp, mngr.documentID)
 	_, err = mngr.cb.Cluster.Query(stmnt, &gocb.QueryOptions{Adhoc: true})
@@ -508,10 +534,10 @@ func (mngr Manager) SetProcessedAt() (err error) {
 	return nil
 }
 
-var myScorecardManager = Manager{}
-
+// newScorecardManager creates a correctly initialized scorecard manager. GetManager should be used by clients instead of this.
 func newScorecardManager(documentID string) (*Manager, error) {
-	myScorecardManager.cb = &cbConnection{}
-	myScorecardManager.documentID = documentID
-	return &myScorecardManager, nil
+	scMgr := Manager{}
+	scMgr.cb = &cbConnection{}
+	scMgr.documentID = documentID
+	return &scMgr, nil
 }

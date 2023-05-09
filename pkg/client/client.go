@@ -22,6 +22,7 @@ func NotifyScorecard(baseURL, docID string) error {
 		return fmt.Errorf("client: error making http request: %w", err)
 	}
 	defer res.Body.Close()
+	defer http.DefaultClient.CloseIdleConnections()
 
 	if res.StatusCode != http.StatusOK {
 		return fmt.Errorf("client: got response code %d from %v", res.StatusCode, scorecardURL)
@@ -60,6 +61,7 @@ func NotifyScorecardStatus(baseURL, docID, status string, err error) error {
 		return fmt.Errorf("client: error making http request: %w", err)
 	}
 	defer res.Body.Close()
+	defer http.DefaultClient.CloseIdleConnections()
 
 	if res.StatusCode != http.StatusOK {
 		return fmt.Errorf("client: got response code %d from %v", res.StatusCode, scorecardURL)

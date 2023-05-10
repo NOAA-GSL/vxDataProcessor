@@ -40,7 +40,7 @@ const (
 	convertingNull = "converting NULL"
 )
 
-func (director *Director) keys(m map[string]interface{}) []string {
+func (director *Director) getMapKeys(m map[string]interface{}) []string {
 	keys := make([]string, 0, len(m))
 	for k := range m {
 		keys = append(keys, k)
@@ -48,10 +48,11 @@ func (director *Director) keys(m map[string]interface{}) []string {
 	return keys
 }
 
+// getMySQLConnection establishes a connection to the given SQL database
+// connection strings should be like: user:password@tcp(localhost:5555)
 func (director *Director) getMySqlConnection(mysqlCredentials DbCredentials) (*sql.DB, error) {
 	// get the connection
 	driver := "mysql"
-	//user:password@tcp(localhost:5555)
 	dataSource := fmt.Sprintf("%s:%s@tcp(%s)/", mysqlCredentials.User, mysqlCredentials.Password, mysqlCredentials.Host)
 	var db *sql.DB
 	db, err := sql.Open(driver, dataSource)
@@ -69,7 +70,8 @@ func (director *Director) getMySqlConnection(mysqlCredentials DbCredentials) (*s
 	return db, nil
 }
 
-func NewMysqlDirector(mysqlCredentials DbCredentials, dateRange DateRange, minorThreshold float64, majorThreshold float64) (*Director, error) {
+// newMySQLDirector creates a correctly initialized MySQL director. GetDirector should be used by clients instead of this.
+func newMySQLDirector(mysqlCredentials DbCredentials, dateRange DateRange, minorThreshold, majorThreshold float64) (*Director, error) {
 	mysqlDirector := Director{}
 	db, err := mysqlDirector.getMySqlConnection(mysqlCredentials)
 	if err != nil {
@@ -162,7 +164,7 @@ var singleThreadedDirector bool = false
 // Recursively process a region/Block until all the leaves (which are cells) have been traversed and processed
 func (director *Director) processSub(queryRegionName string, region interface{}, queryElem interface{}, cellCountPtr *int, keychain *[]string, dateRange DateRange) (interface{}, error) {
 	var err error
-	keys := director.keys(queryElem.(map[string]interface{}))
+	keys := director.getMapKeys(queryElem.(map[string]interface{}))
 	thisIsALeaf := false
 	for _, k := range keys {
 		if k == "controlQueryTemplate" {
@@ -178,10 +180,10 @@ func (director *Director) processSub(queryRegionName string, region interface{},
 		var ctlQueryStatement string = queryElem.(map[string]interface{})["controlQueryTemplate"].(string)
 		var expQueryStatement string = queryElem.(map[string]interface{})["experimentalQueryTemplate"].(string)
 		// substitute the {{fromSecs}} and {{toSecs}}
-		ctlQueryStatement = strings.Replace(ctlQueryStatement, "{{fromSecs}}", fmt.Sprint(dateRange.FromSecs), -1)
-		ctlQueryStatement = strings.Replace(ctlQueryStatement, "{{toSecs}}", fmt.Sprint(dateRange.ToSecs), -1)
-		expQueryStatement = strings.Replace(expQueryStatement, "{{fromSecs}}", fmt.Sprint(dateRange.FromSecs), -1)
-		expQueryStatement = strings.Replace(expQueryStatement, "{{toSecs}}", fmt.Sprint(dateRange.ToSecs), -1)
+		ctlQueryStatement = strings.Replace(ctlQueryStatement, "{{fromSecs}}", fmt.Sprint(director.dateRange.FromSecs), -1)
+		ctlQueryStatement = strings.Replace(ctlQueryStatement, "{{toSecs}}", fmt.Sprint(director.dateRange.ToSecs), -1)
+		expQueryStatement = strings.Replace(expQueryStatement, "{{fromSecs}}", fmt.Sprint(director.dateRange.FromSecs), -1)
+		expQueryStatement = strings.Replace(expQueryStatement, "{{toSecs}}", fmt.Sprint(director.dateRange.ToSecs), -1)
 		var err error
 		var queryResult interface{}
 		queryError := false
@@ -336,7 +338,7 @@ func (director *Director) processSub(queryRegionName string, region interface{},
 		// log.Printf("mysql_director processSub branch keys are %q", keys)
 		// this is a branch (not a leaf) so we keep traversing
 		// check to see if this is a statistic elem, so we can set the statisticType
-		var keys []string = director.keys((region).(map[string]interface{}))
+		var keys []string = director.getMapKeys((region).(map[string]interface{}))
 		for _, elemKey := range keys {
 			for _, s := range director.statistics {
 				if elemKey == fmt.Sprint(s) {
@@ -373,7 +375,7 @@ func (director *Director) Run(queryRegionName string, region interface{}, queryM
 	// This is recursive. Recurse down to the cell levl then traverse back up processing
 	// all the cells on the way
 	// get all the statistic strings (they are the keys of the regionMap)
-	director.statistics = director.keys((region).(map[string]interface{})) // declared at the top
+	director.statistics = director.getMapKeys((region).(map[string]interface{})) // declared at the top
 	dateRange := director.dateRange
 	// declare a waitgroup so that we can wait for all the stats to finish running - only use it if !singlethreaded
 	// process the regionMap (all the values will be filled in)

@@ -4,9 +4,9 @@ package manager
 The Manager has the following responsibilities and transformations.
 
 1. The manager will maintain a Couchbase connection.
-1. The manager is given a process_id from the service. The service
+1. The manager is given a documentID from the API service. The API service
 will have as many managers open as go workers as needed so that it can handle multiple service
-requests simultaneously. The service starts a manager in a GO worker routine and
+requests simultaneously. The API service starts a manager in a GO worker routine and
 the manager is passed the id of the corresponding scorecard document.
 1. The manager will read the scorcard document associated with the id from Couchbase
 and maintain it in memory on behalf of its directors.
@@ -58,7 +58,7 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-func (mngr *Manager) keys(m map[string]interface{}) []string {
+func (mngr *Manager) getMapKeys(m map[string]interface{}) []string {
 	keys := make([]string, 0, len(m))
 	for k := range m {
 		keys = append(keys, k)
@@ -66,6 +66,7 @@ func (mngr *Manager) keys(m map[string]interface{}) []string {
 	return keys
 }
 
+// loadEnvironment retrieves required settings from the environment
 func (mngr *Manager) loadEnvironment() (mysqlCredentials, cbCredentials director.DbCredentials, err error) {
 	cbCredentials = director.DbCredentials{
 		Scope:      "_default",
@@ -106,9 +107,15 @@ func (mngr *Manager) loadEnvironment() (mysqlCredentials, cbCredentials director
 	return mysqlCredentials, cbCredentials, nil
 }
 
-// get the couchbase connection
+// Close is required after we are finished with a Manager. It usually recommended to
+// call it with defer.
+func (mngr *Manager) Close() error {
+	return mngr.cb.Cluster.Close(nil)
+}
+
+// getCouchbaseConnection establishes the couchbase connection
 // mysql connections are maintained in the mysql_director
-func (mngr *Manager) getConnection(cbCredentials director.DbCredentials) (err error) {
+func (mngr *Manager) getCouchbaseConnection(cbCredentials director.DbCredentials) (err error) {
 	options := gocb.ClusterOptions{
 		Authenticator: gocb.PasswordAuthenticator{
 			Username: cbCredentials.User,
@@ -135,6 +142,7 @@ func (mngr *Manager) getConnection(cbCredentials director.DbCredentials) (err er
 	return nil
 }
 
+// upsertSubDocument updates a Couchbase subdocument
 func (mngr *Manager) upsertSubDocument(path string, subDoc interface{}) error {
 	mops := []gocb.MutateInSpec{
 		gocb.UpsertSpec(path, subDoc, &gocb.UpsertSpecOptions{}),
@@ -152,6 +160,7 @@ func (mngr *Manager) upsertSubDocument(path string, subDoc interface{}) error {
 	return nil
 }
 
+// getSubDocument retrieves a Couchbase subdocument
 func (mngr *Manager) getSubDocument(path string, subDocPtr *interface{}) error {
 	ops := []gocb.LookupInSpec{
 		gocb.GetSpec(path, &gocb.GetSpecOptions{IsXattr: false}),
@@ -241,6 +250,7 @@ func (mngr *Manager) getDateRange() (director.DateRange, error) {
 	return dateRange, err
 }
 
+// convertStdToPercent converts a standard deviation to a percent error
 func (mngr *Manager) convertStdToPercent(std string) (percent float64, err error) {
 	stdfloat, err := strconv.ParseFloat(std, 64)
 	if err != nil {
@@ -263,6 +273,7 @@ func (mngr *Manager) convertStdToPercent(std string) (percent float64, err error
 	return percent, err
 }
 
+// getThresholds extracts the major and minor thresholds
 func (mngr *Manager) getThresholds(plotParams map[string]interface{}) (minorThreshold, majorThreshold float64, err error) {
 	percentStddev := plotParams["scorecard-percent-stdv"]
 	switch percentStddev {
@@ -290,6 +301,7 @@ func (mngr *Manager) getThresholds(plotParams map[string]interface{}) (minorThre
 	return minorThreshold, majorThreshold, nil
 }
 
+// notifyMatsRefreash notifies the MATS scorecard app that a particular docID has been updated
 func (mngr *Manager) notifyMatsRefresh(scorecardAppURL, docID string) error {
 	err := client.NotifyScorecard(scorecardAppURL, docID)
 	if err != nil {
@@ -313,23 +325,25 @@ func (mngr *Manager) processRegion(
 	cellCountPtr *int,
 ) error {
 	if strings.ToUpper(appName) == "CB" {
-		log.Print("launch CB director - which we don't have yet")
-	} else {
-		// launch mysql director
-		mysqlDirector, err := director.GetDirector("MysqlDirector", mysqlCredentials, dateRange, minorThreshold, majorThreshold)
-		defer mysqlDirector.CloseDB()
-		if err != nil {
-			return fmt.Errorf("manager Run error getting director: %w", err)
-		}
-		*region, err = mysqlDirector.Run(queryRegionName, *region, queryRegion, cellCountPtr)
-		if err != nil {
-			return fmt.Errorf("manager Run error running director: %w", err)
-		}
+		return fmt.Errorf("Couchbase director is unimplemented")
 	}
-	err := mngr.upsertSubDocument(regionPath, region)
+	// launch mysql director
+	mysqlDirector, err := director.GetDirector("MysqlDirector", mysqlCredentials, dateRange, minorThreshold, majorThreshold)
+	if err != nil {
+		return fmt.Errorf("manager Run error getting director: %w", err)
+	}
+	defer mysqlDirector.CloseDB()
+
+	*region, err = mysqlDirector.Run(queryRegionName, *region, queryRegion, cellCountPtr)
+	if err != nil {
+		return fmt.Errorf("manager Run error running director: %w", err)
+	}
+
+	err = mngr.upsertSubDocument(regionPath, region)
 	if err != nil {
 		return fmt.Errorf("manager Run error upserting resultRegion: %q error: %w", blockRegionName, err)
 	}
+
 	// notify server to update with scorecardApUrl
 	// try to get the SCORECARD_APP_URL from the environment
 	scorecardAppURL := os.Getenv("DEBUG_SCORECARD_APP_URL")
@@ -344,6 +358,7 @@ func (mngr *Manager) processRegion(
 	return nil
 }
 
+// Run processes the docID associated with the manager
 func (mngr *Manager) Run() (err error) {
 	// load the environment
 	cellCount := 0
@@ -353,7 +368,7 @@ func (mngr *Manager) Run() (err error) {
 	if err != nil {
 		return fmt.Errorf("manager loadEnvironmant error %w", err)
 	}
-	err = mngr.getConnection(cbCredentials)
+	err = mngr.getCouchbaseConnection(cbCredentials)
 	if err != nil {
 		return fmt.Errorf("manager Run GetConnection error: %w", err)
 	}
@@ -364,7 +379,7 @@ func (mngr *Manager) Run() (err error) {
 		_ = mngr.SetStatus("error")
 		return fmt.Errorf("manager Run error getting resultsBlocks: %w", err)
 	}
-	blockKeys := mngr.keys(resultsBlocks)
+	blockKeys := mngr.getMapKeys(resultsBlocks)
 	sort.Strings(blockKeys)
 	// get the appUrl from the first block - they should all be the same
 	scorecardAppUrl := resultsBlocks[blockKeys[0]].(map[string]interface{})["blockApplication"].(string)
@@ -427,9 +442,9 @@ func (mngr *Manager) Run() (err error) {
 			}
 		}
 		queryData := queryBlock["data"].(map[string]interface{})
-		blockRegionNames := mngr.keys(block.(map[string]interface{})["data"].(map[string]interface{}))
+		blockRegionNames := mngr.getMapKeys(block.(map[string]interface{})["data"].(map[string]interface{}))
 		sort.Strings(blockRegionNames)
-		queryRegionNames := mngr.keys(queryData)
+		queryRegionNames := mngr.getMapKeys(queryData)
 		sort.Strings(queryRegionNames)
 		numBlockRegions := len(blockRegionNames)
 		numQueryRegions := len(queryRegionNames)
@@ -529,6 +544,7 @@ func (mngr *Manager) Run() (err error) {
 	return nil
 }
 
+// SetStatus updates the couchbase scorecard document with the processing status
 func (mngr *Manager) SetStatus(status string) (err error) {
 	stmnt := "UPDATE vxdata._default.SCORECARD SET status = \"" + status + "\" where meta().id=\"" + mngr.documentID + "\";"
 	_, err = mngr.cb.Cluster.Query(stmnt, &gocb.QueryOptions{Adhoc: true})
@@ -538,6 +554,7 @@ func (mngr *Manager) SetStatus(status string) (err error) {
 	return nil
 }
 
+// SetProcessedAt updates the couchbase scorecard document with the processed timestamp
 func (mngr *Manager) SetProcessedAt() (err error) {
 	timeStamp := strconv.FormatInt(time.Now().Unix(), 10)
 	stmnt := fmt.Sprintf("UPDATE vxdata._default.SCORECARD SET processedAt = %v where meta().id='%s';", timeStamp, mngr.documentID)
@@ -548,9 +565,10 @@ func (mngr *Manager) SetProcessedAt() (err error) {
 	return nil
 }
 
+// newScorecardManager creates a correctly initialized scorecard manager. GetManager should be used by clients instead of this.
 func newScorecardManager(documentID string) (*Manager, error) {
-	myScorecardManager := Manager{}
-	myScorecardManager.cb = &cbConnection{}
-	myScorecardManager.documentID = documentID
-	return &myScorecardManager, nil
+	scMgr := Manager{}
+	scMgr.cb = &cbConnection{}
+	scMgr.documentID = documentID
+	return &scMgr, nil
 }

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/goleak"
 )
 
 func getDataSet(epoch int64, ctlValues []float64, expValues []float64) DataSet {
@@ -28,6 +29,7 @@ func getDataSet(epoch int64, ctlValues []float64, expValues []float64) DataSet {
 }
 
 func TestGetMatchedDataSet(t *testing.T) {
+	defer goleak.VerifyNone(t)
 	epoch := time.Now().Unix()
 	tests := []struct {
 		name    string
@@ -109,6 +111,7 @@ func TestGetMatchedDataSet(t *testing.T) {
 
 // this test has inputs captured from a real world example
 func TestGetMatchedDataSetRealWorld(t *testing.T) {
+	defer goleak.VerifyNone(t)
 	var ctlData, expData PreCalcRecords
 	var dataSet DataSet
 	ctlData = append(ctlData, PreCalcRecord{Avtime: 1678788000, Stat: 0})
@@ -878,6 +881,7 @@ func Test_calculateStatScalar(t *testing.T) {
 	   running the associated test_data/{stat}.sql query.
 	*/
 
+	defer goleak.VerifyNone(t)
 	type args struct {
 		squareDiffSum   float64
 		NSum            float64

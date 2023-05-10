@@ -70,9 +70,10 @@ type DateRange struct {
 	ToSecs   int64
 }
 
+// GetDirector returns a correctly initizalized director. Callers should make sure to call Close() when they're done with the director.
 func GetDirector(directorType string, mysqlCredentials DbCredentials, dateRange DateRange, minorThreshold float64, majorThreshold float64) (*Director, error) {
 	if directorType == "MysqlDirector" {
-		return NewMysqlDirector(mysqlCredentials, dateRange, minorThreshold, majorThreshold)
+		return newMySQLDirector(mysqlCredentials, dateRange, minorThreshold, majorThreshold)
 	} else {
 		return nil, fmt.Errorf("Director GetDirector unsupported directorType: %q", directorType)
 	}

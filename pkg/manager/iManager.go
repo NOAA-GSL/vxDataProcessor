@@ -40,11 +40,12 @@ type Manager struct {
 
 type ManagerBuilder interface {
 	Run() error
+	Close() error
 	SetStatus(status string)
 	SetProcessedAt() error
 	keys(m map[string]interface{}) []string
 	loadEnvironment() (mysqlCredentials, cbCredentials director.DbCredentials, err error)
-	getConnection(cbCredentials director.DbCredentials) (err error)
+	getCouchbaseConnection(cbCredentials director.DbCredentials) (err error)
 	upsertSubDocument(path string, subDoc interface{}) error
 	getSubDocument(path string, subDocPtr *interface{}) error
 	getBlocks(map[string]interface{}, error)
@@ -71,6 +72,8 @@ type ManagerBuilder interface {
 	) error
 }
 
+// Returns a Manager based on the document type. Make sure to call Close() on
+// the returned manager to clean up database connections.
 func GetManager(documentID string) (*Manager, error) {
 	documentType := strings.Split(documentID, ":")[0]
 	if documentType == "SC" {

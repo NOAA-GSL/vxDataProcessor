@@ -14,6 +14,7 @@ import (
 	"github.com/NOAA-GSL/vxDataProcessor/pkg/builder"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/joho/godotenv"
+	"go.uber.org/goleak"
 )
 
 func loadEnvironmentFile() {
@@ -32,6 +33,7 @@ func loadEnvironmentFile() {
 }
 
 func Test_getMySqlConnection(t *testing.T) {
+	defer goleak.VerifyNone(t)
 	type args struct {
 		mysqlCredentials DbCredentials
 	}
@@ -71,7 +73,8 @@ func Test_getMySqlConnection(t *testing.T) {
 				t.Errorf("getMySqlConnection() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			defer got.Close()
+			got.Close()
+			director.CloseDB()
 			if tt.want != fmt.Sprintf("%T", got) {
 				t.Errorf(fmt.Sprintf("getMySqlConnection() type of connection is not sql.DB = %v", fmt.Sprintf("%T", got)))
 			}
@@ -81,6 +84,7 @@ func Test_getMySqlConnection(t *testing.T) {
 
 // record.squareDiffSum record.NSum record.obsModelDiffSum record.modelSum record.obsSum record.absSum record.time
 func Test_mySqlQuery(t *testing.T) {
+	defer goleak.VerifyNone(t)
 	loadEnvironmentFile()
 	var mysqlCredentials DbCredentials
 	// refer to https://github.com/go-sql-driver/mysql/#dsn-data-source-name
@@ -149,8 +153,8 @@ func Test_mySqlQuery(t *testing.T) {
 		}
 
 		stmnt := string(buf)
-		fromEpoch := tt.fromEpoch // Tue, 1 Feb 2023 20:00:00 GMT
-		toEpoch := tt.toEpoch     // Tue, 1 Mar 2023 20:00:00 GMT
+		fromEpoch := tt.fromEpoch
+		toEpoch := tt.toEpoch
 		stmnt = strings.ReplaceAll(stmnt, "{ { fromSecs } }", fromEpoch)
 		stmnt = strings.ReplaceAll(stmnt, "{ { toSecs } }", toEpoch)
 		t.Run(tt.name, func(t *testing.T) {
@@ -187,6 +191,7 @@ func Test_mySqlQuery(t *testing.T) {
 					t.Fatalf("Test_mySqlQuery unrecognized record type %q", tt.recordType)
 				}
 			}
+			director.CloseDB()
 			elapsed := time.Since(start)
 			fmt.Printf("The query and scan took combined %s", elapsed)
 			if tt.want != len(records) {

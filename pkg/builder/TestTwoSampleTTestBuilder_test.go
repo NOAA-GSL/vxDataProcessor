@@ -3,6 +3,8 @@ package builder
 import (
 	"fmt"
 	"testing"
+
+	"go.uber.org/goleak"
 )
 
 var (
@@ -14,6 +16,7 @@ var (
 
 // test for zero variance
 func TestTwoSampleTTestBuilder_test_identical(t *testing.T) {
+	defer goleak.VerifyNone(t)
 	err := cellPtr.setGoodnessPolarity(gp)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_identical - setGoodnessPolarity - error message : ", err))
@@ -65,6 +68,7 @@ func TestTwoSampleTTestBuilder_test_identical(t *testing.T) {
 
 // this BIAS test has inputs that should return a value of 2
 func TestTwoSampleTTestBuilder_test_BIAS_2(t *testing.T) {
+	defer goleak.VerifyNone(t)
 	cellPtr := NewTwoSampleTTestBuilder()
 	err := cellPtr.setGoodnessPolarity(gp)
 	if err != nil {
@@ -118,6 +122,7 @@ func TestTwoSampleTTestBuilder_test_BIAS_2(t *testing.T) {
 
 // this test has inputs that should return a value of -2
 func TestTwoSampleTTestBuilder_test_neagtive_2(t *testing.T) {
+	defer goleak.VerifyNone(t)
 	cellPtr := NewTwoSampleTTestBuilder()
 	err := cellPtr.setGoodnessPolarity(gp)
 	if err != nil {
@@ -171,6 +176,7 @@ func TestTwoSampleTTestBuilder_test_neagtive_2(t *testing.T) {
 
 // this test has inputs that should return a value of 1
 func TestTwoSampleTTestBuilder_test_1(t *testing.T) {
+	defer goleak.VerifyNone(t)
 	err := cellPtr.setGoodnessPolarity(gp)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_1 - setGoodnessPolarity - error message : ", err))
@@ -225,6 +231,7 @@ func TestTwoSampleTTestBuilder_test_1(t *testing.T) {
 
 // this test has inputs that should return a value of 0
 func TestTwoSampleTTestBuilder_test_0(t *testing.T) {
+	defer goleak.VerifyNone(t)
 	err := cellPtr.setGoodnessPolarity(gp)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_0 - setGoodnessPolarity - error message : ", err))
@@ -280,6 +287,7 @@ func TestTwoSampleTTestBuilder_test_0(t *testing.T) {
 }
 
 func TestTwoSampleTTestBuilder_different_lengths(t *testing.T) {
+	defer goleak.VerifyNone(t)
 	err := cellPtr.setGoodnessPolarity(gp)
 	if err != nil {
 		t.Fatal(fmt.Sprint("SampleTTestBuilder_diff - setGoodnessPolarity - error message : ", err))
@@ -329,6 +337,7 @@ func TestTwoSampleTTestBuilder_different_lengths(t *testing.T) {
 
 // this test has inputs that should return a value of 1 after matching (ctl missing one element)
 func TestTwoSampleTTestBuilder_test__match_ctl_short_1(t *testing.T) {
+	defer goleak.VerifyNone(t)
 	err := cellPtr.setGoodnessPolarity(gp)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_1 - setGoodnessPolarity - error message : ", err))
@@ -387,6 +396,7 @@ func TestTwoSampleTTestBuilder_test__match_ctl_short_1(t *testing.T) {
 
 // this test has inputs that should return a value of 1 after matching (exp missing one element)
 func TestTwoSampleTTestBuilder_test__match_exp_short_1(t *testing.T) {
+	defer goleak.VerifyNone(t)
 	err := cellPtr.setGoodnessPolarity(gp)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_1 - setGoodnessPolarity - error message : ", err))
@@ -445,6 +455,7 @@ func TestTwoSampleTTestBuilder_test__match_exp_short_1(t *testing.T) {
 
 // this test has inputs that should return a value of 0 exp missing all data)
 func TestTwoSampleTTestBuilder_test__missing_one_population(t *testing.T) {
+	defer goleak.VerifyNone(t)
 	err := cellPtr.setGoodnessPolarity(gp)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test__missing_one_population - setGoodnessPolarity - error message : ", err))

@@ -37,6 +37,7 @@ will cause a return of 0.
 import (
 	"fmt"
 	"log"
+	"math"
 	"reflect"
 	"strings"
 	"sync"
@@ -80,6 +81,12 @@ func (scc *ScorecardCell) SetMinorThreshold(threshold Threshold) error {
 	return nil // no errors
 }
 
+// set the statisticType
+func (scc *ScorecardCell) SetStatisticType(statisticType StatisticType) error {
+	scc.statisticType = statisticType
+	return nil // no errors
+}
+
 // get the return value based on the major and minor thresholds compared to the p-value.
 // If the difference is negative and the goodnessPolarity is positive then the result
 // value is negative. If the difference is positive and the goodnessPolarity is negative
@@ -110,7 +117,7 @@ func (scc *ScorecardCell) SetValue(value int) {
 
 // using the experimental Query Result and the control QueryResult and the statistic
 // perform statistic calculation for each, perform matching and store the resultant  dataSet
-func (scc *ScorecardCell) deriveCTCInputData(queryResult BuilderCTCResult, statisticType string) (dataSet DataSet, err error) {
+func (scc *ScorecardCell) deriveCTCInputData(queryResult BuilderCTCResult, statisticType StatisticType) (dataSet DataSet, err error) {
 	// derive CTC statistical values for ctl and exp
 	var stat float32
 	var ctlData PreCalcRecords
@@ -139,7 +146,7 @@ func (scc *ScorecardCell) deriveCTCInputData(queryResult BuilderCTCResult, stati
 	return dataSet, err
 }
 
-func (scc *ScorecardCell) deriveScalarInputData(queryResult BuilderScalarResult, statisticType string) (dataSet DataSet, err error) {
+func (scc *ScorecardCell) deriveScalarInputData(queryResult BuilderScalarResult, statisticType StatisticType) (dataSet DataSet, err error) {
 	// derive Scalar statistical values for ctl and exp
 	var stat float64
 	var ctlData []PreCalcRecord
@@ -165,12 +172,13 @@ func (scc *ScorecardCell) deriveScalarInputData(queryResult BuilderScalarResult,
 	return dataSet, err
 }
 
-func (scc *ScorecardCell) derivePreCalcInputData(queryResult BuilderPreCalcResult, statisticType string) (dataSet DataSet, err error) {
+func (scc *ScorecardCell) derivePreCalcInputData(queryResult BuilderPreCalcResult, statisticType StatisticType) (dataSet DataSet, err error) {
 	// data is precalculated - don't need to derive stats
 	// have to use just the values to create the data set (type DataSet)
 	var ctlData PreCalcRecords
 	var expData PreCalcRecords
-
+	// set the statistic type for future reference
+	scc.statisticType = statisticType
 	ctlData = append(ctlData, queryResult.CtlData...)
 	expData = append(expData, queryResult.ExpData...)
 	// return the unmatched PreCalculated dataSet
@@ -178,17 +186,17 @@ func (scc *ScorecardCell) derivePreCalcInputData(queryResult BuilderPreCalcResul
 	return dataSet, err
 }
 
-func (scc *ScorecardCell) DeriveInputData(qrPtr interface{}, statisticType string) (err error) {
+func (scc *ScorecardCell) DeriveInputData(qrPtr interface{}) (err error) {
 	var dataSet DataSet
 	var matchedDataSet DataSet
 	dataType := reflect.TypeOf(qrPtr).Name()
 	switch dataType {
 	case "BuilderCTCResult":
-		dataSet, err = scc.deriveCTCInputData(qrPtr.(BuilderCTCResult), statisticType)
+		dataSet, err = scc.deriveCTCInputData(qrPtr.(BuilderCTCResult), scc.statisticType)
 	case "BuilderScalarResult":
-		dataSet, err = scc.deriveScalarInputData(qrPtr.(BuilderScalarResult), statisticType)
+		dataSet, err = scc.deriveScalarInputData(qrPtr.(BuilderScalarResult), scc.statisticType)
 	case "BuilderPreCalcResult":
-		dataSet, err = scc.derivePreCalcInputData(qrPtr.(BuilderPreCalcResult), statisticType)
+		dataSet, err = scc.derivePreCalcInputData(qrPtr.(BuilderPreCalcResult), scc.statisticType)
 	default:
 		err = fmt.Errorf("TwoSampleTTestBuilder DeriveInputData unsupported data type: %q", dataType)
 	}
@@ -254,7 +262,12 @@ func (scc *ScorecardCell) ComputeSignificance() error {
 		// what are the means of the populations?
 		meanCtl := stats.Mean(derivedData.CtlPop)
 		meanExp := stats.Mean(derivedData.ExpPop)
-		difference := (meanCtl - meanExp)
+		var difference float64
+		if scc.statisticType == Bias_Model_Obs {
+			difference = (math.Abs(meanCtl) - math.Abs(meanExp))
+		} else {
+			difference = (meanExp - meanCtl)
+		}
 		scc.pvalue = ret.P
 		v, err := scc.deriveValue(difference, ret.P)
 		if err != nil {
@@ -278,61 +291,64 @@ func NewTwoSampleTTestBuilder() *ScorecardCell {
 	return &ScorecardCell{mu: sync.Mutex{}}
 }
 
-func getGoodnessPolarity(statisticType string) (polarity GoodnessPolarity, err error) {
+func getGoodnessPolarity(statisticType StatisticType) (polarity GoodnessPolarity, err error) {
 	/*
-		"RMSE": "Want control to exceed experimental" 1
-		"Bias (Model - Obs)": "Want control to exceed experimental" 1
-		"MAE (temp and dewpoint only)": "Want control to exceed experimental" 1
-		"MAE": "Want control to exceed experimental" 1
-		"TSS (True Skill Score)": "Want experimental to exceed control" -1
-		"PODy (POD of value < threshold)": "Want experimental to exceed control" -1
-		"PODy (POD of value > threshold)": "Want experimental to exceed control" -1
-		"PODn (POD of value > threshold)": "Want experimental to exceed control" -1
-		"PODn (POD of value < threshold)": "Want experimental to exceed control" -1
-		"FAR (False Alarm Ratio)": "Want control to exceed experimental" 1
-		"CSI (Critical Success Index)": "Want experimental to exceed control" -1
-		"HSS (Heidke Skill Score)": "Want experimental to exceed control" -1
-		"ETS (Equitable Threat Score)": "Want experimental to exceed control" -1
-		"ACC": "Want experimental to exceed control" -1
+		    see builder/iBuilder.go for the definitions of StatisticType and GoodnessPolarity
+			"RMSE": "Want control to exceed experimental" 1
+			"Bias (Model - Obs)": "Want control to exceed experimental" 1
+			"MAE (temp and dewpoint only)": "Want control to exceed experimental" 1
+			"MAE": "Want control to exceed experimental" 1
+			"TSS (True Skill Score)": "Want experimental to exceed control" -1
+			"PODy (POD of value < threshold)": "Want experimental to exceed control" -1
+			"PODy (POD of value>threshold)": "Want experimental to exceed control" -1
+			"PODn (POD of value>threshold)": "Want experimental to exceed control" -1
+			"PODn (POD of value < threshold)": "Want experimental to exceed control" -1
+			"FAR (False Alarm Ratio)": "Want control to exceed experimental" 1
+			"CSI (Critical Success Index)": "Want experimental to exceed control" -1
+			"HSS (Heidke Skill Score)": "Want experimental to exceed control" -1
+			"ETS (Equitable Threat Score)": "Want experimental to exceed control" -1
+			"ACC": "Want experimental to exceed control" -1
 	*/
 
 	switch statisticType {
-	case "RMSE":
+	case RMSE:
 		return 1, nil
-	case "Bias (Model - Obs)":
+	case Bias_Model_Obs:
 		return 1, nil
-	case "MAE":
+	case MAE:
 		return 1, nil
-	case "MAE (temp and dewpoint only)":
+	case MAE_temp_and_dewpoint_only:
 		return 1, nil
-	case "TSS (True Skill Score)":
+	case TSS_True_Skill_Score:
 		return -1, nil
-	case "PODy (POD of value < threshold)":
+	case PODy_POD_of_value_lt_threshold:
 		return -1, nil
-	case "PODy (POD of value > threshold)":
+	case PODy_POD_of_value_gt_threshold:
 		return -1, nil
-	case "PODn (POD of value > threshold)":
+	case PODn_POD_of_value_gt_threshold:
 		return -1, nil
-	case "PODn (POD of value < threshold)":
+	case PODn_POD_of_value_lt_threshold:
 		return -1, nil
-	case "FAR (False Alarm Ratio)":
+	case FAR_False_Alarm_Ratio:
 		return 1, nil
-	case "CSI (Critical Success Index)":
+	case CSI_Critical_Success_Index:
 		return -1, nil
-	case "HSS (Heidke Skill Score)":
+	case HSS_Heidke_Skill_Score:
 		return -1, nil
-	case "ETS (Equitable Threat Score)":
+	case ETS_Equitable_Threat_Score:
 		return -1, nil
-	case "ACC":
+	case ACC:
 		return -1, nil
 	default:
 		return -1, fmt.Errorf("TwoSampleTTestBuilder getGoodnessPolarity unknown statistic %q", statisticType)
 	}
 }
 
-func (scc *ScorecardCell) Build(qrPtr interface{}, statisticType string, minorThreshold float64, majorThreshold float64) (value int, err error) {
+func (scc *ScorecardCell) Build(qrPtr interface{}, statisticType StatisticType, minorThreshold float64, majorThreshold float64) (value int, err error) {
 	// DerivePreCalcInputData(ctlQR PreCalcRecords, expQR PreCalcRecords, statisticType string)
 	// build the input data elements and
+
+	scc.statisticType = statisticType
 	goodnessPolarity, err := getGoodnessPolarity(statisticType)
 	if err != nil {
 		return ErrorValue, fmt.Errorf("mysql_director Build SetGoodnessPolarity error  %w", err)
@@ -352,7 +368,7 @@ func (scc *ScorecardCell) Build(qrPtr interface{}, statisticType string, minorTh
 		return ErrorValue, fmt.Errorf("mysql_director Build SetMajorThreshold error  %w", err)
 	}
 
-	err = scc.DeriveInputData(qrPtr, statisticType)
+	err = scc.DeriveInputData(qrPtr)
 	if err != nil {
 		return ErrorValue, fmt.Errorf("mysql_director - build - SetInputData - error message :  %w", err)
 	}

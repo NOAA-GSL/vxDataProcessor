@@ -18,6 +18,8 @@ process every scorecard cell within the block / region that the director is assi
 import (
 	"database/sql"
 	"fmt"
+
+	"github.com/NOAA-GSL/vxDataProcessor/pkg/builder"
 )
 
 // for couchbase all these fields will be needed
@@ -46,7 +48,7 @@ type Director struct {
 	minorThreshold   float64
 	majorThreshold   float64
 	statistics       []string
-	statisticType    string
+	statisticType    builder.StatisticType
 }
 
 type DirectorBuilder interface {

@@ -20,7 +20,7 @@ There is also a time matching function. These functions are used by the builder 
 */
 
 // calculates the statistic for ctc plots
-func CalculateStatCTC(hit float32, fa float32, miss float32, cn float32, statistic string) (float32, error) {
+func CalculateStatCTC(hit float32, fa float32, miss float32, cn float32, statistic StatisticType) (float32, error) {
 	var err error
 	var value float32
 	validate = validator.New()
@@ -46,25 +46,25 @@ func CalculateStatCTC(hit float32, fa float32, miss float32, cn float32, statist
 	}
 
 	switch statistic {
-	case "TSS (True Skill Score)": // radar
+	case TSS_True_Skill_Score: // radar
 		value = ((hit*cn - fa*miss) / ((hit + miss) * (fa + cn))) * 100
 	// some PODy measures look for a value over a threshold, some look for under
-	case "PODy (POD of value < threshold)": // ceiling
+	case PODy_POD_of_value_lt_threshold: // ceiling
 		value = hit / (hit + miss) * 100
-	case "PODy (POD of value > threshold)": // radar
+	case PODy_POD_of_value_gt_threshold: // radar
 		value = hit / (hit + miss) * 100
 	// some PODn measures look for a value under a threshold, some look for over
-	case "PODn (POD of value > threshold)": // ceiling
+	case PODn_POD_of_value_gt_threshold: // ceiling
 		value = cn / (cn + fa) * 100
-	case "PODn (POD of value < threshold)": // radar
+	case PODn_POD_of_value_lt_threshold: // radar
 		value = cn / (cn + fa) * 100
-	case "FAR (False Alarm Ratio)": // radar
+	case FAR_False_Alarm_Ratio: // radar
 		value = fa / (fa + hit) * 100
-	case "CSI (Critical Success Index)": // radar
+	case CSI_Critical_Success_Index: // radar
 		value = hit / (hit + miss + fa) * 100
-	case "HSS (Heidke Skill Score)": // radar
+	case HSS_Heidke_Skill_Score: // radar
 		value = 2 * (cn*hit - miss*fa) / ((cn+fa)*(fa+hit) + (cn+miss)*(miss+hit)) * 100
-	case "ETS (Equitable Threat Score)": // radar
+	case ETS_Equitable_Threat_Score: // radar
 		value = (hit - ((hit + fa) * (hit + miss) / (hit + fa + miss + cn))) / ((hit + fa + miss) - ((hit + fa) * (hit + miss) / (hit + fa + miss + cn))) * 100
 	default:
 		err = fmt.Errorf(fmt.Sprintf("builder_stats.calculateStatCTC: %q %q", "Invalid statistic:", statistic))
@@ -82,17 +82,17 @@ func CalculateStatCTC(hit float32, fa float32, miss float32, cn float32, statist
 }
 
 // calculates the statistic for scalar partial sums plots
-func CalculateStatScalar(squareDiffSum, NSum, obsModelDiffSum, modelSum, obsSum, absSum float64, statistic string) (float64, error) {
+func CalculateStatScalar(squareDiffSum, NSum, obsModelDiffSum, modelSum, obsSum, absSum float64, statistic StatisticType) (float64, error) {
 	var err error
 	var value float64
 	switch statistic {
-	case "RMSE": // surface
+	case RMSE: // surface
 		value = math.Sqrt(squareDiffSum / NSum)
-	case "Bias (Model - Obs)": // surface
+	case Bias_Model_Obs: // surface
 		value = (modelSum - obsSum) / NSum
-	case "MAE (temp and dewpoint only)": // surface
+	case MAE_temp_and_dewpoint_only: // surface
 		value = absSum / NSum
-	case "MAE": // landuse
+	case MAE: // landuse
 		value = absSum / NSum
 	}
 	return value, err

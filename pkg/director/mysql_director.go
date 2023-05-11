@@ -317,7 +317,8 @@ func (director *Director) processSub(region interface{}, queryElem interface{}, 
 		for _, elemKey := range keys {
 			for _, s := range director.statistics {
 				if elemKey == fmt.Sprint(s) {
-					director.statisticType = elemKey
+					statisticType := builder.GetStatisticTpe(elemKey)
+					director.statisticType = statisticType
 					break
 				}
 			}

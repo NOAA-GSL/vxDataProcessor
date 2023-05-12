@@ -57,7 +57,6 @@ type DirectorBuilder interface {
 	// datasourceName like user:password@tcp(hostname:3306)/dbname
 	Run(queryRegionName string, regionMap ScorecardBlock, queryMap ScorecardBlock)
 	CloseDB()
-	keys(m map[string]interface{}) []string
 	getMySqlConnection(mysqlCredentials DbCredentials) (*sql.DB, error)
 	queryDataPreCalc(stmnt string) (queryResult builder.PreCalcRecords, err error)
 	queryDataCTC(stmnt string) (queryResult builder.CTCRecords, err error)

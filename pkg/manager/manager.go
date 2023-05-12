@@ -58,7 +58,7 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-func (mngr *Manager) getMapKeys(m map[string]interface{}) []string {
+func getMapKeys(m map[string]interface{}) []string {
 	keys := make([]string, 0, len(m))
 	for k := range m {
 		keys = append(keys, k)
@@ -379,7 +379,7 @@ func (mngr *Manager) Run() (err error) {
 		_ = mngr.SetStatus("error")
 		return fmt.Errorf("manager Run error getting resultsBlocks: %w", err)
 	}
-	blockKeys := mngr.getMapKeys(resultsBlocks)
+	blockKeys := getMapKeys(resultsBlocks)
 	sort.Strings(blockKeys)
 	// get the appUrl from the first block - they should all be the same
 	scorecardAppUrl := resultsBlocks[blockKeys[0]].(map[string]interface{})["blockApplication"].(string)
@@ -442,9 +442,9 @@ func (mngr *Manager) Run() (err error) {
 			}
 		}
 		queryData := queryBlock["data"].(map[string]interface{})
-		blockRegionNames := mngr.getMapKeys(block.(map[string]interface{})["data"].(map[string]interface{}))
+		blockRegionNames := getMapKeys(block.(map[string]interface{})["data"].(map[string]interface{}))
 		sort.Strings(blockRegionNames)
-		queryRegionNames := mngr.getMapKeys(queryData)
+		queryRegionNames := getMapKeys(queryData)
 		sort.Strings(queryRegionNames)
 		numBlockRegions := len(blockRegionNames)
 		numQueryRegions := len(queryRegionNames)

@@ -43,7 +43,7 @@ type ManagerBuilder interface {
 	Close() error
 	SetStatus(status string)
 	SetProcessedAt() error
-	keys(m map[string]interface{}) []string
+	//keys(m map[string]interface{}) []string
 	loadEnvironment() (mysqlCredentials, cbCredentials director.DbCredentials, err error)
 	getCouchbaseConnection(cbCredentials director.DbCredentials) (err error)
 	upsertSubDocument(path string, subDoc interface{}) error

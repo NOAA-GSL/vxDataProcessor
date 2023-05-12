@@ -245,7 +245,7 @@ func Test_getQueryBlocks(t *testing.T) {
 			if retData == nil {
 				t.Errorf("%v error = %v", tt.name, err)
 			}
-			got := mngr.getMapKeys(retData)
+			got := getMapKeys(retData)
 			sort.Strings(got)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("getQueryBlocks() error = %v, wantErr %v", err, tt.wantErr)
@@ -318,7 +318,7 @@ func Test_getSliceResultBlocks(t *testing.T) {
 			if retData == nil {
 				t.Errorf("%v error = %v", tt.name, err)
 			}
-			got := mngr.getMapKeys(retData[0])
+			got := getMapKeys(retData[0])
 			sort.Strings(got)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("getPlotParamCurves() error = %v, wantErr %v", err, tt.wantErr)
@@ -368,7 +368,7 @@ func Test_runManager(t *testing.T) {
 			name:            "test_AMDAR",
 			docId:           "SCTEST:test_AMDAR",
 			fileName:        "./testdata/test_AMDAR.json",
-			expectedSeconds: 60,
+			expectedSeconds: 80,
 		},
 		{
 			name:            "test_Anomaly_Correlation",

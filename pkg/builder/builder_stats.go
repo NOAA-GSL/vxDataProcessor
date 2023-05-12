@@ -103,7 +103,7 @@ func CalculateStatScalar(squareDiffSum, NSum, obsModelDiffSum, modelSum, obsSum,
 // This function assumes that the two slices are sorted by the time element (which is an epoch)
 // The DataSet consists of time and value elements only, since the statistical value has
 // already been derived
-func GetMatchedDataSet(dataSet DataSet) (DataSet, error) {
+func getMatchedDataSet(dataSet DataSet) (DataSet, error) {
 	var result DataSet
 	var indexCtl int = 0
 	var indexExp int = 0

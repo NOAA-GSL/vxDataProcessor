@@ -64,6 +64,7 @@ type (
 		minorThreshold   Threshold
 		statisticType    StatisticType
 		pvalue           float64
+		keychain         []string
 		value            int
 	}
 )
@@ -202,15 +203,16 @@ func GetStatisticTpe(statType string) StatisticType {
 }
 
 type ScorecardCellBuilder interface {
-	SetGoodnessPolarity(GoodnessPolarity)
-	SetMajorThreshold(Threshold)
-	SetMinorThreshold(Threshold)
-	DeriveInputData(QueryResult interface{})
-	ComputeSignificance()
-	GetValue()
-	SetValue(value int32)
+	setGoodnessPolarity(GoodnessPolarity)
+	setMajorThreshold(Threshold)
+	setMinorThreshold(Threshold)
+	SetKeyChain([]string) // has to be public
+	deriveInputData(QueryResult interface{})
+	computeSignificance()
+	getValue()
+	setValue(value int32)
 	SetStatisticType(statisticType string)
-	Build(res interface{}, qr interface{}, statisticType string)
+	Build(qrPtr interface{}, statisticType string, minorThreshold float64, majorThreshold float64)
 }
 
 func GetBuilder(builderType string) *ScorecardCell {

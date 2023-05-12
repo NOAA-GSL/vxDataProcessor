@@ -18,6 +18,7 @@ process every scorecard cell within the block / region that the director is assi
 import (
 	"database/sql"
 	"fmt"
+	"sync"
 
 	"github.com/NOAA-GSL/vxDataProcessor/pkg/builder"
 )

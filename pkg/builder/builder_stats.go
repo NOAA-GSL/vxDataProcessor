@@ -20,7 +20,7 @@ There is also a time matching function. These functions are used by the builder 
 */
 
 // calculates the statistic for ctc plots
-func CalculateStatCTC(hit float32, fa float32, miss float32, cn float32, statistic StatisticType) (float32, error) {
+func calculateStatCTC(hit float32, fa float32, miss float32, cn float32, statistic StatisticType) (float32, error) {
 	var err error
 	var value float32
 	validate = validator.New()
@@ -82,7 +82,7 @@ func CalculateStatCTC(hit float32, fa float32, miss float32, cn float32, statist
 }
 
 // calculates the statistic for scalar partial sums plots
-func CalculateStatScalar(squareDiffSum, NSum, obsModelDiffSum, modelSum, obsSum, absSum float64, statistic StatisticType) (float64, error) {
+func calculateStatScalar(squareDiffSum, NSum, obsModelDiffSum, modelSum, obsSum, absSum float64, statistic StatisticType) (float64, error) {
 	var err error
 	var value float64
 	switch statistic {

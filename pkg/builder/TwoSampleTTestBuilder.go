@@ -82,6 +82,12 @@ func (scc *ScorecardCell) setMinorThreshold(threshold Threshold) error {
 	return nil // no errors
 }
 
+// set the keychain
+func (scc *ScorecardCell) SetKeyChain(keychain []string) error {
+	scc.keychain = keychain
+	return nil // no errors
+}
+
 // set the statisticType
 func (scc *ScorecardCell) SetStatisticType(statisticType StatisticType) error {
 	scc.statisticType = statisticType
@@ -130,7 +136,6 @@ func (scc *ScorecardCell) deriveCTCInputData(queryResult BuilderCTCResult, stati
 			// include this one
 			ctlData = append(ctlData, PreCalcRecord{Stat: float64(stat), Avtime: record.Avtime})
 		}
-		scc.stat = float64(stat)
 	}
 	for i := 0; i < len(queryResult.ExpData); i++ {
 		record = queryResult.ExpData[i]
@@ -186,7 +191,7 @@ func (scc *ScorecardCell) derivePreCalcInputData(queryResult BuilderPreCalcResul
 	return dataSet, err
 }
 
-func (scc *ScorecardCell) DeriveInputData(qrPtr interface{}) (err error) {
+func (scc *ScorecardCell) deriveInputData(qrPtr interface{}) (err error) {
 	var dataSet DataSet
 	var matchedDataSet DataSet
 	dataType := reflect.TypeOf(qrPtr).Name()
@@ -288,8 +293,7 @@ func (scc *ScorecardCell) getValue() int {
 
 func NewTwoSampleTTestBuilder() *ScorecardCell {
 	validate = validator.New()
-	scc := ScorecardCell{mu: sync.Mutex{}, Data: DerivedDataElement{CtlPop: make([]float64, 0), ExpPop: make([]float64, 0)}, goodnessPolarity: 9999, majorThreshold: 9999, minorThreshold: 9999, stat: 9999, pvalue: 9999, keychain: make([]string, 0), value: 0}
-	return &scc
+	return &ScorecardCell{mu: sync.Mutex{}}
 }
 
 func getGoodnessPolarity(statisticType StatisticType) (polarity GoodnessPolarity, err error) {
@@ -369,7 +373,7 @@ func (scc *ScorecardCell) Build(qrPtr interface{}, statisticType StatisticType, 
 		return ErrorValue, fmt.Errorf("mysql_director Build SetMajorThreshold error  %w", err)
 	}
 
-	err = scc.DeriveInputData(qrPtr)
+	err = scc.deriveInputData(qrPtr)
 	if err != nil {
 		return ErrorValue, fmt.Errorf("mysql_director - build - SetInputData - error message :  %w", err)
 	}

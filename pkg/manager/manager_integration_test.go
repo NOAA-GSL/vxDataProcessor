@@ -333,12 +333,12 @@ func Test_runManager(t *testing.T) {
 		fileName        string
 		expectedSeconds int
 	}{
-		// {
-		// 	name:            "test_1_Hour_Precipitation",
-		// 	docId:           "SCTEST:test_1_Hour_Precipitation",
-		// 	fileName:        "./testdata/test_1_Hour_Precipitation.json",
-		// 	expectedSeconds: 60,
-		// },
+		{
+			name:            "test_1_Hour_Precipitation",
+			docId:           "SCTEST:test_1_Hour_Precipitation",
+			fileName:        "./testdata/test_1_Hour_Precipitation.json",
+			expectedSeconds: 60,
+		},
 		{
 			name:            "test_24_Hour_Precipitation",
 			docId:           "SCTEST:test_24_Hour_Precipitation",

@@ -82,7 +82,7 @@ func TestDirector_test_connection(t *testing.T) {
 	documentID := "SCTEST:test_scorecard"
 	loadEnvironmentFile()
 	mngr, _ := GetManager(documentID)
-	defer mngr.Close()
+	defer mngr.close()
 	mysqlCredentials, cbCredentials, err = mngr.loadEnvironment()
 
 	if err != nil {
@@ -199,7 +199,7 @@ func Test_getQueryBlocks(t *testing.T) {
 	loadEnvironmentFile()
 	mngr, err = GetManager(documentID)
 	defer func() {
-		errd := mngr.Close()
+		errd := mngr.close()
 		if errd != nil {
 			log.Printf("Error cleaning up manager: %q", errd)
 		}
@@ -272,7 +272,7 @@ func Test_getSliceResultBlocks(t *testing.T) {
 	loadEnvironmentFile()
 	mngr, err = GetManager(documentID)
 	defer func() {
-		errd := mngr.Close()
+		errd := mngr.close()
 		if errd != nil {
 			log.Printf("Error cleaning up manager: %q", errd)
 		}
@@ -470,7 +470,7 @@ func Test_runManager(t *testing.T) {
 		if err != nil {
 			t.Fatal(fmt.Errorf("manager upsertTestDoc test %s error upserting test scorecard %w", tt.name, err))
 		}
-		setupManager.Close() // Can't defer since we're in a for loop
+		setupManager.close() // Can't defer since we're in a for loop
 
 		// Test execution
 		manager, err := GetManager(tt.docId)

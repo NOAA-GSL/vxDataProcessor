@@ -40,10 +40,9 @@ type Manager struct {
 
 type ManagerBuilder interface {
 	Run() error
-	Close() error
+	close() error
 	SetStatus(status string)
 	SetProcessedAt() error
-	//keys(m map[string]interface{}) []string
 	loadEnvironment() (mysqlCredentials, cbCredentials director.DbCredentials, err error)
 	getCouchbaseConnection(cbCredentials director.DbCredentials) (err error)
 	upsertSubDocument(path string, subDoc interface{}) error

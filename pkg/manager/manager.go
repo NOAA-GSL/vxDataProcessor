@@ -109,7 +109,7 @@ func (mngr *Manager) loadEnvironment() (mysqlCredentials, cbCredentials director
 
 // Close is required after we are finished with a Manager. It usually recommended to
 // call it with defer.
-func (mngr *Manager) Close() error {
+func (mngr *Manager) close() error {
 	return mngr.cb.Cluster.Close(nil)
 }
 

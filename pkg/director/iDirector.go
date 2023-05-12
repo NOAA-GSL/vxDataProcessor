@@ -18,6 +18,9 @@ process every scorecard cell within the block / region that the director is assi
 import (
 	"database/sql"
 	"fmt"
+	"sync"
+
+	"github.com/NOAA-GSL/vxDataProcessor/pkg/builder"
 )
 
 // for couchbase all these fields will be needed
@@ -45,13 +48,20 @@ type Director struct {
 	dateRange        DateRange
 	minorThreshold   float64
 	majorThreshold   float64
+	wg               *sync.WaitGroup
 	statistics       []string
 	statisticType    string
 }
 
 type DirectorBuilder interface {
-	Run(regionMap ScorecardBlock, queryMap ScorecardBlock)
-	Close() error
+	// datasourceName like user:password@tcp(hostname:3306)/dbname
+	Run(queryRegionName string, regionMap ScorecardBlock, queryMap ScorecardBlock)
+	CloseDB()
+	getMySqlConnection(mysqlCredentials DbCredentials) (*sql.DB, error)
+	queryDataPreCalc(stmnt string) (queryResult builder.PreCalcRecords, err error)
+	queryDataCTC(stmnt string) (queryResult builder.CTCRecords, err error)
+	queryDataScalar(stmnt string) (queryResult builder.ScalarRecords, err error)
+	processSub(queryRegionName string, region interface{}, queryElem interface{}, wgPtr *sync.WaitGroup, cellCountPtr *int, keychain *[]string, dateRange DateRange) (interface{}, error)
 }
 
 type DateRange struct {

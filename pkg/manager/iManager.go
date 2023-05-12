@@ -22,6 +22,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/NOAA-GSL/vxDataProcessor/pkg/director"
 	"github.com/couchbase/gocb/v2"
 )
 
@@ -39,9 +40,35 @@ type Manager struct {
 
 type ManagerBuilder interface {
 	Run() error
-	Close() error
+	close() error
 	SetStatus(status string)
 	SetProcessedAt() error
+	loadEnvironment() (mysqlCredentials, cbCredentials director.DbCredentials, err error)
+	getCouchbaseConnection(cbCredentials director.DbCredentials) (err error)
+	upsertSubDocument(path string, subDoc interface{}) error
+	getSubDocument(path string, subDocPtr *interface{}) error
+	getBlocks(map[string]interface{}, error)
+	getQueryBlocks(map[string]interface{}, error)
+	getPlotParams(map[string]interface{}, error)
+	getPlotParamCurves([]map[string]interface{}, error)
+	getDateRange(director.DateRange, error)
+	convertStdToPercent(std string) (percent float64, err error)
+	getThresholds(plotParams map[string]interface{}) (minorThreshold, majorThreshold float64, err error)
+	notifyMatsRefresh(scorecardAppURL, docID string) error
+	processRegion(
+		appName string,
+		queryRegionName string,
+		queryRegion map[string]interface{},
+		blockRegionName string,
+		region *interface{},
+		regionPath string,
+		mysqlCredentials director.DbCredentials,
+		dateRange director.DateRange,
+		minorThreshold float64,
+		majorThreshold float64,
+		documentScorecardAppURL string,
+		cellCountPtr *int,
+	) error
 }
 
 // Returns a Manager based on the document type. Make sure to call Close() on

@@ -58,9 +58,8 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-// getMapKeys returns an unsorted slice containing the keys in the given map
-func getMapKeys[K comparable, V any](m map[K]V) []K {
-	keys := make([]K, 0, len(m))
+func getMapKeys(m map[string]interface{}) []string {
+	keys := make([]string, 0, len(m))
 	for k := range m {
 		keys = append(keys, k)
 	}
@@ -68,7 +67,7 @@ func getMapKeys[K comparable, V any](m map[K]V) []K {
 }
 
 // loadEnvironment retrieves required settings from the environment
-func loadEnvironment() (mysqlCredentials, cbCredentials director.DbCredentials, err error) {
+func (mngr *Manager) loadEnvironment() (mysqlCredentials, cbCredentials director.DbCredentials, err error) {
 	cbCredentials = director.DbCredentials{
 		Scope:      "_default",
 		Collection: "SCORECARD",
@@ -110,7 +109,7 @@ func loadEnvironment() (mysqlCredentials, cbCredentials director.DbCredentials, 
 
 // Close is required after we are finished with a Manager. It usually recommended to
 // call it with defer.
-func (mngr *Manager) Close() error {
+func (mngr *Manager) close() error {
 	return mngr.cb.Cluster.Close(nil)
 }
 
@@ -252,7 +251,7 @@ func (mngr *Manager) getDateRange() (director.DateRange, error) {
 }
 
 // convertStdToPercent converts a standard deviation to a percent error
-func convertStdToPercent(std string) (percent float64, err error) {
+func (mngr *Manager) convertStdToPercent(std string) (percent float64, err error) {
 	stdfloat, err := strconv.ParseFloat(std, 64)
 	if err != nil {
 		err = fmt.Errorf("manager convertStdToPercent error converting standard deviation %q to percent error: %w", std, err)
@@ -275,7 +274,7 @@ func convertStdToPercent(std string) (percent float64, err error) {
 }
 
 // getThresholds extracts the major and minor thresholds
-func getThresholds(plotParams map[string]interface{}) (minorThreshold, majorThreshold float64, err error) {
+func (mngr *Manager) getThresholds(plotParams map[string]interface{}) (minorThreshold, majorThreshold float64, err error) {
 	percentStddev := plotParams["scorecard-percent-stdv"]
 	switch percentStddev {
 	case "Percent":
@@ -288,11 +287,11 @@ func getThresholds(plotParams map[string]interface{}) (minorThreshold, majorThre
 			return minorThreshold, majorThreshold, err
 		}
 	case "Standard Deviation":
-		minorThreshold, err = convertStdToPercent(plotParams["minor-threshold-by-stdv"].(string))
+		minorThreshold, err = mngr.convertStdToPercent(plotParams["minor-threshold-by-stdv"].(string))
 		if err != nil {
 			return minorThreshold, majorThreshold, err
 		}
-		majorThreshold, err = convertStdToPercent(plotParams["major-threshold-by-stdv"].(string))
+		majorThreshold, err = mngr.convertStdToPercent(plotParams["major-threshold-by-stdv"].(string))
 		if err != nil {
 			return minorThreshold, majorThreshold, err
 		}
@@ -303,7 +302,7 @@ func getThresholds(plotParams map[string]interface{}) (minorThreshold, majorThre
 }
 
 // notifyMatsRefreash notifies the MATS scorecard app that a particular docID has been updated
-func notifyMatsRefresh(scorecardAppURL, docID string) error {
+func (mngr *Manager) notifyMatsRefresh(scorecardAppURL, docID string) error {
 	err := client.NotifyScorecard(scorecardAppURL, docID)
 	if err != nil {
 		return fmt.Errorf("manager notifyMATSRefresh error: %w", err)
@@ -333,9 +332,9 @@ func (mngr *Manager) processRegion(
 	if err != nil {
 		return fmt.Errorf("manager Run error getting director: %w", err)
 	}
-	defer mysqlDirector.Close()
+	defer mysqlDirector.CloseDB()
 
-	*region, err = mysqlDirector.Run(*region, queryRegion, cellCountPtr)
+	*region, err = mysqlDirector.Run(queryRegionName, *region, queryRegion, cellCountPtr)
 	if err != nil {
 		return fmt.Errorf("manager Run error running director: %w", err)
 	}
@@ -352,7 +351,7 @@ func (mngr *Manager) processRegion(
 		// not in environment. so use the one from the document
 		scorecardAppURL = documentScorecardAppURL
 	}
-	err = notifyMatsRefresh(scorecardAppURL, mngr.documentID)
+	err = mngr.notifyMatsRefresh(scorecardAppURL, mngr.documentID)
 	if err != nil {
 		return fmt.Errorf("manager Run error Failed to Notify appUrl %q: error: %w", scorecardAppURL, err)
 	}
@@ -365,7 +364,7 @@ func (mngr *Manager) Run() (err error) {
 	cellCount := 0
 	start := time.Now()
 	// initially unknown
-	mysqlCredentials, cbCredentials, err := loadEnvironment()
+	mysqlCredentials, cbCredentials, err := mngr.loadEnvironment()
 	if err != nil {
 		return fmt.Errorf("manager loadEnvironmant error %w", err)
 	}
@@ -373,6 +372,7 @@ func (mngr *Manager) Run() (err error) {
 	if err != nil {
 		return fmt.Errorf("manager Run GetConnection error: %w", err)
 	}
+	defer mngr.cb.Cluster.Close(nil)
 	// from here on we should be able to set an error status in the document, if we need to
 	resultsBlocks, err := mngr.getBlocks()
 	if err != nil {
@@ -398,7 +398,7 @@ func (mngr *Manager) Run() (err error) {
 		_ = mngr.SetStatus("error")
 		return err
 	}
-	minorThreshold, majorThreshold, err := getThresholds(plotParams)
+	minorThreshold, majorThreshold, err := mngr.getThresholds(plotParams)
 	if err != nil {
 		err := fmt.Errorf("manager Run error getting thresholds: %w", err)
 		_ = client.NotifyScorecardStatus(scorecardAppUrl, mngr.documentID, "error", err)
@@ -424,6 +424,11 @@ func (mngr *Manager) Run() (err error) {
 	numBlocks := len(blockKeys)
 	// create an errgroup for running all the block/regions in go routines
 	errGroup := new(errgroup.Group)
+	// don't really care what SINGLETHREADEDMANAGER env var is set to, just if it is set
+	_, singleThreadedManager := os.LookupEnv("SINGLETHREADEDMANGER")
+	if singleThreadedManager {
+		log.Print("manager is Running SINGLETHREADEDMANGER")
+	}
 	for i := 0; i < numBlocks; i++ {
 		blockName := blockKeys[i]
 		block := resultsBlocks[blockName]
@@ -468,8 +473,25 @@ func (mngr *Manager) Run() (err error) {
 				_ = mngr.SetStatus("error")
 				return err
 			}
-			// process the region/block in the errgroup
-			errGroup.Go(func() error {
+			if !singleThreadedManager {
+				// process the region/block in the errgroup
+				errGroup.Go(func() error {
+					err = mngr.processRegion(
+						appName,
+						queryRegionName,
+						queryRegion,
+						blockRegionName,
+						&region,
+						regionPath,
+						mysqlCredentials,
+						dateRange,
+						minorThreshold,
+						majorThreshold,
+						scorecardAppUrl,
+						&cellCount)
+					return err
+				})
+			} else {
 				err = mngr.processRegion(
 					appName,
 					queryRegionName,
@@ -483,19 +505,28 @@ func (mngr *Manager) Run() (err error) {
 					majorThreshold,
 					scorecardAppUrl,
 					&cellCount)
-				return err
-			})
+				if err != nil {
+					// set error in the status field
+					err := fmt.Errorf("error processing scorecard single threaded Run %w", err)
+					// set error status in document
+					_ = mngr.SetStatus("error")
+					_ = client.NotifyScorecardStatus(scorecardAppUrl, mngr.documentID, "error", err)
+					return err
+				}
+			}
 		}
 	}
-	// Wait for all processRegions to complete, capture their error values
-	err = errGroup.Wait()
-	if err != nil {
-		// set error in the status field
-		err := fmt.Errorf("error processing scorecard Run %w", err)
-		// set error status in document
-		_ = mngr.SetStatus("error")
-		_ = client.NotifyScorecardStatus(scorecardAppUrl, mngr.documentID, "error", err)
-		return err
+	if !singleThreadedManager {
+		// Wait for all processRegions to complete, capture their error values
+		err = errGroup.Wait()
+		if err != nil {
+			// set error in the status field
+			err := fmt.Errorf("error processing scorecard multithreaded Run %w", err)
+			// set error status in document
+			_ = mngr.SetStatus("error")
+			_ = client.NotifyScorecardStatus(scorecardAppUrl, mngr.documentID, "error", err)
+			return err
+		}
 	}
 	// set processedAt to now
 	err = mngr.SetProcessedAt()

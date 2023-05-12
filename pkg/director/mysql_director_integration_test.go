@@ -65,14 +65,16 @@ func Test_getMySqlConnection(t *testing.T) {
 			wantErr: false,
 		},
 	}
+	director, _ := GetDirector("MysqlDirector", mysqlCredentials, DateRange{FromSecs: 1, ToSecs: 2}, 95, 99)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := getMySQLConnection(tt.args.mysqlCredentials)
+			got, err := director.getMySqlConnection(tt.args.mysqlCredentials)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("getMySqlConnection() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			defer got.Close()
+			got.Close()
+			director.CloseDB()
 			if tt.want != fmt.Sprintf("%T", got) {
 				t.Errorf(fmt.Sprintf("getMySqlConnection() type of connection is not sql.DB = %v", fmt.Sprintf("%T", got)))
 			}
@@ -98,7 +100,8 @@ func Test_mySqlQuery(t *testing.T) {
 	if mysqlCredentials.Password == "" {
 		t.Fatalf("Undefined MYSQL_PASSWORD in environment")
 	}
-	mysqlDB, err := getMySQLConnection(mysqlCredentials)
+	director, _ := GetDirector("MysqlDirector", mysqlCredentials, DateRange{FromSecs: 1, ToSecs: 2}, 95, 99)
+	mysqlDB, err := director.getMySqlConnection(mysqlCredentials)
 	if err != nil {
 		t.Fatalf("getMySqlConnection() error = %v", err)
 		return
@@ -188,6 +191,7 @@ func Test_mySqlQuery(t *testing.T) {
 					t.Fatalf("Test_mySqlQuery unrecognized record type %q", tt.recordType)
 				}
 			}
+			director.CloseDB()
 			elapsed := time.Since(start)
 			fmt.Printf("The query and scan took combined %s", elapsed)
 			if tt.want != len(records) {

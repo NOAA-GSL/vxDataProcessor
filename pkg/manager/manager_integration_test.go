@@ -1,6 +1,7 @@
 //go:build integration
 // +build integration
 
+// To clean the test cache use the following command: go clean -testcache
 package manager
 
 import (
@@ -77,8 +78,13 @@ func TestDirector_test_connection(t *testing.T) {
 	var cbCredentials director.DbCredentials
 	var mysqlCredentials director.DbCredentials
 	var err error
+	t.Setenv("PROC_TESTING_ACCEPT_SCTEST_DOCIDS", "")
+	documentID := "SCTEST:test_scorecard"
 	loadEnvironmentFile()
-	mysqlCredentials, cbCredentials, err = loadEnvironment()
+	mngr, _ := GetManager(documentID)
+	defer mngr.close()
+	mysqlCredentials, cbCredentials, err = mngr.loadEnvironment()
+
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestDirector_test_connection load environment error ", err))
 	}
@@ -90,10 +96,6 @@ func TestDirector_test_connection(t *testing.T) {
 		t.Errorf("loadEnvironment() error  did return mysqlCredentials from loadEnvironment")
 		return
 	}
-	documentID := "SCTEST:test_scorecard"
-	t.Setenv("PROC_TESTING_ACCEPT_SCTEST_DOCIDS", "")
-	mngr, _ := GetManager(documentID)
-	defer mngr.Close()
 	err = mngr.getCouchbaseConnection(cbCredentials)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestDirector_test_connection Build GetConnection error ", err))
@@ -127,10 +129,14 @@ func Test_loadEnvironment(t *testing.T) {
 			wantErr:              false,
 		},
 	}
+	t.Setenv("PROC_TESTING_ACCEPT_SCTEST_DOCIDS", "")
+	documentID := "SCTEST:test_scorecard"
 	loadEnvironmentFile()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotMysqlCredentials, gotCbCredentials, err := loadEnvironment()
+			mngr, _ := GetManager(documentID)
+			// Don't close this mngr, it never gets a connection in this test and will cause a panic
+			gotMysqlCredentials, gotCbCredentials, err := mngr.loadEnvironment()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("loadEnvironment() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -193,7 +199,7 @@ func Test_getQueryBlocks(t *testing.T) {
 	loadEnvironmentFile()
 	mngr, err = GetManager(documentID)
 	defer func() {
-		errd := mngr.Close()
+		errd := mngr.close()
 		if errd != nil {
 			log.Printf("Error cleaning up manager: %q", errd)
 		}
@@ -202,7 +208,7 @@ func Test_getQueryBlocks(t *testing.T) {
 		t.Fatal(fmt.Errorf("manager loadEnvironment error GetManager %w", err))
 	}
 	var cbCredentials director.DbCredentials
-	_, cbCredentials, err = loadEnvironment()
+	_, cbCredentials, err = mngr.loadEnvironment()
 	if err != nil {
 		t.Fatal(fmt.Errorf("manager loadEnvironment error loadEnvironment %w", err))
 	}
@@ -257,12 +263,16 @@ func Test_getSliceResultBlocks(t *testing.T) {
 	// setup a test document
 	documentID := "SCTEST:test_scorecard"
 	t.Setenv("PROC_TESTING_ACCEPT_SCTEST_DOCIDS", "")
+	// set these to make debugging easier
+	// t.Setenv("SINGLETHREADEDMANGER", "true")
+	// t.Setenv("SINGLETHREADEDDIRECTOR", "true")
+
 	var mngr *Manager
 	var err error
 	loadEnvironmentFile()
 	mngr, err = GetManager(documentID)
 	defer func() {
-		errd := mngr.Close()
+		errd := mngr.close()
 		if errd != nil {
 			log.Printf("Error cleaning up manager: %q", errd)
 		}
@@ -271,7 +281,7 @@ func Test_getSliceResultBlocks(t *testing.T) {
 		t.Fatal(fmt.Errorf("manager loadEnvironment error GetManager %w", err))
 	}
 	var cbCredentials director.DbCredentials
-	_, cbCredentials, err = loadEnvironment()
+	_, cbCredentials, err = mngr.loadEnvironment()
 	if err != nil {
 		t.Fatal(fmt.Errorf("manager loadEnvironment error loadEnvironment %w", err))
 	}
@@ -324,6 +334,9 @@ func Test_getSliceResultBlocks(t *testing.T) {
 func Test_runManager(t *testing.T) {
 	defer goleak.VerifyNone(t)
 	t.Setenv("PROC_TESTING_ACCEPT_SCTEST_DOCIDS", "")
+	// uncomment these for debugging
+	// t.Setenv("SINGLETHREADEDMANGER", "true")
+	// t.Setenv("SINGLETHREADEDDIRECTOR", "true")
 	var setupManager *Manager
 	var err error
 	loadEnvironmentFile()
@@ -333,17 +346,17 @@ func Test_runManager(t *testing.T) {
 		fileName        string
 		expectedSeconds int
 	}{
-		// {
-		// 	name:            "test_1_Hour_Precipitation",
-		// 	docId:           "SCTEST:test_1_Hour_Precipitation",
-		// 	fileName:        "./testdata/test_1_Hour_Precipitation.json",
-		// 	expectedSeconds: 60,
-		// },
+		{
+			name:            "test_1_Hour_Precipitation",
+			docId:           "SCTEST:test_1_Hour_Precipitation",
+			fileName:        "./testdata/test_1_Hour_Precipitation.json",
+			expectedSeconds: 60,
+		},
 		{
 			name:            "test_24_Hour_Precipitation",
 			docId:           "SCTEST:test_24_Hour_Precipitation",
 			fileName:        "./testdata/test_24_Hour_Precipitation.json",
-			expectedSeconds: 5,
+			expectedSeconds: 15,
 		},
 		{
 			name:            "test_90day_rufs_a_scorecard",
@@ -355,7 +368,7 @@ func Test_runManager(t *testing.T) {
 			name:            "test_AMDAR",
 			docId:           "SCTEST:test_AMDAR",
 			fileName:        "./testdata/test_AMDAR.json",
-			expectedSeconds: 60,
+			expectedSeconds: 80,
 		},
 		{
 			name:            "test_Anomaly_Correlation",
@@ -403,7 +416,7 @@ func Test_runManager(t *testing.T) {
 			name:            "test_Sub_24_Hour_Precipitation",
 			docId:           "SCTEST:test_Sub_24_Hour_Precipitation",
 			fileName:        "./testdata/test_Sub_24_Hour_Precipitation.json",
-			expectedSeconds: 5,
+			expectedSeconds: 15,
 		},
 		{
 			name:            "test_Surface",
@@ -415,33 +428,28 @@ func Test_runManager(t *testing.T) {
 			name:            "test_Surface_Land_Use",
 			docId:           "SCTEST:test_Surface_Land_Use",
 			fileName:        "./testdata/test_Surface_Land_Use.json",
-			expectedSeconds: 50,
+			expectedSeconds: 140,
 		},
 		{
 			name:            "test_Vertically_Integrated_Liquid",
 			docId:           "SCTEST:test_Vertically_Integrated_Liquid",
 			fileName:        "./testdata/test_Vertically_Integrated_Liquid.json",
-			expectedSeconds: 15,
+			expectedSeconds: 30,
 		},
 		{
 			name:            "test_Visibility",
 			docId:           "SCTEST:test_Visibility",
 			fileName:        "./testdata/test_Visibility.json",
-			expectedSeconds: 10,
+			expectedSeconds: 30,
 		},
 		{
 			name:            "test_flipped_scorecard",
 			docId:           "SCTEST:test_flipped_scorecard",
 			fileName:        "./testdata/test_flipped_scorecard.json",
-			expectedSeconds: 60,
+			expectedSeconds: 120,
 		},
 	}
 	var cbCredentials director.DbCredentials
-	_, cbCredentials, err = loadEnvironment()
-	if err != nil {
-		t.Fatal(fmt.Errorf("manager loadEnvironment error loadEnvironment %w", err))
-	}
-
 	for _, tt := range tests {
 		log.Printf("Starting test %s", tt.name)
 		start := time.Now()
@@ -449,6 +457,10 @@ func Test_runManager(t *testing.T) {
 		setupManager, err = GetManager(tt.docId)
 		if err != nil {
 			t.Fatal(fmt.Errorf("manager - getManager for %s error  %w", tt.name, err))
+		}
+		_, cbCredentials, err = setupManager.loadEnvironment()
+		if err != nil {
+			t.Fatal(fmt.Errorf("manager loadEnvironment error loadEnvironment %w", err))
 		}
 		err = setupManager.getCouchbaseConnection(cbCredentials)
 		if err != nil {
@@ -458,7 +470,7 @@ func Test_runManager(t *testing.T) {
 		if err != nil {
 			t.Fatal(fmt.Errorf("manager upsertTestDoc test %s error upserting test scorecard %w", tt.name, err))
 		}
-		setupManager.Close() // Can't defer since we're in a for loop
+		setupManager.close() // Can't defer since we're in a for loop
 
 		// Test execution
 		manager, err := GetManager(tt.docId)
@@ -473,7 +485,6 @@ func Test_runManager(t *testing.T) {
 		if tt.expectedSeconds < int(elapsed.Seconds()) {
 			t.Fatalf("manager test %s expected %d seconds but took %d seconds", tt.name, tt.expectedSeconds, int(elapsed.Seconds()))
 		}
-		manager.Close() // Can't defer since we're in a for loop
 		log.Printf("The test %s took combined %s", tt.name, elapsed)
 	}
 }

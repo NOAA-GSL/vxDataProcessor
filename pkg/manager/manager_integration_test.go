@@ -332,8 +332,7 @@ func Test_getSliceResultBlocks(t *testing.T) {
 }
 
 func Test_runManager(t *testing.T) {
-	// At the moment I do not know how to make this test work with the goleak.VerifyNone(t)
-	// defer goleak.VerifyNone(t)
+	defer goleak.VerifyNone(t)
 	t.Setenv("PROC_TESTING_ACCEPT_SCTEST_DOCIDS", "")
 	// uncomment these for debugging
 	// t.Setenv("SINGLETHREADEDMANGER", "true")

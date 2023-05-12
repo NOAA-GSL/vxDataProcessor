@@ -470,7 +470,14 @@ func Test_runManager(t *testing.T) {
 		if err != nil {
 			t.Fatal(fmt.Errorf("manager upsertTestDoc test %s error upserting test scorecard %w", tt.name, err))
 		}
-		err = setupManager.Run() // Run closes the Cluster
+		setupManager.Close() // Can't defer since we're in a for loop
+
+		// Test execution
+		manager, err := GetManager(tt.docId)
+		if err != nil {
+			t.Fatal(fmt.Errorf("manager test %s NewScorecardManager error getting a manager %w", tt.name, err))
+		}
+		err = manager.Run()
 		if err != nil {
 			t.Fatal(fmt.Errorf("manager test %s Run error %w", tt.name, err))
 		}
@@ -478,5 +485,6 @@ func Test_runManager(t *testing.T) {
 		if tt.expectedSeconds < int(elapsed.Seconds()) {
 			t.Fatalf("manager test %s expected %d seconds but took %d seconds", tt.name, tt.expectedSeconds, int(elapsed.Seconds()))
 		}
+		log.Printf("The test %s took combined %s", tt.name, elapsed)
 	}
 }

@@ -889,7 +889,7 @@ func Test_calculateStatScalar(t *testing.T) {
 		modelSum        float64
 		obsSum          float64
 		absSum          float64
-		statistic       string
+		statistic       StatisticType
 	}
 	tests := []struct {
 		name      string
@@ -909,7 +909,7 @@ func Test_calculateStatScalar(t *testing.T) {
 				modelSum:        85194.69848632812,
 				obsSum:          87028.8984375,
 				absSum:          4889.7998046875,
-				statistic:       "RMSE",
+				statistic:       RMSE,
 			},
 			want:      1.957 * 1.8,
 			tolerance: 0.005,
@@ -925,7 +925,7 @@ func Test_calculateStatScalar(t *testing.T) {
 				modelSum:        85194.69848632812,
 				obsSum:          87028.8984375,
 				absSum:          4889.7998046875,
-				statistic:       "Bias (Model - Obs)",
+				statistic:       Bias_Model_Obs,
 			},
 			want:      -0.5741 * 1.8,
 			tolerance: 0.001,
@@ -941,7 +941,7 @@ func Test_calculateStatScalar(t *testing.T) {
 				modelSum:        6096.10009765625,
 				obsSum:          6163.60009765625,
 				absSum:          740.9000244140630,
-				statistic:       "MAE (temp and dewpoint only)",
+				statistic:       MAE_temp_and_dewpoint_only,
 			},
 			want:      1.942 * 1.8,
 			tolerance: 0.005,
@@ -957,7 +957,7 @@ func Test_calculateStatScalar(t *testing.T) {
 				modelSum:        0.1,
 				obsSum:          -2.4978950321674347,
 				absSum:          4.271478652954102,
-				statistic:       "MAE",
+				statistic:       MAE,
 			},
 			want:      0.3286,
 			tolerance: 0.005,
@@ -1006,7 +1006,7 @@ func Test_calculateStatCTC(t *testing.T) {
 		fa        float32
 		miss      float32
 		cn        float32
-		statistic string
+		statistic StatisticType
 	}
 	tests := []struct {
 		name    string
@@ -1023,7 +1023,7 @@ func Test_calculateStatCTC(t *testing.T) {
 				fa:        1876,
 				miss:      868,
 				cn:        56054,
-				statistic: "TSS (True Skill Score)",
+				statistic: TSS_True_Skill_Score,
 			},
 			want:    61.35,
 			wantErr: false,
@@ -1036,7 +1036,7 @@ func Test_calculateStatCTC(t *testing.T) {
 				fa:        46,
 				miss:      18,
 				cn:        1695,
-				statistic: "PODy (POD of value < threshold)",
+				statistic: PODy_POD_of_value_lt_threshold,
 			},
 			want:    35.71,
 			wantErr: false,
@@ -1049,7 +1049,7 @@ func Test_calculateStatCTC(t *testing.T) {
 				fa:        1876,
 				miss:      868,
 				cn:        56054,
-				statistic: "PODy (POD of value > threshold)",
+				statistic: PODy_POD_of_value_gt_threshold,
 			},
 			want:    64.59,
 			wantErr: false,
@@ -1061,7 +1061,7 @@ func Test_calculateStatCTC(t *testing.T) {
 				fa:        41,
 				miss:      5,
 				cn:        1716,
-				statistic: "PODn (POD of value > threshold)",
+				statistic: PODn_POD_of_value_gt_threshold,
 			},
 			want:    97.67,
 			wantErr: false,
@@ -1074,7 +1074,7 @@ func Test_calculateStatCTC(t *testing.T) {
 				fa:        1876,
 				miss:      868,
 				cn:        56054,
-				statistic: "PODn (POD of value < threshold)",
+				statistic: PODn_POD_of_value_lt_threshold,
 			},
 			want:    96.76,
 			wantErr: false,
@@ -1087,7 +1087,7 @@ func Test_calculateStatCTC(t *testing.T) {
 				fa:        1876,
 				miss:      868,
 				cn:        56054,
-				statistic: "FAR (False Alarm Ratio)",
+				statistic: FAR_False_Alarm_Ratio,
 			},
 			want:    54.24,
 			wantErr: false,
@@ -1100,7 +1100,7 @@ func Test_calculateStatCTC(t *testing.T) {
 				fa:        1876,
 				miss:      868,
 				cn:        56054,
-				statistic: "CSI (Critical Success Index)",
+				statistic: CSI_Critical_Success_Index,
 			},
 			want:    36.58,
 			wantErr: false,
@@ -1113,7 +1113,7 @@ func Test_calculateStatCTC(t *testing.T) {
 				fa:        1876,
 				miss:      868,
 				cn:        56054,
-				statistic: "HSS (Heidke Skill Score)",
+				statistic: HSS_Heidke_Skill_Score,
 			},
 			want:    51.25,
 			wantErr: false,
@@ -1126,7 +1126,7 @@ func Test_calculateStatCTC(t *testing.T) {
 				fa:        1876,
 				miss:      868,
 				cn:        56054,
-				statistic: "ETS (Equitable Threat Score)",
+				statistic: ETS_Equitable_Threat_Score,
 			},
 			want:    34.46,
 			wantErr: false,
@@ -1139,7 +1139,7 @@ func Test_calculateStatCTC(t *testing.T) {
 				fa:        1876,
 				miss:      0,
 				cn:        56054,
-				statistic: "TSS (True Skill Score)",
+				statistic: TSS_True_Skill_Score,
 			},
 			want:    -9999,
 			wantErr: false,
@@ -1153,7 +1153,7 @@ func Test_calculateStatCTC(t *testing.T) {
 				fa:        1,
 				miss:      1,
 				cn:        1,
-				statistic: "TSS (True Skill Score)",
+				statistic: TSS_True_Skill_Score,
 			},
 			want: 0.0,
 			// wantErr: true,

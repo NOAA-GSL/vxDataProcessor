@@ -62,7 +62,7 @@ type (
 		goodnessPolarity GoodnessPolarity
 		majorThreshold   Threshold
 		minorThreshold   Threshold
-		stat             float64
+		statisticType    StatisticType
 		pvalue           float64
 		keychain         []string
 		value            int
@@ -109,15 +109,109 @@ type BuilderPreCalcResult struct {
 	ExpData PreCalcRecords
 }
 
+// enum values for statistics type
+type StatisticType int
+
+const (
+	TSS_True_Skill_Score StatisticType = iota
+	PODy_POD_of_value_lt_threshold
+	PODy_POD_of_value_gt_threshold
+	PODn_POD_of_value_gt_threshold
+	PODn_POD_of_value_lt_threshold
+	FAR_False_Alarm_Ratio
+	CSI_Critical_Success_Index
+	HSS_Heidke_Skill_Score
+	ETS_Equitable_Threat_Score
+	ACC
+	RMSE
+	Bias_Model_Obs
+	MAE_temp_and_dewpoint_only
+	MAE
+	Unknown
+)
+
+// implement the String interface for StatisticType
+func (s StatisticType) String() string {
+	switch s {
+	case TSS_True_Skill_Score:
+		return "TSS (True Skill Score)"
+	case PODy_POD_of_value_lt_threshold:
+		return "PODy (POD of value < threshold)"
+	case PODy_POD_of_value_gt_threshold:
+		return "PODy (POD of value > threshold)"
+	case PODn_POD_of_value_gt_threshold:
+		return "PODn (POD of value > threshold)"
+	case PODn_POD_of_value_lt_threshold:
+		return "PODn (POD of value < threshold)"
+	case FAR_False_Alarm_Ratio:
+		return "FAR (False Alarm Ratio)"
+	case CSI_Critical_Success_Index:
+		return "CSI (Critical Success Index)"
+	case HSS_Heidke_Skill_Score:
+		return "HSS (Heidke Skill Score)"
+	case ETS_Equitable_Threat_Score:
+		return "ETS (Equitable Threat Score)"
+	case ACC:
+		return "Want experimental to exceed control"
+	case RMSE:
+		return "RMSE"
+	case Bias_Model_Obs:
+		return "Bias (Model - Obs)"
+	case MAE_temp_and_dewpoint_only:
+		return "MAE (temp and dewpoint only)"
+	case MAE:
+		return "MAE"
+	default:
+		return "Unknown"
+	}
+}
+
+// implment the reverse string interface for StatisticType
+func GetStatisticTpe(statType string) StatisticType {
+	switch statType {
+	case "TSS (True Skill Score)":
+		return TSS_True_Skill_Score
+	case "PODy (POD of value < threshold)":
+		return PODy_POD_of_value_lt_threshold
+	case "PODy (POD of value > threshold)":
+		return PODy_POD_of_value_gt_threshold
+	case "PODn (POD of value > threshold)":
+		return PODn_POD_of_value_gt_threshold
+	case "PODn (POD of value < threshold)":
+		return PODn_POD_of_value_lt_threshold
+	case "FAR (False Alarm Ratio)":
+		return FAR_False_Alarm_Ratio
+	case "CSI (Critical Success Index)":
+		return CSI_Critical_Success_Index
+	case "HSS (Heidke Skill Score)":
+		return HSS_Heidke_Skill_Score
+	case "ETS (Equitable Threat Score)":
+		return ETS_Equitable_Threat_Score
+	case "ACC":
+		return ACC
+	case "RMSE":
+		return RMSE
+	case "Bias (Model - Obs)":
+		return Bias_Model_Obs
+	case "MAE (temp and dewpoint only)":
+		return MAE_temp_and_dewpoint_only
+	case "MAE":
+		return MAE
+	default:
+		return Unknown
+	}
+}
+
 type ScorecardCellBuilder interface {
 	setGoodnessPolarity(GoodnessPolarity)
 	setMajorThreshold(Threshold)
 	setMinorThreshold(Threshold)
 	SetKeyChain([]string) // has to be public
-	deriveInputData(QueryResult interface{}, statisticType string)
+	deriveInputData(QueryResult interface{})
 	computeSignificance()
 	getValue()
 	setValue(value int32)
+	SetStatisticType(statisticType string)
 	Build(qrPtr interface{}, statisticType string, minorThreshold float64, majorThreshold float64)
 }
 

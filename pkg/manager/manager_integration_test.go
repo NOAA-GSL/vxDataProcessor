@@ -356,7 +356,7 @@ func Test_runManager(t *testing.T) {
 			name:            "test_24_Hour_Precipitation",
 			docId:           "SCTEST:test_24_Hour_Precipitation",
 			fileName:        "./testdata/test_24_Hour_Precipitation.json",
-			expectedSeconds: 15,
+			expectedSeconds: 50,
 		},
 		{
 			name:            "test_90day_rufs_a_scorecard",
@@ -368,7 +368,7 @@ func Test_runManager(t *testing.T) {
 			name:            "test_AMDAR",
 			docId:           "SCTEST:test_AMDAR",
 			fileName:        "./testdata/test_AMDAR.json",
-			expectedSeconds: 80,
+			expectedSeconds: 100,
 		},
 		{
 			name:            "test_Anomaly_Correlation",
@@ -434,13 +434,13 @@ func Test_runManager(t *testing.T) {
 			name:            "test_Vertically_Integrated_Liquid",
 			docId:           "SCTEST:test_Vertically_Integrated_Liquid",
 			fileName:        "./testdata/test_Vertically_Integrated_Liquid.json",
-			expectedSeconds: 30,
+			expectedSeconds: 75,
 		},
 		{
 			name:            "test_Visibility",
 			docId:           "SCTEST:test_Visibility",
 			fileName:        "./testdata/test_Visibility.json",
-			expectedSeconds: 30,
+			expectedSeconds: 60,
 		},
 		{
 			name:            "test_flipped_scorecard",

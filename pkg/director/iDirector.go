@@ -50,7 +50,7 @@ type Director struct {
 	majorThreshold   float64
 	wg               *sync.WaitGroup
 	statistics       []string
-	statisticType    string
+	statisticType    builder.StatisticType
 }
 
 type DirectorBuilder interface {

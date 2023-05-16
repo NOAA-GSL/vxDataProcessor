@@ -34,14 +34,6 @@ func TestTwoSampleTTestBuilder_test_identical(t *testing.T) {
 	}
 
 	epoch := int64(1682112031)
-	var ctlData PreCalcRecords
-	for i := 0; i < 10; i++ {
-		rec := PreCalcRecord{
-			Stat:   float64(i) * 1.1,
-			Avtime: int64(i) + epoch,
-		}
-		ctlData = append(ctlData, rec)
-	}
 	var expData PreCalcRecords
 	for i := 0; i < 10; i++ {
 		rec := PreCalcRecord{
@@ -50,11 +42,19 @@ func TestTwoSampleTTestBuilder_test_identical(t *testing.T) {
 		}
 		expData = append(expData, rec)
 	}
+	var ctlData PreCalcRecords
+	for i := 0; i < 10; i++ {
+		rec := PreCalcRecord{
+			Stat:   float64(i) * 1.1,
+			Avtime: int64(i) + epoch,
+		}
+		ctlData = append(ctlData, rec)
+	}
 	var queryResult BuilderPreCalcResult
 	queryResult.CtlData = ctlData
 	queryResult.ExpData = expData
-	var statistic string = "TSS (True Skill Score)"
-	err = cellPtr.deriveInputData(queryResult, statistic)
+	_ = cellPtr.SetStatisticType(TSS_True_Skill_Score)
+	err = cellPtr.deriveInputData(queryResult)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_1 - computeSignificance - error message : ", err))
 	}
@@ -86,27 +86,27 @@ func TestTwoSampleTTestBuilder_test_BIAS_2(t *testing.T) {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_2 - setInputData - error message : ", err))
 	}
 	epoch := int64(1682112031)
-	var ctlData PreCalcRecords
+	var expData PreCalcRecords
 	for i := 0; i < 10; i++ {
 		rec := PreCalcRecord{
 			Stat:   float64(i) * 1.1,
 			Avtime: int64(i) + epoch,
 		}
-		ctlData = append(ctlData, rec)
+		expData = append(expData, rec)
 	}
-	var expData PreCalcRecords
+	var ctlData PreCalcRecords
 	for i := 0; i < 10; i++ {
 		rec := PreCalcRecord{
 			Stat:   float64(i) * 1.02,
 			Avtime: int64(i) + epoch,
 		}
-		expData = append(expData, rec)
+		ctlData = append(ctlData, rec)
 	}
 	var queryResult BuilderPreCalcResult
 	queryResult.CtlData = ctlData
 	queryResult.ExpData = expData
-	var statistic string = "Bias (Model - Obs)"
-	err = cellPtr.deriveInputData(queryResult, statistic)
+	_ = cellPtr.SetStatisticType(Bias_Model_Obs)
+	err = cellPtr.deriveInputData(queryResult)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_2 - computeSignificance - error message : ", err))
 	}
@@ -115,7 +115,7 @@ func TestTwoSampleTTestBuilder_test_BIAS_2(t *testing.T) {
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_2 - computeSignificance - error message : ", err))
 	}
-	if cellPtr.value != 2 {
+	if cellPtr.value != -2 {
 		t.Fatal("test_2_wrong value :", cellPtr.value)
 	}
 }
@@ -140,27 +140,27 @@ func TestTwoSampleTTestBuilder_test_neagtive_2(t *testing.T) {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_2 - setInputData - error message : ", err))
 	}
 	epoch := int64(1682112031)
-	var ctlData PreCalcRecords
+	var expData PreCalcRecords
 	for i := 0; i < 10; i++ {
 		rec := PreCalcRecord{
 			Stat:   float64(i) * 1.02,
 			Avtime: int64(i) + epoch,
 		}
-		ctlData = append(ctlData, rec)
+		expData = append(expData, rec)
 	}
-	var expData PreCalcRecords
+	var ctlData PreCalcRecords
 	for i := 0; i < 10; i++ {
 		rec := PreCalcRecord{
 			Stat:   float64(i) * 1.1,
 			Avtime: int64(i) + epoch,
 		}
-		expData = append(expData, rec)
+		ctlData = append(ctlData, rec)
 	}
 	var queryResult BuilderPreCalcResult
 	queryResult.CtlData = ctlData
 	queryResult.ExpData = expData
-	var statistic string = "TSS (True Skill Score)"
-	err = cellPtr.deriveInputData(queryResult, statistic)
+	_ = cellPtr.SetStatisticType(TSS_True_Skill_Score)
+	err = cellPtr.deriveInputData(queryResult)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_2 - computeSignificance - error message : ", err))
 	}
@@ -194,28 +194,28 @@ func TestTwoSampleTTestBuilder_test_1(t *testing.T) {
 	}
 	epoch := int64(1682112031)
 	normData := [10]int{86, 74, 79, 94, 73, 92, 66, 77, 74, 78}
-	var ctlData PreCalcRecords
+	var expData PreCalcRecords
 	for i := 0; i < 10; i++ {
 		rec := PreCalcRecord{
 			Stat:   float64(normData[i]),
 			Avtime: int64(i) + epoch,
 		}
-		ctlData = append(ctlData, rec)
+		expData = append(expData, rec)
 	}
 	// I don't claim to know why but this modification gives a number set that generates a pvalue 0.015523870374046123 which results in value 1
-	var expData PreCalcRecords
+	var ctlData PreCalcRecords
 	for i := 0; i < 10; i++ {
 		rec := PreCalcRecord{
 			Stat:   float64(normData[i] * (i % 2)),
 			Avtime: int64(i) + epoch,
 		}
-		expData = append(expData, rec)
+		ctlData = append(ctlData, rec)
 	}
 	var queryResult BuilderPreCalcResult
 	queryResult.CtlData = ctlData
 	queryResult.ExpData = expData
-	var statistic string = "TSS (True Skill Score)"
-	err = cellPtr.deriveInputData(queryResult, statistic)
+	_ = cellPtr.SetStatisticType(TSS_True_Skill_Score)
+	err = cellPtr.deriveInputData(queryResult)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_1 - computeSignificance - error message : ", err))
 	}
@@ -250,17 +250,7 @@ func TestTwoSampleTTestBuilder_test_0(t *testing.T) {
 
 	epoch := int64(1682112031)
 	normData := [10]int{86, 74, 79, 94, 73, 92, 66, 77, 74, 78}
-	var ctlData PreCalcRecords
-	for i := 0; i < 10; i++ {
-		rec := PreCalcRecord{
-			Stat:   float64(normData[i]),
-			Avtime: int64(i) + epoch,
-		}
-		ctlData = append(ctlData, rec)
-	}
-	// The first element is off by one
 	var expData PreCalcRecords
-	normData = [10]int{87, 74, 79, 94, 73, 92, 66, 77, 74, 78}
 	for i := 0; i < 10; i++ {
 		rec := PreCalcRecord{
 			Stat:   float64(normData[i]),
@@ -268,11 +258,21 @@ func TestTwoSampleTTestBuilder_test_0(t *testing.T) {
 		}
 		expData = append(expData, rec)
 	}
+	// The first element is off by one
+	var ctlData PreCalcRecords
+	normData = [10]int{87, 74, 79, 94, 73, 92, 66, 77, 74, 78}
+	for i := 0; i < 10; i++ {
+		rec := PreCalcRecord{
+			Stat:   float64(normData[i]),
+			Avtime: int64(i) + epoch,
+		}
+		ctlData = append(ctlData, rec)
+	}
 	var queryResult BuilderPreCalcResult
 	queryResult.CtlData = ctlData
 	queryResult.ExpData = expData
-	var statistic string = "TSS (True Skill Score)"
-	err = cellPtr.deriveInputData(queryResult, statistic)
+	_ = cellPtr.SetStatisticType(TSS_True_Skill_Score)
+	err = cellPtr.deriveInputData(queryResult)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_1 - computeSignificance - error message : ", err))
 	}
@@ -305,27 +305,27 @@ func TestTwoSampleTTestBuilder_different_lengths(t *testing.T) {
 	}
 
 	epoch := int64(1682112031)
-	var ctlData PreCalcRecords
+	var expData PreCalcRecords
 	for i := 0; i < 10; i++ {
 		rec := PreCalcRecord{
 			Stat:   float64(i) * 1.01,
 			Avtime: int64(i) + epoch,
 		}
-		ctlData = append(ctlData, rec)
+		expData = append(expData, rec)
 	}
-	var expData PreCalcRecords
+	var ctlData PreCalcRecords
 	for i := 0; i < 9; i++ {
 		rec := PreCalcRecord{
 			Stat:   float64(i) * 1.2,
 			Avtime: int64(i) + epoch,
 		}
-		expData = append(expData, rec)
+		ctlData = append(ctlData, rec)
 	}
 	var queryResult BuilderPreCalcResult
 	queryResult.CtlData = ctlData
 	queryResult.ExpData = expData
-	var statistic string = "TSS (True Skill Score)"
-	err = cellPtr.deriveInputData(queryResult, statistic)
+	_ = cellPtr.SetStatisticType(TSS_True_Skill_Score)
+	err = cellPtr.deriveInputData(queryResult)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_1 - computeSignificance - error message : ", err))
 	}
@@ -355,7 +355,7 @@ func TestTwoSampleTTestBuilder_test__match_ctl_short_1(t *testing.T) {
 	}
 	epoch := int64(1682112031)
 	normData := [10]int{86, 74, 79, 94, 73, 92, 66, 77, 74, 78}
-	var ctlData PreCalcRecords
+	var expData PreCalcRecords
 	for i := 0; i < 10; i++ {
 		// skip number 5
 		if i == 5 {
@@ -365,22 +365,22 @@ func TestTwoSampleTTestBuilder_test__match_ctl_short_1(t *testing.T) {
 			Stat:   float64(normData[i]),
 			Avtime: int64(i) + epoch,
 		}
-		ctlData = append(ctlData, rec)
+		expData = append(expData, rec)
 	}
 	// I don't claim to know why but this modification gives a number set that generates a pvalue 0.015523870374046123 which results in value 1
-	var expData PreCalcRecords
+	var ctlData PreCalcRecords
 	for i := 0; i < 10; i++ {
 		rec := PreCalcRecord{
 			Stat:   float64(normData[i] * (i % 2)),
 			Avtime: int64(i) + epoch,
 		}
-		expData = append(expData, rec)
+		ctlData = append(ctlData, rec)
 	}
 	var queryResult BuilderPreCalcResult
 	queryResult.CtlData = ctlData
 	queryResult.ExpData = expData
-	var statistic string = "TSS (True Skill Score)"
-	err = cellPtr.deriveInputData(queryResult, statistic)
+	_ = cellPtr.SetStatisticType(TSS_True_Skill_Score)
+	err = cellPtr.deriveInputData(queryResult)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_1 - computeSignificance - error message : ", err))
 	}
@@ -414,16 +414,16 @@ func TestTwoSampleTTestBuilder_test__match_exp_short_1(t *testing.T) {
 	}
 	epoch := int64(1682112031)
 	normData := [10]int{86, 74, 79, 94, 73, 92, 66, 77, 74, 78}
-	var ctlData PreCalcRecords
+	var expData PreCalcRecords
 	for i := 0; i < 10; i++ {
 		rec := PreCalcRecord{
 			Stat:   float64(normData[i]),
 			Avtime: int64(i) + epoch,
 		}
-		ctlData = append(ctlData, rec)
+		expData = append(expData, rec)
 	}
 	// I don't claim to know why but this modification gives a number set that generates a pvalue 0.015523870374046123 which results in value 1
-	var expData PreCalcRecords
+	var ctlData PreCalcRecords
 	for i := 0; i < 10; i++ {
 		// skip number 5
 		if i == 5 {
@@ -433,13 +433,13 @@ func TestTwoSampleTTestBuilder_test__match_exp_short_1(t *testing.T) {
 			Stat:   float64(normData[i] * (i % 2)),
 			Avtime: int64(i) + epoch,
 		}
-		expData = append(expData, rec)
+		ctlData = append(ctlData, rec)
 	}
 	var queryResult BuilderPreCalcResult
 	queryResult.CtlData = ctlData
 	queryResult.ExpData = expData
-	var statistic string = "TSS (True Skill Score)"
-	err = cellPtr.deriveInputData(queryResult, statistic)
+	_ = cellPtr.SetStatisticType(TSS_True_Skill_Score)
+	err = cellPtr.deriveInputData(queryResult)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_1 - computeSignificance - error message : ", err))
 	}
@@ -485,8 +485,8 @@ func TestTwoSampleTTestBuilder_test__missing_one_population(t *testing.T) {
 	var queryResult BuilderPreCalcResult
 	queryResult.CtlData = ctlData
 	queryResult.ExpData = expData
-	var statistic string = "TSS (True Skill Score)"
-	err = cellPtr.deriveInputData(queryResult, statistic)
+	_ = cellPtr.SetStatisticType(TSS_True_Skill_Score)
+	err = cellPtr.deriveInputData(queryResult)
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test__missing_one_population - computeSignificance - error message : ", err))
 	}

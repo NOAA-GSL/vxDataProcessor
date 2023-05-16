@@ -298,7 +298,7 @@ func (director *Director) processSub(queryRegionName string, region interface{},
 					defer director.wg.Done()
 					*cellCountPtr++
 					scc := builder.NewTwoSampleTTestBuilder()
-					_ = scc.SetKeyChain(*keychain) // ignore error
+					_ = scc.SetKeyChain(*keychain) // ignore errorscc.
 					value, err := (scc.Build(queryResult, director.statisticType, director.minorThreshold, director.majorThreshold))
 					// remove this leaf key from the keychain
 					if len(*keychain) > 0 {
@@ -342,7 +342,8 @@ func (director *Director) processSub(queryRegionName string, region interface{},
 		for _, elemKey := range keys {
 			for _, s := range director.statistics {
 				if elemKey == fmt.Sprint(s) {
-					director.statisticType = elemKey
+					statisticType := builder.GetStatisticTpe(elemKey)
+					director.statisticType = statisticType
 					break
 				}
 			}

@@ -349,6 +349,15 @@ func getGoodnessPolarity(statisticType StatisticType) (polarity GoodnessPolarity
 	}
 }
 
+// public getters
+func (scc *ScorecardCell) GetPath() string                       { return strings.Join(scc.keychain, " -> ") }
+func (scc *ScorecardCell) GetValue() int                         { return scc.value }
+func (scc *ScorecardCell) GetPvalue() float64                    { return scc.pvalue }
+func (scc *ScorecardCell) GetGoodnessPolarity() GoodnessPolarity { return scc.goodnessPolarity }
+func (scc *ScorecardCell) GetMajorThreshold() Threshold          { return scc.majorThreshold }
+func (scc *ScorecardCell) GetMinorThreshold() Threshold          { return scc.minorThreshold }
+func (scc *ScorecardCell) GetStatisticType() StatisticType       { return scc.statisticType }
+
 func (scc *ScorecardCell) Build(qrPtr interface{}, statisticType StatisticType, minorThreshold float64, majorThreshold float64) (value int, err error) {
 	// DerivePreCalcInputData(ctlQR PreCalcRecords, expQR PreCalcRecords, statisticType string)
 	// build the input data elements and

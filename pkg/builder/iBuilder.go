@@ -48,6 +48,20 @@ type StatType string
 
 const ErrorValue = -9999
 
+// ValueStuct has public fields because it is used in the director but
+// contains types that are defined in the builder package.
+// valueStruct is essentially a ScorecardCell without the derived data or the mutex.
+// ValueStruct is for public use by the director.
+type ValueStruct struct {
+	Path             string
+	GoodnessPolarity GoodnessPolarity
+	MajorThreshold   Threshold
+	MinorThreshold   Threshold
+	StatisticType    string
+	Pvalue           float64
+	Value            int
+}
+
 type DerivedDataElement struct {
 	CtlPop []float64
 	ExpPop []float64
@@ -209,7 +223,13 @@ type ScorecardCellBuilder interface {
 	SetKeyChain([]string) // has to be public
 	deriveInputData(QueryResult interface{})
 	computeSignificance()
-	getValue()
+	GetPath() string // string representation of keychain
+	GetValue() int
+	GetPvalue() float64
+	GetGoodnessPolarity() GoodnessPolarity
+	GetMajorThreshold() Threshold
+	GetMinorThreshold() Threshold
+	GetStatisticType() StatisticType
 	setValue(value int32)
 	SetStatisticType(statisticType string)
 	Build(qrPtr interface{}, statisticType string, minorThreshold float64, majorThreshold float64)

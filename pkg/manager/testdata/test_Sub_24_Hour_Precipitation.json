@@ -339,7 +339,7 @@
   "results": {
     "blocks": {
       "Block0": {
-        "blockApplication": "https://mats-docker-dev.gsd.esrl.noaa.gov/scorecard",
+        "blockApplication": "https://apps-dev.gsd.esrl.noaa.gov/mats-dev/scorecard",
         "blockParameters": [
           "application",
           "scale",

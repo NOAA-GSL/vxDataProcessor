@@ -184,7 +184,6 @@ func (director *Director) processSub(queryRegionName string, region interface{},
 		ctlQueryStatement = strings.Replace(ctlQueryStatement, "{{toSecs}}", fmt.Sprint(director.dateRange.ToSecs), -1)
 		expQueryStatement = strings.Replace(expQueryStatement, "{{fromSecs}}", fmt.Sprint(director.dateRange.FromSecs), -1)
 		expQueryStatement = strings.Replace(expQueryStatement, "{{toSecs}}", fmt.Sprint(director.dateRange.ToSecs), -1)
-		var err error
 		var queryResult interface{}
 		queryError := false
 
@@ -281,8 +280,9 @@ func (director *Director) processSub(queryRegionName string, region interface{},
 
 		// for all the input elements
 		// build the input data elements - derive the statistic and summary value
-		// for this element i.e. this cell in the scorecard
-		// The build will fill in the value (write into the result)
+		// for this element i.e. this cell in the scorecard.
+		// The actual scorecard data location for the cell is written in
+		// the branch part of processSub when it encounters a leaf. See below.
 		// Build(qr QueryResult, statisticType string, dataType string
 		if queryError {
 			if err != nil {
@@ -290,6 +290,7 @@ func (director *Director) processSub(queryRegionName string, region interface{},
 			}
 			return builder.ErrorValue, err
 		} else {
+			valueStruct := builder.ValueStruct{}
 			if !singleThreadedDirector {
 				director.wg.Add(1)
 				// run builder in parallel
@@ -307,37 +308,54 @@ func (director *Director) processSub(queryRegionName string, region interface{},
 						*keychain = kc
 					}
 					c <- errval{err: err, val: value}
+					// build the value structure for this cell
+					valueStruct.Path = scc.GetPath()
+					valueStruct.GoodnessPolarity = scc.GetGoodnessPolarity()
+					valueStruct.MajorThreshold = scc.GetMajorThreshold()
+					valueStruct.MinorThreshold = scc.GetMinorThreshold()
+					valueStruct.StatisticType = fmt.Sprint(scc.GetStatisticType())
+					valueStruct.Pvalue = scc.GetPvalue()
 				}(queryRegionName)
 				ret := <-c
 				if ret.err != nil {
 					return builder.ErrorValue, fmt.Errorf("mysql_director processSub error from builder %w", ret.err)
 				}
-				return ret.val, nil
+				valueStruct.Value = ret.val
+				return valueStruct, nil
 			} else {
 				// singleThreadedDirector
 				*cellCountPtr++
 				scc := builder.NewTwoSampleTTestBuilder()
 				_ = scc.SetKeyChain(*keychain) // ignore error
 				value, err := (scc.Build(queryResult, director.statisticType, director.minorThreshold, director.majorThreshold))
+				// build the value structure for this cell
+				valueStruct.Path = scc.GetPath()
+				valueStruct.GoodnessPolarity = scc.GetGoodnessPolarity()
+				valueStruct.MajorThreshold = scc.GetMajorThreshold()
+				valueStruct.MinorThreshold = scc.GetMinorThreshold()
+				valueStruct.StatisticType = fmt.Sprint(scc.GetStatisticType())
+				valueStruct.Pvalue = scc.GetPvalue()
+				valueStruct.Value = value
+
 				// remove this leaf key from the keychain
 				if len(*keychain) > 0 {
 					kc := *keychain
 					kc = kc[:len(kc)-1]
 					*keychain = kc
 				}
-				ret := errval{err: err, val: value}
-				if ret.err != nil {
-					return builder.ErrorValue, fmt.Errorf("mysql_director processSub error from builder %w", ret.err)
+				if err != nil {
+					return builder.ErrorValue, fmt.Errorf("mysql_director processSub error from builder %w", err)
 				}
-				return ret.val, nil
+				return valueStruct, nil
 			}
 		}
 	} else {
-		// this is a branch (not a leaf) so we keep traversing
-		// log statement uncomment for debugging
-		// log.Printf("mysql_director processSub branch keys are %q", keys)
-		// this is a branch (not a leaf) so we keep traversing
-		// check to see if this is a statistic elem, so we can set the statisticType
+		// This is a branch (not a leaf) so we keep traversing until we get a leaf.
+		// Uncomment this log statement for debugging
+		// 	log.Printf("mysql_director processSub branch keys are %q", keys)
+		// This is a branch (not a leaf) so we keep traversing until we get to a leaf and then
+		// we write the scorecard data with the value from the leaf.
+		// Check to see if this is a statistic elem, so we can set the statisticType
 		var keys []string = getMapKeys((region).(map[string]interface{}))
 		for _, elemKey := range keys {
 			for _, s := range director.statistics {
@@ -349,8 +367,12 @@ func (director *Director) processSub(queryRegionName string, region interface{},
 			}
 			*keychain = append(*keychain, elemKey)
 			queryElem := queryElem.(map[string]interface{})[elemKey]
-			// update the region with the result of the recursive call - this inserts the value into the document
-			// eventually we will want to put the other scc values(pvalue, stat, keychain) into the scorecard cell as well
+			// Here we are in a for loop of region elements. We pass each region element (sub region) to the recursive
+			// call to processSub. This is the traversal.
+			// Each region element is a sub region - like a variable or a stat etc.
+			// We update the region with the result of the recursive call - If the sub region is a branch the effect is that we
+			// assign the region ptr back to itself, but if it is a leaf element this assigns the value structure ptr
+			// into the document result map. The value structure will either be a structure or it will be an integer value (-9999).
 			region.(map[string]interface{})[elemKey], err = director.processSub(queryRegionName, region.(map[string]interface{})[elemKey], queryElem, cellCountPtr, keychain, dateRange)
 			// remove this branch key from the keychain
 			if len(*keychain) > 0 {

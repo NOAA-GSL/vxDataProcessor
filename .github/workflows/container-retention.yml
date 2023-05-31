@@ -10,15 +10,6 @@ jobs:
     name: Delete images from ghcr.io
     runs-on: ubuntu-latest
     steps:
-      - name: Delete untagged images
-        uses: snok/container-retention-policy@v2
-        with:
-          image-names: vxdataprocessor
-          cut-off: 1 day ago MST
-          account-type: org
-          org-name: noaa-gsl
-          untagged-only: true
-          token: ${{ secrets.GHCR_CLEANUP_PAT }}
       - name: Delete sha-* images over two weeks old
         uses: snok/container-retention-policy@v2
         with:

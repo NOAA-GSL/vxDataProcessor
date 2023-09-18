@@ -6,7 +6,7 @@ require (
 	github.com/aclements/go-moremath v0.0.0-20210112150236-f10218a38794
 	github.com/couchbase/gocb/v2 v2.6.3
 	github.com/gin-gonic/gin v1.9.1
-	github.com/go-playground/validator/v10 v10.14.1
+	github.com/go-playground/validator/v10 v10.15.4
 	github.com/go-sql-driver/mysql v1.7.1
 	github.com/joho/godotenv v1.5.1
 	github.com/prometheus/client_golang v1.16.0

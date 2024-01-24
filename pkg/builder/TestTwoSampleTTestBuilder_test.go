@@ -169,7 +169,7 @@ func TestTwoSampleTTestBuilder_test_neagtive_2(t *testing.T) {
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_2 - computeSignificance - error message : ", err))
 	}
-	if cellPtr.value != -2 {
+	if cellPtr.value != 2 {
 		t.Fatal("test_2_wrong value :", cellPtr.value)
 	}
 }
@@ -224,7 +224,7 @@ func TestTwoSampleTTestBuilder_test_1(t *testing.T) {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_1 - computeSignificance - error message : ", err))
 	}
 	fmt.Println("Pval is", cellPtr.pvalue, "value is ", cellPtr.value)
-	if cellPtr.value != 2 {
+	if cellPtr.value != -2 {
 		t.Fatal("test_1 wrong value :", cellPtr.value)
 	}
 }
@@ -281,7 +281,7 @@ func TestTwoSampleTTestBuilder_test_0(t *testing.T) {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_0 - computeSignificance - error message : ", err))
 	}
 	fmt.Println("Pval is", cellPtr.pvalue, "value is ", cellPtr.value)
-	if cellPtr.value != -2 {
+	if cellPtr.value != 2 {
 		t.Fatal("test_0 wrong value :", cellPtr.value)
 	}
 }
@@ -389,7 +389,7 @@ func TestTwoSampleTTestBuilder_test__match_ctl_short_1(t *testing.T) {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_1 - computeSignificance - error message : ", err))
 	}
 	fmt.Println("Pval is", cellPtr.pvalue, "value is ", cellPtr.value)
-	if cellPtr.value != 2 {
+	if cellPtr.value != -2 {
 		t.Fatal("test_1 wrong value :", cellPtr.value)
 	}
 }
@@ -448,7 +448,7 @@ func TestTwoSampleTTestBuilder_test__match_exp_short_1(t *testing.T) {
 		t.Fatal(fmt.Sprint("TestTwoSampleTTestBuilder_test_1 - computeSignificance - error message : ", err))
 	}
 	fmt.Println("Pval is", cellPtr.pvalue, "value is ", cellPtr.value)
-	if cellPtr.value != 2 {
+	if cellPtr.value != -2 {
 		t.Fatal("test_1 wrong value :", cellPtr.value)
 	}
 }

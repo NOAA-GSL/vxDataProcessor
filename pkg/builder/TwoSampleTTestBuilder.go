@@ -271,7 +271,7 @@ func (scc *ScorecardCell) computeSignificance() error {
 		if scc.statisticType == Bias_Model_Obs {
 			difference = (math.Abs(meanCtl) - math.Abs(meanExp))
 		} else {
-			difference = (meanExp - meanCtl)
+			difference = (meanCtl - meanExp)
 		}
 		scc.pvalue = ret.P
 		v, err := scc.deriveValue(difference, ret.P)

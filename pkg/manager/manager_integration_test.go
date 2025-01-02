@@ -84,7 +84,6 @@ func TestDirector_test_connection(t *testing.T) {
 	mngr, _ := GetManager(documentID)
 	defer mngr.close()
 	mysqlCredentials, cbCredentials, err = mngr.loadEnvironment()
-
 	if err != nil {
 		t.Fatal(fmt.Sprint("TestDirector_test_connection load environment error ", err))
 	}

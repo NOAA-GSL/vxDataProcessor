@@ -4,6 +4,7 @@ run:
     - integration
 
 output:
+  uniq-by-line: false
   sort-results: true
   print-linter-name: true
 
@@ -12,7 +13,6 @@ issues:
   max-issues-per-linter: 0
   max-same-issues: 0
   new: false
-  uniq-by-line: false
 
 
 # Linters & linter-settings inspired by https://olegk.dev/go-linters-configuration-the-right-version
@@ -49,7 +49,7 @@ linters:
     - errorlint
 
     # Checks for pointers to enclosing loop variables.
-    - copyloopvar
+    - exportloopref
 
     # TODO - enable
     # - gocritic

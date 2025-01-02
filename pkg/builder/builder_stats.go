@@ -67,7 +67,7 @@ func calculateStatCTC(hit float32, fa float32, miss float32, cn float32, statist
 	case ETS_Equitable_Threat_Score: // radar
 		value = (hit - ((hit + fa) * (hit + miss) / (hit + fa + miss + cn))) / ((hit + fa + miss) - ((hit + fa) * (hit + miss) / (hit + fa + miss + cn))) * 100
 	default:
-		err = fmt.Errorf(fmt.Sprintf("builder_stats.calculateStatCTC: %q %q", "Invalid statistic:", statistic))
+		err = fmt.Errorf("%s", fmt.Sprintf("builder_stats.calculateStatCTC: %q %q", "Invalid statistic:", statistic))
 		return 0, err
 	}
 	if math.IsNaN(float64(value)) {

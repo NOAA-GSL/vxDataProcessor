@@ -76,7 +76,7 @@ func Test_getMySqlConnection(t *testing.T) {
 			got.Close()
 			director.CloseDB()
 			if tt.want != fmt.Sprintf("%T", got) {
-				t.Errorf(fmt.Sprintf("getMySqlConnection() type of connection is not sql.DB = %v", fmt.Sprintf("%T", got)))
+				t.Errorf("%s", fmt.Sprintf("getMySqlConnection() type of connection is not sql.DB = %v", fmt.Sprintf("%T", got)))
 			}
 		})
 	}

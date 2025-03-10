@@ -1,7 +1,6 @@
 module github.com/NOAA-GSL/vxDataProcessor
 
 go 1.23
-
 require (
 	github.com/aclements/go-moremath v0.0.0-20241023150245-c8bbc672ef66
 	github.com/couchbase/gocb/v2 v2.9.3
@@ -12,7 +11,7 @@ require (
 	github.com/prometheus/client_golang v1.20.5
 	github.com/stretchr/testify v1.10.0
 	go.uber.org/goleak v1.3.0
-	golang.org/x/sync v0.10.0
+	golang.org/x/sync v0.12.0
 )
 
 require (

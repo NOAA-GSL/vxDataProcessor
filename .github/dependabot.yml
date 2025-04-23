@@ -9,22 +9,28 @@ updates:
   - package-ecosystem: "gomod"
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
     pull-request-branch-name:
       separator: "-" # Use "-" instead of "/" in branch names to avoid issues with docker registries
+    assignees:
+      - "ian-noaa"
 
   # Maintain dependencies for GitHub Actions
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
     pull-request-branch-name:
       separator: "-" # Use "-" instead of "/" in branch names to avoid issues with docker registries
+    assignees:
+      - "ian-noaa"
 
   # Maintain dependencies for Docker
   - package-ecosystem: "docker"
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
     pull-request-branch-name:
       separator: "-" # Use "-" instead of "/" in branch names to avoid issues with docker registries
+    assignees:
+      - "ian-noaa"
